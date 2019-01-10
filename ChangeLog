@@ -1,0 +1,26 @@
+- 2018-05-25
+1. 생성되는 VFClient마다 고유의 IdNumber를 부여하여 로그 출력에서 구별할 수 있도록 작업 완료
+2. 이중화 구성 시에 Standby 상태의 중계서버에서는 Active상태가 되기 전까지 Notify, Shcd4DB 모듈이 동작하지 않도록 기능 추가
+
+- 2018-05-24
+1. FileHandler(File핸들러) 모듈 기능 수정 - Batch 서비스 이용 시에도 결과를 파일로 저장할 수 있도록 기능 수정
+
+- 2018-05-23
+1. Batch 서비스에 해당되는 프로토콜 변경 :/ -> ://
+2. Batch 서비스 결과를 저장할 때 SPKERNO: 'N' 로 설정
+3. Batch 서비스 요청 로직 구현/테스트(VFClient모듈)
+
+- 2018-05-17
+1. DBHandler 및 DB 관련 모듈 수정 작업
+    - DBHandler : Task 조회, 등록, 가져오기 함수 작성 및 테스트
+    - Notifier와 연계하여 신규로 생성할 Task를 DB에 등록 및 조회, 가져오는 기능 테스트 완료k
+    - Scheduler 모듈에서 일정한 간격으로 DB를 조회하여 수행할 Task의 여부를 알아내고 수행(VFCManager의 Queue로 item을 push)
+
+- 2018-05-16
+1. DB 변경 작업
+    - 변경된 테이블 적용: CALL_LIST -> CS_LIST : CallExecutor에서 호출되며 CS_LIST에 등록되지 않은 상담원 코드인 경우 등록시켜준다.
+    - 이미 등록된 상담원 코드가 있을 경우 Call_ID, State 값만 변경해준다.
+    - 호(Call)가 종료되면 CS_LIST의 상담원 상태값(state)을 변경해준다.
+2. Notifier에서 발견된 파일들은 바로 처리하지 않고 DB에 등록한 후 Scheduler 모듈에서 처리하도록 구조를 변경
+3. CallSignal 수정 - 요청 및 응답 패킷에 CounselorCode(32) 항목 추가
+4. 남은 작업 - VFClient, Scheduler 업무 로직 설계, 코딩 및 테스트

@@ -1,0 +1,8 @@
+
+1. BUILD
+    ./make
+    ./make release
+
+2. INSTALL
+    BIN : itf_stas
+    CONFIG : env.conf (in conf)

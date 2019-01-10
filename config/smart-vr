@@ -1,0 +1,105 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          smart-vr
+# Required-Start:    $local_fs $network $named $time $syslog
+# Required-Stop:     $local_fs $network $named $time $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       Smart-VR Master server
+### END INIT INFO
+
+## Environment
+STT_HOME=/home/boolpae/Dev/stas
+LOGS=$STT_HOME/logs
+#FOREVER=/usr/bin/forever
+DIST_SRV=/usr/local/sbin/gearmand
+DIST_SRV_PID=$LOGS/gearmand.pid
+DIST_TOOL=/usr/local/bin/gearadmin
+#INOTIFY=$STT_HOME/bin/itf_inotify
+#SCHEDULER=$STT_HOME/bin/scheduler-1.0.0.jar
+#SCHEDULER_OPTIONS="-Dlog4j.configuration=file://$STT_HOME/config/log4j.xml -Dpath.schedule=$STT_HOME/schedule"
+#SCHEDULER_PID=$STT_HOME/scheduler.pid
+STAS=$STT_HOME/bin/Debug/Linux_x86_64/itf_stas_odbc
+STAS_PID=$LOGS/itf_stas.pid
+#STAS_OPT="-i /home/boolpae/Dev/stas/config/stas.conf --verbose DEBUG --pid-file=${S_PID} -d"
+SERV_MON=$STT_HOME/config/stas_service.sh
+
+## Options
+#export PROTOCOL=http
+#export PROTOCOL=https
+#export MASTER_HOST=192.168.0.252
+#export FOREVER_ROOT=/home/stt/.forever
+#export NODE_ENV=production
+#export JOB_DB=$STT_HOME/db/job.db
+#export IF_DB_CONF=$STT_HOME/config/mssql_ace.json
+#export A2W=yes
+
+start() {
+        cd $STT_HOME
+        echo -n 'Starting Service-Mon:      ' >&1
+        $SERV_MON &
+        if [ $? -eq 0 ]; then
+                echo -e '[\033[00;32mSuccess\033[00m]' >&1
+        else
+                echo -e '[\033[00;31mFailure\033[00m]' >&1
+                stop
+        fi
+
+}
+
+
+stop() {
+        PID_MON=$(ps -ef | grep stas_service | grep -v grep | awk '{print $2}')
+        if [ "$PID_MON" != "" ] && kill -0 $PID_MON; then
+                echo -n 'Stopping Service-Mon: ' >&2
+                kill -15 $PID_MON
+                if [ $? -eq 0 ]; then
+                        echo -e '[\033[00;32mSuccess\033[00m]' >&2
+                else
+                        echo -e '[\033[00;31mFailure\033[00m]' >&2
+                fi
+        fi
+
+        PID_STAS=$(ps -ef | grep itf_stas_odbc | grep -v grep | awk '{print $2}')
+        if [ "$PID_STAS" != "" ] && kill -0 $PID_STAS; then
+                echo -n 'Stopping STAS service: ' >&2
+                kill -15 $PID_STAS
+                if [ $? -eq 0 ]; then
+                        echo -e '[\033[00;32mSuccess\033[00m]' >&2
+                else
+                        echo -e '[\033[00;31mFailure\033[00m]' >&2
+                fi
+        fi
+
+        #echo -n 'Stopping Gearman server:   ' >&2
+#       $DIST_TOOL --shutdown
+        #$DIST_TOOL --getpid > $DIST_PID
+        PID_GEARMAND=$(ps -ef | grep gearmand | grep -v grep | awk '{print $2}')
+        #kill -15 $DIST_PID
+        if [ "$PID_GEARMAND" != "" ] && kill -0 $PID_GEARMAND; then
+                echo -n 'Stopping master server:   ' >&2
+                kill -15 $PID_GEARMAND
+                if [ $? -eq 0 ]; then
+                        echo -e '[\033[00;32mSuccess\033[00m]' >&2
+                else
+                        echo -e '[\033[00;31mFailure\033[00m]' >&2
+                fi
+        fi
+
+}
+
+case "$1" in
+        start)
+                start
+                ;;
+        stop)
+                stop
+                ;;
+        restart)
+                stop
+                sleep 1
+                start
+                ;;
+        *)
+                echo "Usage: $0 {start|stop|restart}"
+esac
