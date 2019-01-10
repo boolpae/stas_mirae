@@ -138,6 +138,7 @@ DBHandler::~DBHandler()
 	m_Logger->debug("DBHandler Destructed.\n");
 }
 
+#define MAX_STT_SIZE (1024*2048)    // 1MiB
 void DBHandler::thrdMain(DBHandler * s2d)
 {
 	std::lock_guard<std::mutex> *g;
@@ -152,11 +153,11 @@ void DBHandler::thrdMain(DBHandler * s2d)
     char *output_buf_ptr = NULL;
     char cSpk='N';
     char sRxTx[8];
-    char sqlbuff[1024];
+    char sqlbuff[MAX_STT_SIZE + 128];
     int nIdx;
 
     SQLLEN lenStt, lenIdx, lenCallid, /*lenSpk,*/ lenStart, lenEnd;
-    char sttValue[2048];
+    char sttValue[MAX_STT_SIZE];
     char callId[256];
     int nStart, nEnd;
 

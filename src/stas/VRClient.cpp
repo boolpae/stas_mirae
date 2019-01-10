@@ -237,10 +237,27 @@ void VRClient::thrdMain(VRClient* client) {
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
     xRedisClient &xRedis = client->getXRdedisClient();
     RedisDBIdx dbi(&xRedis);
+    std::string redisKey = "G_CS:";
+    char redisValue[256];
+    std::string strRedisValue;
 
     if ( useRedis ) {
         dbi.CreateDBIndex(client->getCallId().c_str(), APHash, CACHE_TYPE_1);
         it = iconv_open("UTF-8", "EUC-KR");
+
+        // 2019-01-10, 호 시작 시 상담원 상태 변경 전달 - 호 시작
+        int64_t zCount=0;
+        redisKey.append(client->getCallId());
+
+        //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
+        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
+        sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"I\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
+        strRedisValue = redisValue;
+        
+        xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+
+        redisKey = "G_RTSTT:";
+        redisKey.append(client->getCallId());
     }
 #endif
 
@@ -556,8 +573,8 @@ void VRClient::thrdMain(VRClient* client) {
                                             vVal.push_back(toString(diaNumber));
                                             vVal.push_back(sJsonValue);
 
-                                            if ( !xRedis.zadd(dbi, client->getCallId(), vVal, zCount) ) {
-                                                client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
+                                            if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
+                                                client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
                                             }
                                             vVal.clear();
 
@@ -565,10 +582,13 @@ void VRClient::thrdMain(VRClient* client) {
                                         }
                                     }
 #endif
+
+#ifdef DISABLE_ON_REALTIME
                                     // to DB
                                     if (client->m_s2d) {
                                         client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, modValue/*boost::replace_all_copy(std::string((const char*)value), "\n", " ")*/);
                                     }
+#endif // DISABLE_ON_REALTIME
                                     //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
@@ -775,8 +795,8 @@ void VRClient::thrdMain(VRClient* client) {
                                     // vVal.push_back(toString(diaNumber));
                                     // vVal.push_back(modValue);
 
-                                    if ( !xRedis.zadd(dbi, client->getCallId(), vVal, zCount) ) {
-                                        client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
+                                    if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
+                                        client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
                                     }
                                     vVal.clear();
 
@@ -785,9 +805,12 @@ void VRClient::thrdMain(VRClient* client) {
                             }
 #endif
 
+#ifdef DISABLE_ON_REALTIME
                             if (client->m_s2d) {
                                 client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, modValue/*boost::replace_all_copy(std::string((const char*)value), "\n", " ")*/);
                             }
+#endif // DISABLE_ON_REALTIME
+
                             //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
@@ -825,9 +848,26 @@ void VRClient::thrdMain(VRClient* client) {
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
                                 int64_t zCount=0;
+                                time_t t;
+                                struct tm *tmp;
+
+                                t = time(NULL);
+                                tmp = localtime(&t);
+
                                 if (!xRedis.publish(dbi, sPubCannel.c_str(), client->getCallId().c_str(), zCount)) {
                                     client->m_Logger->error("VRClient::thrdMain(%s) - redis publish(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
                                 }
+
+                                redisKey = "G_CS:";
+                                redisKey.append(client->getCallId());
+
+                                //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
+                                strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
+                                sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
+                                strRedisValue = redisValue;
+                                
+                                xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+
                             }
 #endif
                             client->m_s2d->updateCallInfo(client->m_sCallId, true);
