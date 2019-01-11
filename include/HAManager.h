@@ -29,7 +29,11 @@ class SyncItem {
         std::string sCounselCode,
         std::string sFuncName,
         unsigned short n1port,
-        unsigned short n2port);
+        unsigned short n2port
+#ifdef EN_RINGBACK_LEN
+        ,uint32_t nRingbackLen
+#endif
+        );
     virtual ~SyncItem();
 
     bool m_bSignalType; // true: call start, false: call end
@@ -38,6 +42,9 @@ class SyncItem {
     std::string m_sFuncName;
     unsigned short m_n1port;
     unsigned short m_n2port;
+#ifdef EN_RINGBACK_LEN
+    uint32_t m_nRingbackLen;
+#endif
 };
 
 class HAManager {
@@ -59,8 +66,11 @@ class HAManager {
     int init(std::string ipaddr, uint16_t port);
 
     //int sendCallSignal();
-
+#ifdef EN_RINGBACK_LEN
+    int insertSyncItem( bool calltype, std::string callid,  std::string counselcode, std::string funcname, uint16_t port1, uint16_t port2, uint32_t ringbacklen );
+#else
     int insertSyncItem( bool calltype, std::string callid,  std::string counselcode, std::string funcname, uint16_t port1, uint16_t port2 );
+#endif
     //void deleteSyncItem( std::string callid );
 
     bool getHAStat() { return m_bStat; }

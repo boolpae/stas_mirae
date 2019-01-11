@@ -60,6 +60,9 @@ FLAGS			+= -DUSE_REALTIME_MT # 실시간 tasK에 대해 채널 당 화자 별 �
 FLAGS			+= -DCHANNEL_SYNC # 두 화자 간의 음성 데이터 처리 속도를 맞추기 위한 정의
 #FLAGS			+= -DDIAL_SYNC # 두 화자 간의 대화 내용을 맞추기 위한 정의(CHANNEL_SYNC가 이미 정의되어야 한다.)
 endif
+ifeq ($(EN_RINGBACK_LEN), "TRUE")
+FLAGS			+= -DEN_RINGBACK_LEN # 통화연결음 길이를 이용할 경우 - 추후 Define을 이요하지 않고 기본으로 빌드할 예정
+endif
 endif
 
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 

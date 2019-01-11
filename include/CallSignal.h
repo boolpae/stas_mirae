@@ -13,8 +13,14 @@
 
 #define LEN_CALL_ID 128
 
+#ifdef EN_RINGBACK_LEN
+#define CALL_BEG_PACKET_LEN (116+LEN_CALL_ID)
+#define CALL_END_PACKET_LEN (109+LEN_CALL_ID)
+#else
 #define CALL_BEG_PACKET_LEN (112+LEN_CALL_ID)
 #define CALL_END_PACKET_LEN (105+LEN_CALL_ID)
+#endif // EN_RINGBACK_LEN
+
 #define CALL_PACKET_HEADER_LEN 8
 #define CALL_BEG_PACKET_BODY_LEN (CALL_BEG_PACKET_LEN - CALL_PACKET_HEADER_LEN)
 #define CALL_END_PACKET_BODY_LEN (CALL_END_PACKET_LEN - CALL_PACKET_HEADER_LEN)
@@ -36,6 +42,9 @@ namespace Protocol {
         uint8_t pacChnCnt;
         uint8_t pacEnc;
 		uint8_t pacFingerPrint[65];	// 패킷의 조작 여부를 판별하기 위한 문자열 값(요청하는 노드에서 설정되는 값)
+#ifdef EN_RINGBACK_LEN
+		uint32_t pacRingbackLen;	// 통화연결음 길이
+#endif
 		uint8_t pacRes[3];		// 응답 값 - HTTP 프로토콜의 응답 코드와 동일한 값 사용
         
         log4cpp::Category *m_Logger;
@@ -60,6 +69,10 @@ namespace Protocol {
 		const char* getCallId() { return (const char*)pacCallId; }
 		uint8_t getUdpCnt() { return pacUdpCnt; }
 
+#ifdef EN_RINGBACK_LEN
+		uint32_t getRingbackLen() { return pacRingbackLen; }
+#endif
+
 		void setPacFlag(uint8_t flag) { pacFlag = flag; }
 		void setPacCounselorCode(uint8_t *counselorcode, uint16_t len);
 		void setPacCallId(uint8_t *callid, uint16_t len);
@@ -70,6 +83,11 @@ namespace Protocol {
 		void setFingerPrint(uint8_t *fprint, uint16_t len);
 
 		void printPacketInfo();
+
+#ifdef EN_RINGBACK_LEN
+		void setRingbackLen(uint32_t len) { pacRingbackLen = len; }
+#endif
+
 	};
 
 }

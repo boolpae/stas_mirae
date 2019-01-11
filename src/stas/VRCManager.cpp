@@ -290,7 +290,11 @@ void VRCManager::release()
 }
 
 // return: 성공(0), 실패(0이 아닌 값)
+#ifdef EN_RINGBACK_LEN
+int16_t VRCManager::requestVRC(string& callid, string& counselcode, time_t &startT, uint8_t jobType, uint8_t noc, uint32_t ringbackLen)
+#else
 int16_t VRCManager::requestVRC(string& callid, string& counselcode, time_t &startT, uint8_t jobType, uint8_t noc)
+#endif
 {
 	int16_t res = 0;
 	VRClient* client;
@@ -324,7 +328,12 @@ int16_t VRCManager::requestVRC(string& callid, string& counselcode, time_t &star
 #ifndef USE_REALTIME_MF
 		fname = "vr_realtime";
 #endif
+
+#ifdef EN_RINGBACK_LEN
+		client = new VRClient(ms_instance, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname/**iter*/, callid, counselcode, jobType, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, startT, ringbackLen);
+#else
 		client = new VRClient(ms_instance, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname/**iter*/, callid, counselcode, jobType, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, startT); // or VRClient(this);
+#endif
 
 		if (client) {
 			std::lock_guard<std::mutex> g(m_mxMap);
@@ -407,12 +416,20 @@ VRClient* VRCManager::getVRClient(string& callid)
 	return client;
 }
 
+#ifdef EN_RINGBACK_LEN
+int VRCManager::addVRC(string callid, string counselcode, string fname, uint8_t jobtype, uint8_t noc, uint32_t ringbacklen)
+#else
 int VRCManager::addVRC(string callid, string counselcode, string fname, uint8_t jobtype, uint8_t noc)
+#endif
 {
 	int16_t res = 0;
 	VRClient* client;
 
+#ifdef EN_RINGBACK_LEN
+    client = new VRClient(this, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobtype, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, time(NULL), ringbacklen);
+#else
     client = new VRClient(this, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobtype, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, time(NULL)); // or VRClient(this);
+#endif
 
     if (client) {
         std::lock_guard<std::mutex> g(m_mxMap);

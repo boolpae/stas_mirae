@@ -60,12 +60,19 @@ class VRClient
 	int m_mode;
 
 	time_t m_tStart;
+#ifdef EN_RINGBACK_LEN
+	uint32_t m_nRingbackLen;
+#endif
 
 public:
 
 public:
 	// VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, /*log4cpp::Category *logger,*/ DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen);
+#ifdef EN_RINGBACK_LEN
+	VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, /*log4cpp::Category *logger,*/ DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode, time_t startTime, uint32_t ringbacklen);
+#else
 	VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, /*log4cpp::Category *logger,*/ DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode, time_t startTime);
+#endif
 	void finish();
 
 	string& getFname() { return m_sFname; }

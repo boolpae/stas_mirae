@@ -107,7 +107,12 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 					// VDC, VRC 요청
 					// 1. VRC 요청 : 성공 시 VDC 요청, 실패 패킷 생성하여 sendto
 					WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_REQ_WORKER);
-                    if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt()))) {
+#ifdef EN_RINGBACK_LEN
+                    if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt()), cs->getRingbackLen()))
+#else
+                    if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt())))
+#endif
+					{
 						WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_RES_WORKER);
 
 						if (resReq == 1) {
@@ -156,7 +161,11 @@ void CallExecutor::thrdMain(CallExecutor* exe)
                             
                             // HA
                             if (exe->m_ham)
+#ifdef EN_RINGBACK_LEN
+                                exe->m_ham->insertSyncItem(true, sCallId, sCounselorCode, exe->m_vrcm->getVRClient(sCallId)->getFname(), vPorts[0], vPorts[1], cs->getRingbackLen());
+#else
                                 exe->m_ham->insertSyncItem(true, sCallId, sCounselorCode, exe->m_vrcm->getVRClient(sCallId)->getFname(), vPorts[0], vPorts[1]);
+#endif
 						}
 					}
 				}

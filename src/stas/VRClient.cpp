@@ -137,12 +137,19 @@ enum {
 
 // VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, /*log4cpp::Category *logger,*/ DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen)
 // 	: m_sGearHost(gearHost), m_nGearPort(gearPort), m_nGearTimeout(gearTimeout), m_sFname(fname), m_sCallId(callid), m_sCounselCode(counselcode), m_nLiveFlag(1), m_cJobType(jobType), m_nNumofChannel(noc), m_deliver(deliver), /*m_Logger(logger),*/ m_s2d(s2d), m_is_save_pcm(is_save_pcm), m_pcm_path(pcm_path), m_framelen(framelen*8)
+#ifdef EN_RINGBACK_LEN
+VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode, time_t startT, uint32_t ringbacklen)
+#else
 VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode, time_t startT)
+#endif
 	: m_sGearHost(gearHost), m_nGearPort(gearPort), m_nGearTimeout(gearTimeout), m_sFname(fname), m_sCallId(callid), m_sCounselCode(counselcode), m_nLiveFlag(1), m_cJobType(jobType), m_nNumofChannel(noc), m_deliver(deliver), m_s2d(s2d), m_is_save_pcm(is_save_pcm), m_pcm_path(pcm_path), m_framelen(framelen*8), m_mode(mode)
 {
 	m_Mgr = mgr;
     m_tStart = startT;
 	m_thrd = std::thread(VRClient::thrdMain, this);
+#ifdef EN_RINGBACK_LEN
+    m_nRingbackLen = ringbacklen;
+#endif
 	//thrd.detach();
 	//printf("\t[DEBUG] VRClinet Constructed.\n");
     m_Logger = config->getLogger();
@@ -395,8 +402,13 @@ void VRClient::thrdMain(VRClient* client) {
         vBuff[1].clear();
         sframe[0] = 0;
         sframe[1] = 0;
+#ifdef EN_RINGBACK_LEN
+        eframe[0] = client->m_nRingbackLen;
+        eframe[1] = client->m_nRingbackLen;
+#else
         eframe[0] = 0;
         eframe[1] = 0;
+#endif
         
         aDianum[0] = 0;
         aDianum[1] = 0;
@@ -878,7 +890,11 @@ void VRClient::thrdMain(VRClient* client) {
 #else
                         // HA
                         if (HAManager::getInstance())
+#ifdef EN_RINGBACK_LEN
+                            HAManager::getInstance()->insertSyncItem(false, client->m_sCallId, client->m_sCounselCode, std::string("remove"), 1, 1, 0);
+#else
                             HAManager::getInstance()->insertSyncItem(false, client->m_sCallId, client->m_sCounselCode, std::string("remove"), 1, 1);
+#endif
 
 #endif
                         if (client->m_is_save_pcm) {
