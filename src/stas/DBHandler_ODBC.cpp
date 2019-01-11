@@ -180,19 +180,19 @@ void DBHandler::thrdMain(DBHandler * s2d)
     // retcode = SQLPrepare(connSet->stmt, (SQLCHAR*)sqlbuff, SQL_NTS);
     // printf("SQLPrepare RET(%d)\n", retcode);
 
+    // retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
+    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
+    //                     (SQLPOINTER)&nIdx, sizeof(SQLINTEGER), (SQLLEN*)&lenIdx);
     retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
-                        SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                        (SQLPOINTER)&nIdx, sizeof(SQLINTEGER), (SQLLEN*)&lenIdx);
-    retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
                         SQL_C_CHAR, SQL_VARCHAR, sizeof(callId), 0,
                         (SQLPOINTER)callId, sizeof(callId), (SQLLEN*)&lenCallid);
-    retcode = SQLBindParameter(connSet->stmt, 3, SQL_PARAM_INPUT,
-                        SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                        (SQLPOINTER)&nStart, sizeof(SQLINTEGER), (SQLLEN*)&lenStart);
-    retcode = SQLBindParameter(connSet->stmt, 4, SQL_PARAM_INPUT,
-                        SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                        (SQLPOINTER)&nEnd, sizeof(SQLINTEGER), (SQLLEN*)&lenEnd);
-    retcode = SQLBindParameter(connSet->stmt, 5, SQL_PARAM_INPUT,
+    // retcode = SQLBindParameter(connSet->stmt, 3, SQL_PARAM_INPUT,
+    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
+    //                     (SQLPOINTER)&nStart, sizeof(SQLINTEGER), (SQLLEN*)&lenStart);
+    // retcode = SQLBindParameter(connSet->stmt, 4, SQL_PARAM_INPUT,
+    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
+    //                     (SQLPOINTER)&nEnd, sizeof(SQLINTEGER), (SQLLEN*)&lenEnd);
+    retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
                         SQL_C_CHAR, SQL_VARCHAR, sizeof(sttValue), 0,
                         (SQLPOINTER)sttValue, sizeof(sttValue), (SQLLEN*)&lenStt);
     // retcode = SQLBindParameter(connSet->stmt, 6, SQL_PARAM_INPUT,
@@ -252,7 +252,8 @@ void DBHandler::thrdMain(DBHandler * s2d)
                     sprintf(sRxTx, "%s", "MN");
             }
 
-            sprintf(sqlbuff, "INSERT INTO TBL_JOB_DATA (IDX,SPK,CALL_ID,POS_START,POS_END,VALUE,RCD_TP) VALUES (?,'%c',?,?,?,?,'%s')", cSpk, sRxTx);
+            // sprintf(sqlbuff, "INSERT INTO TBL_JOB_DATA (IDX,SPK,CALL_ID,POS_START,POS_END,VALUE,RCD_TP) VALUES (?,'%c',?,?,?,?,'%s')", cSpk, sRxTx);
+            sprintf(sqlbuff, "INSERT INTO TBL_JOB_DATA (CALL_ID,RCD_TP,TEXT) VALUES (?,'%s',?)", sRxTx);
             //printf("QUERY<%s>\n", sqlbuff);
 
             retcode = SQLPrepare(connSet->stmt, (SQLCHAR*)sqlbuff, SQL_NTS);
@@ -278,28 +279,60 @@ void DBHandler::thrdMain(DBHandler * s2d)
             //printf("SQLExecute RET(%d)\n", retcode);
             //retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
-            if (retcode < 0) {
+            if SQL_SUCCEEDED(retcode) {
+                logger->debug("DBHandler::thrdMain() succeeded to excute SQL!\n");
+            }
+            else
+            {
                 int odbcret = extract_error("SQLExecute()", connSet->stmt, SQL_HANDLE_STMT);
                 //s2d->m_Logger->error("DBHandler::insertCallInfo - SQLException -- %s", Exception_frame.message);
                 // connSet = s2d->m_pSolDBConnPool->reconnectConnection(connSet);
 
-                if ((odbcret == 2006) && s2d->m_pSolDBConnPool->reconnectConnection(connSet)) {
+                // if ((odbcret == 2006) && s2d->m_pSolDBConnPool->reconnectConnection(connSet)) {
+                if (odbcret == 1062) {
+                    odbcret = s2d->deleteJobData(item->getCallId());
+
+                }
+                
+                if (!odbcret) {
+                    logger->debug("DBHandler::thrdMain() succeeded to DELETE JOB_DATA(%s) SQL!\n", callId);
+                    // retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
+                    //                     SQL_C_CHAR, SQL_VARCHAR, sizeof(callId), 0,
+                    //                     (SQLPOINTER)callId, sizeof(callId), (SQLLEN*)&lenCallid);
+                    // retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
+                    //                     SQL_C_CHAR, SQL_VARCHAR, sizeof(sttValue), 0,
+                    //                     (SQLPOINTER)sttValue, sizeof(sttValue), (SQLLEN*)&lenStt);
+                    retcode = SQLExecute(connSet->stmt);
+                }
+                
+                if SQL_SUCCEEDED(retcode) {
+                    logger->debug("DBHandler::thrdMain() succeeded to RE-INSERT JOB_DATA(%s) SQL!\n", callId);
+                }
+                else if ( s2d->m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    // retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
+                    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
+                    //                     (SQLPOINTER)&nIdx, sizeof(SQLINTEGER), (SQLLEN*)&lenIdx);
                     retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
-                                        SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                                        (SQLPOINTER)&nIdx, sizeof(SQLINTEGER), (SQLLEN*)&lenIdx);
-                    retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
                                         SQL_C_CHAR, SQL_VARCHAR, sizeof(callId), 0,
                                         (SQLPOINTER)callId, sizeof(callId), (SQLLEN*)&lenCallid);
-                    retcode = SQLBindParameter(connSet->stmt, 3, SQL_PARAM_INPUT,
-                                        SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                                        (SQLPOINTER)&nStart, sizeof(SQLINTEGER), (SQLLEN*)&lenStart);
-                    retcode = SQLBindParameter(connSet->stmt, 4, SQL_PARAM_INPUT,
-                                        SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                                        (SQLPOINTER)&nEnd, sizeof(SQLINTEGER), (SQLLEN*)&lenEnd);
-                    retcode = SQLBindParameter(connSet->stmt, 5, SQL_PARAM_INPUT,
+                    // retcode = SQLBindParameter(connSet->stmt, 3, SQL_PARAM_INPUT,
+                    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
+                    //                     (SQLPOINTER)&nStart, sizeof(SQLINTEGER), (SQLLEN*)&lenStart);
+                    // retcode = SQLBindParameter(connSet->stmt, 4, SQL_PARAM_INPUT,
+                    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
+                    //                     (SQLPOINTER)&nEnd, sizeof(SQLINTEGER), (SQLLEN*)&lenEnd);
+                    retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
                                         SQL_C_CHAR, SQL_VARCHAR, sizeof(sttValue), 0,
                                         (SQLPOINTER)sttValue, sizeof(sttValue), (SQLLEN*)&lenStt);
 
+                }
+                else
+                {
+                    logger->error("DBHandler::thrdMain() Failed reconnection DB!\n");
+                    m_bThrdMain = false;
+                    logger->debug("DBHandler::thrdMain() finish!\n");
+                    return;
                 }
 #if 0
                 else {
@@ -414,9 +447,16 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
             }
             else {
                 int odbcret = extract_error("DBHandler::thrdUpdate() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-                if (odbcret == 2006) {
-                    s2d->m_pSolDBConnPool->reconnectConnection(connSet);
-                }
+                // if (odbcret == 2006) {
+                    logger->debug("DBHandler::thrdUpdate() - ReConnecting... DB");
+                    if (!s2d->m_pSolDBConnPool->reconnectConnection(connSet))
+                    {
+                        logger->error("DBHandler::thrdUpdate() - ReConnecting... DB");
+                        m_bThrdUpdate = false;
+                        logger->debug("DBHandler::thrdUpdate() finish!\n");
+                        return;
+                    }
+                // }
                 ret = 1;
             }
 			delete item;
@@ -649,11 +689,18 @@ int DBHandler::searchCallInfo(std::string counselorcode)
         }
         }
         else {
-            int odbcret = extract_error("DBHandler::insertCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-            if (odbcret == 2006) {
-                m_pSolDBConnPool->reconnectConnection(connSet);
-            }
-            ret = -1;
+            int odbcret = extract_error("DBHandler::searchCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::searchCallInfo - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
 
         }
         printf("DEBUG(searchCallInfo) - SQL(%s), ret(%d)\n", sqlbuff, ret);
@@ -697,10 +744,25 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
         }
         else {
             int odbcret = extract_error("DBHandler::insertCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::insertCallInfo - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
         m_pSolDBConnPool->restoreConnection(connSet);
@@ -741,9 +803,23 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
         }
         else {
             int odbcret = extract_error("DBHandler::updateCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
+            ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateCallInfo - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
@@ -786,10 +862,24 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
             m_Logger->debug("DBHandler::updateCallInfo - SQL[UPDATE TBL_CS_LIST SET STAT='%c', CALL_ID='%s' WHERE CS_CD='%s']", (end)?'E':'I', callid.c_str(), counselorcode.c_str());
         }
         else {
+            #if 0
             int odbcret = extract_error("DBHandler::updateCallInfo(2) - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
+            ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateCallInfo(2) - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
@@ -924,9 +1014,23 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
         }
         else {
             int odbcret = extract_error("DBHandler::insertTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
+            ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::insertTaskInfo() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
@@ -978,10 +1082,25 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
         }
         else {
             int odbcret = extract_error("DBHandler::insertTaskInfoRT() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::insertTaskInfoRT() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
 
@@ -1084,10 +1203,25 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
         }
         else {
             int odbcret = extract_error("DBHandler::updateTaskInfo4Schd() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateTaskInfo4Schd() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
 
@@ -1130,10 +1264,25 @@ int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string 
         }
         else {
             int odbcret = extract_error("DBHandler::updateTaskInfo2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = 1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateTaskInfo2() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
 
@@ -1193,10 +1342,25 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
         }
         else {
             int odbcret = extract_error("DBHandler::searchTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = -1;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::searchTaskInfo() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         printf("DEBUG(searchTaskInfo) - ret(%d)\n", ret);
 
@@ -1307,10 +1471,25 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
         }
         else if (retcode < 0) {
             int odbcret = extract_error("DBHandler::getTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = retcode;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::getTaskInfo() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
         m_pSolDBConnPool->restoreConnection(connSet);
@@ -1379,10 +1558,25 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
         }
         else if (retcode < 0) {
             int odbcret = extract_error("DBHandler::getTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = retcode;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::getTaskInfo() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
         m_pSolDBConnPool->restoreConnection(connSet);
@@ -1445,10 +1639,25 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
         }
         else if (retcode < 0) {
             int odbcret = extract_error("DBHandler::getTimeoutTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
             ret = retcode;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::getTimeoutTaskInfo() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
         m_pSolDBConnPool->restoreConnection(connSet);
@@ -1497,9 +1706,24 @@ void DBHandler::updateAllTask2Fail2()
                 }
                 else {
                     int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                    #if 0
                     if (odbcret == 2006) {
                         m_pSolDBConnPool->reconnectConnection(connSet);
                     }
+                    #endif
+                    // if (odbcret == 2006) {
+                        if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                        {
+                            m_pSolDBConnPool->eraseConnection(connSet);
+                            m_Logger->error("DBHandler::updateAllTask2Fail2() - failed to re-connect to DB, erase connection from pool");
+                            retcode = SQLCloseCursor(connSet->stmt);
+
+                            delete jobInfo;
+                            vItems.clear();
+                            return;
+                        }
+                    // }
+
                 }
 
                 delete jobInfo;
@@ -1534,9 +1758,22 @@ void DBHandler::updateAllTask2Fail()
         }
         else {
             int odbcret = extract_error("DBHandler::updateAllTask2Fail() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
             }
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateAllTask2Fail() - failed to re-connect to DB, erase connection from pool");
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return;
+                }
+            // }
+
         }
         retcode = SQLCloseCursor(connSet->stmt);
 
@@ -1577,6 +1814,60 @@ void DBHandler::setInterDBDisable()
         m_bInterDBUse = false;
     }
 }
+
+int DBHandler::deleteJobData(std::string callid)
+{
+    PConnSet connSet = m_pSolDBConnPool->getConnection();
+    int ret=0;
+    char sqlbuff[512];
+    SQLRETURN retcode;
+    RETCODE rc = SQL_SUCCESS;
+
+    if (connSet)
+    {
+        //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
+        sprintf(sqlbuff, "DELETE FROM TBL_JOB_DATA WHERE CALL_ID='%s'", callid.c_str());
+        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+#if 0
+        if (retcode == SQL_NO_DATA) {
+            ret = 0;
+	    }
+	    else if (retcode == SQL_SUCCESS){
+            ret = 1;
+        }
+#endif
+        if SQL_SUCCEEDED(retcode) {
+            m_Logger->debug("DBHandler::deleteJobData - succeeded to delete job data(%s)", callid.c_str());
+        }
+        else {
+            int odbcret = extract_error("DBHandler::deleteJobData() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::deleteJobData - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
+        }
+
+        retcode = SQLCloseCursor(connSet->stmt);
+        m_pSolDBConnPool->restoreConnection(connSet);
+    }
+    else
+    {
+        // error
+        m_Logger->error("DBHandler::deleteJobData - can't get connection from pool");
+        ret = -1;
+    }
+
+    return ret;
+}
+
 
 RTSTTQueItem::RTSTTQueItem(uint32_t idx, std::string callid, uint8_t spkno, std::string &sttvalue, uint64_t bpos, uint64_t epos)
 	:m_nDiaIdx(idx), m_sCallId(callid), m_nSpkNo(spkno), m_sSTTValue(sttvalue), m_nBpos(bpos), m_nEpos(epos)

@@ -1036,7 +1036,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
     xRedisClient &xRedis = client->getXRdedisClient();
     RedisDBIdx dbi(&xRedis);
-    std::string redisKey = "G_RTSTT";
+    std::string redisKey = "G_RTSTT:";
 
     if ( useRedis ) {
         dbi.CreateDBIndex(client->getCallId().c_str(), APHash, CACHE_TYPE_1);

@@ -29,6 +29,7 @@ public:
     void        restoreConnection(ConnSet *conn);  // 사용 완료된 커넥션은 반드시 반환해야 함.
     PConnSet    reconnectConnection(ConnSet *conn);    // 사용 중 문제가 생긴 커넥션에 대해 재연결
     int         getConnSetCount() { return m_nConnSetCount; }
+    void        eraseConnection(ConnSet *conn);
     
 private:
     mutable std::mutex m_mxDb;

@@ -21,11 +21,11 @@
 #include <sstream>
 #include <fstream>
 
-#ifdef USE_RAPIDJSON
+
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
-#endif
+
 
 VFClient::VFClient(VFCManager* mgr, std::string gearHost, uint16_t gearPort, int gearTimeout, uint64_t numId, bool bMakeMLF, std::string resultpath)
 : m_LiveFlag(true), m_mgr(mgr), m_sGearHost(gearHost), m_nGearPort(gearPort), m_nGearTimeout(gearTimeout), m_nNumId(numId), m_bMakeMLF(bMakeMLF), m_sResultPath(resultpath)
@@ -289,7 +289,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                     if (sValue[0] == 'E' && sValue[0] != '{') {
                         err_code = sValue.substr(0, sValue.find("\n"));
                         svr_name = sValue.substr(sValue.find("\n")+1);
-                        logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_stt). [%s : %s], error_code(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), err_code.c_str());
+                        logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_stt). [%s : %s], error_code(%s), server_name(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), err_code.c_str(), svr_name.c_str());
                         DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), err_code.c_str(), svr_name.c_str());
                     }
                     else
@@ -378,7 +378,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                     if (sValue[0] == 'E') {
                                         err_code = sValue.substr(0, sValue.find("\n"));
                                         svr_name = sValue.substr(sValue.find("\n")+1);
-                                        logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text_tx). [%s : %s], ERROR-CODE(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), err_code.c_str());
+                                        logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text_tx). [%s : %s], ERROR-CODE(%s), server_name(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), err_code.c_str(), svr_name.c_str());
                                         DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), err_code.c_str(), svr_name.c_str());
                                         free(value);
                                     }
@@ -398,18 +398,44 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 
                                         {
                                             uint32_t diaNumber=0;
-                                            uint8_t spkno=2;
+                                            uint8_t spkno=1;
                                             std::istringstream iss(rx_unseg);
                                             std::vector<std::string> strs;
+
+                                            rapidjson::Document d;
+                                            rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
+                                            int idx=1;
+
+                                            d.SetArray();
+
                                             while(std::getline(iss, line)) {
                                                 boost::split(strs, line, boost::is_any_of(","));
                                                 //std::cout << "[1] : " << strs[0] << " [2] : " << strs[1] << " [3] : " << strs[2] << std::endl;
-
+#ifdef CHANGE_STT_DATA
                                                 // to DB
                                                 if (DBHandler) {
                                                     diaNumber++;
                                                     DBHandler->insertSTTData(diaNumber, item->getCallId(), spkno, std::stoi(strs[0].c_str()+4), std::stoi(strs[1].c_str()+4), strs[2]);
                                                 }
+
+                                        d.SetObject();
+                                        d.AddMember("IDX", diaNumber, alloc);
+                                        d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                        d.AddMember("SPK", rapidjson::Value((item->spkNo==1)?"R":"L", alloc).Move(), alloc);
+                                        d.AddMember("POS_START", sframe[item->spkNo -1]/10, alloc);
+                                        d.AddMember("POS_END", eframe[item->spkNo -1]/10, alloc);
+                                        d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
+#endif
+                                                rapidjson::Value o(rapidjson::kObjectType);
+                                                o.AddMember("IDX", idx, alloc);
+                                                o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
+                                                o.AddMember("SPK", "R", alloc);
+                                                o.AddMember("POS_START", std::stoi(strs[0].c_str()+4), alloc);
+                                                o.AddMember("POS_END", std::stoi(strs[1].c_str()+4), alloc);
+                                                o.AddMember("VALUE", rapidjson::Value(strs[2].c_str(), alloc).Move(), alloc);
+
+                                                d.PushBack(o, alloc);
+                                                idx++;
 
                                                 // to STTDeliver(file), FullText
                                                 if (FileHandler) {
@@ -417,22 +443,50 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                                     FileHandler->insertSTT(item->getCallId(), strs[2], item->getCallId()+"_r");
                                                 }
                                             }
+
+                                            rapidjson::StringBuffer strbuf;
+                                            rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                            d.Accept(writer);
+                                            // to DB
+                                            if (DBHandler) {
+                                                std::string sttValue = strbuf.GetString();
+                                                DBHandler->insertSTTData(0, item->getCallId(), spkno, 0, 0, sttValue);
+                                            }
+
                                         }
 
                                         {
                                             uint32_t diaNumber=0;
-                                            uint8_t spkno=1;
+                                            uint8_t spkno=2;
                                             std::istringstream iss(tx_unseg);
                                             std::vector<std::string> strs;
+
+                                            rapidjson::Document d;
+                                            rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
+                                            int idx=1;
+
+                                            d.SetArray();
+
                                             while(std::getline(iss, line)) {
                                                 boost::split(strs, line, boost::is_any_of(","));
                                                 //std::cout << "[1] : " << strs[0] << " [2] : " << strs[1] << " [3] : " << strs[2] << std::endl;
-
+#ifdef CHANGE_STT_DATA
                                                 // to DB
                                                 if (DBHandler) {
                                                     diaNumber++;
                                                     DBHandler->insertSTTData(diaNumber, item->getCallId(), spkno, std::stoi(strs[0].c_str()+4), std::stoi(strs[1].c_str()+4), strs[2]);
                                                 }
+#endif // CHANGE_STT_DATA
+                                                rapidjson::Value o(rapidjson::kObjectType);
+                                                o.AddMember("IDX", idx, alloc);
+                                                o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
+                                                o.AddMember("SPK", "L", alloc);
+                                                o.AddMember("POS_START", std::stoi(strs[0].c_str()+4), alloc);
+                                                o.AddMember("POS_END", std::stoi(strs[1].c_str()+4), alloc);
+                                                o.AddMember("VALUE", rapidjson::Value(strs[2].c_str(), alloc).Move(), alloc);
+
+                                                d.PushBack(o, alloc);
+                                                idx++;
 
                                                 // to STTDeliver(file), FullText
                                                 if (FileHandler) {
@@ -440,9 +494,19 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                                     FileHandler->insertSTT(item->getCallId(), strs[2], item->getCallId()+"_l");
                                                 }
                                             }
+
+                                            rapidjson::StringBuffer strbuf;
+                                            rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                            d.Accept(writer);
+                                            // to DB
+                                            if (DBHandler) {
+                                                std::string sttValue = strbuf.GetString();
+                                                DBHandler->insertSTTData(0, item->getCallId(), spkno, 0, 0, sttValue);
+                                            }
+
                                         }
                                         auto t2 = std::chrono::high_resolution_clock::now();
-                                        logger->debug("VFClient::thrdFunc(%ld) - STT SUCCESS [%s : %s], timeout(%d), fsize(%d)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout, nFilesize);
+                                        logger->debug("VFClient::thrdFunc(%ld) - STT SUCCESS [%s : %s], timeout(%d), fsize(%d), server_name(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout, nFilesize, svr_name.c_str());
                                         DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'Y', nFilesize, nFilesize/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), item->m_procNo, item->getTableName().c_str(), "", svr_name.c_str());
                                     }
                                 }
@@ -525,7 +589,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                             if (sValue[0] == 'E') {
                                 err_code = sValue.substr(0, sValue.find("\n"));
                                 svr_name = sValue.substr(sValue.find("\n")+1);
-                                logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text). [%s : %s], ERROR-CODE(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), err_code.c_str());
+                                logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text). [%s : %s], ERROR-CODE(%s), server_name(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), err_code.c_str(), svr_name.c_str());
                                 DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), err_code.c_str(), svr_name.c_str());
                                 free(value);
                             }
@@ -577,15 +641,44 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                     {
                                         std::istringstream iss(strValue);
                                         std::vector<std::string> strs;
+
+                                        rapidjson::Document d;
+                                        rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
+                                        int idx=1;
+
+                                        d.SetArray();
+
                                         while(std::getline(iss, line)) {
+                                            char spk[3];
                                             boost::split(strs, line, boost::is_any_of(","));
                                             //std::cout << "[1] : " << strs[0] << " [2] : " << strs[1] << " [3] : " << strs[2] << std::endl;
-
+#ifdef CHANGE_STT_DATA
                                             // to DB
                                             if (DBHandler) {
                                                 diaNumber++;
                                                 DBHandler->insertSTTData(diaNumber, item->getCallId(), spkno, std::stoi(strs[0].c_str()+4), std::stoi(strs[1].c_str()+4), strs[2]);
                                             }
+#endif
+                                            switch(spkno) {
+                                                case 1:
+                                                sprintf(spk, "%c", 'R');
+                                                break;
+                                                case 2:
+                                                sprintf(spk, "%c", 'L');
+                                                break;
+                                                default:
+                                                sprintf(spk, "%c", 'N');
+                                            }
+                                            rapidjson::Value o(rapidjson::kObjectType);
+                                            o.AddMember("IDX", idx, alloc);
+                                            o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
+                                            o.AddMember("SPK", rapidjson::Value(spk, alloc).Move(), alloc);
+                                            o.AddMember("POS_START", std::stoi(strs[0].c_str()+4), alloc);
+                                            o.AddMember("POS_END", std::stoi(strs[1].c_str()+4), alloc);
+                                            o.AddMember("VALUE", rapidjson::Value(strs[2].c_str(), alloc).Move(), alloc);
+
+                                            d.PushBack(o, alloc);
+                                            idx++;
 
                                             // to STTDeliver(file), FullText
                                             if (FileHandler) {
@@ -593,6 +686,16 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                                 FileHandler->insertSTT(item->getCallId(), strs[2], item->getCallId());
                                             }
                                         }
+
+                                        rapidjson::StringBuffer strbuf;
+                                        rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                        d.Accept(writer);
+                                        // to DB
+                                        if (DBHandler) {
+                                            std::string sttValue = strbuf.GetString();
+                                            DBHandler->insertSTTData(0, item->getCallId(), spkno, 0, 0, sttValue);
+                                        }
+
                                     }
 
                                     if (sFuncName.size()) {
@@ -607,7 +710,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 
                                 }
                                 auto t2 = std::chrono::high_resolution_clock::now();
-                                logger->debug("VFClient::thrdFunc(%ld) - STT SUCCESS [%s : %s], timeout(%d), fsize(%d)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout, nFilesize);
+                                logger->debug("VFClient::thrdFunc(%ld) - STT SUCCESS [%s : %s], timeout(%d), fsize(%d), server_name(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout, nFilesize, svr_name.c_str());
                                 DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'Y', nFilesize, nFilesize/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), item->m_procNo, item->getTableName().c_str(), "", svr_name.c_str());
                             }
                         }
@@ -619,7 +722,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 #endif  // USE_RAPIDJSON
                 }
                 else {
-                    logger->info("VFClient::thrdFunc(%ld) - Success to get gearman(vr_stt) but empty result.  [%s : %s]", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str());
+                    logger->info("VFClient::thrdFunc(%ld) - Success to get gearman(vr_stt) but empty result.  [%s : %s], server_name(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), svr_name.c_str());
                     DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'Y', 0, 0, 0, item->m_procNo, item->getTableName().c_str());
                 }
             }

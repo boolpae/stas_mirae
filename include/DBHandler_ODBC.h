@@ -154,6 +154,8 @@ public:
     void setInterDBEnable(std::string dsn, std::string id, std::string pw, int conCount);
     void setInterDBDisable();
 
+    int deleteJobData(std::string counselorcode);
+
 private:
     DBHandler(std::string dsn, int connCount);
 	static void thrdMain(DBHandler* s2d);

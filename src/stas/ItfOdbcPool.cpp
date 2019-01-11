@@ -216,3 +216,27 @@ PConnSet    ItfOdbcPool::reconnectConnection(ConnSet *conn)    // 사용 중 문
     return nullptr;
 }
 
+void ItfOdbcPool::eraseConnection(ConnSet *conn)
+{
+    std::map<int, PConnSet>::iterator iter;
+
+    for(iter=m_mConnSets.begin(); iter!=m_mConnSets.end(); iter++) {
+        PConnSet connSet = iter->second;
+
+        if ( connSet->id == conn->id )
+        {
+
+            SQLFreeHandle(SQL_HANDLE_STMT, conn->stmt);
+            SQLDisconnect(conn->dbc);
+            SQLFreeHandle(SQL_HANDLE_DBC, conn->dbc);
+            SQLFreeHandle(SQL_HANDLE_ENV, conn->env);
+
+            delete conn;
+            m_mConnSets.erase(iter);
+            break;
+        }
+    }
+
+    m_mConnSets.clear();
+}
+

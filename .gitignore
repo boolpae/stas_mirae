@@ -5,6 +5,10 @@ Debug/
 logs/
 bin/
 input/
+NOTI/
+STT/
+WAVS/
+stt/
 *.stt
 core
 nohup.out
