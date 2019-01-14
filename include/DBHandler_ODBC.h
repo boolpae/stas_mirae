@@ -134,6 +134,7 @@ public:
     void deleteBatchTask();
     void updateAllTask2Fail();  // 일정 시간(1시간)이 경과된 작업 중인 task에 대해 '실패' 상태로 변경
     void updateAllTask2Fail2();
+    void updateAllIncompleteTask2Fail();
 
     // for Task working
     // VFClient에서 사용되는 api로서 작업 시작 전,
@@ -147,6 +148,9 @@ public:
     int getTimeoutTaskInfo(std::vector< JobInfoItem* > &v);
     int insertTaskInfoRT(std::string downloadPath, std::string filename, std::string callId, std::string counselcode, time_t startT);
     int updateTaskInfo4Schd(std::string callid, std::string regdate, std::string rxtx, std::string tbName);
+    int getIncompleteTask(std::vector< JobInfoItem* > &v);
+    int getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v);
+    int getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v);
 
     // void restartConnectionPool();
 

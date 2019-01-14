@@ -1236,6 +1236,244 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
     return ret;
 }
 
+int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v) 
+{
+    PConnSet connSet = m_pSolDBConnPool->getConnection();
+    int ret=0;
+    char sqlbuff[512];
+    SQLRETURN retcode;
+    
+    char callid[256];
+    int counselorcode;
+    char path[500];
+    char filename[256];
+    char regdate[24];
+    char rxtx[8];
+    int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate;
+
+    //m_Logger->debug("BEFORE DBHandler::getIncompleteTask - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
+    
+    if (connSet)
+    {
+        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM TBL_JOB_INFO WHERE STATE='U'");
+
+        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
+        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+        if (retcode == SQL_SUCCESS) {
+            while (SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+            {
+                memset(callid, 0, sizeof(callid));
+                memset(path, 0, sizeof(path));
+                memset(filename, 0, sizeof(filename));
+
+                SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
+                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
+                SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
+                SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
+                SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
+
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx));
+                v.push_back(item);
+            }
+        }
+        else if (retcode < 0) {
+            int odbcret = extract_error("DBHandler::getIncompleteTask() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
+            if (odbcret == 2006) {
+                m_pSolDBConnPool->reconnectConnection(connSet);
+            }
+            ret = retcode;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::getIncompleteTask() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
+        }
+        retcode = SQLCloseCursor(connSet->stmt);
+        m_pSolDBConnPool->restoreConnection(connSet);
+
+        ret = v.size();
+    }
+    else
+    {
+        m_Logger->error("DBHandler::getIncompleteTask - can't get connection from pool");
+        ret = -1;
+    }
+
+    return ret;
+}
+
+int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v) 
+{
+    PConnSet connSet = m_pSolDBConnPool->getConnection();
+    int ret=0;
+    char sqlbuff[512];
+    SQLRETURN retcode;
+    
+    char callid[256];
+    int counselorcode;
+    char path[500];
+    char filename[256];
+    char regdate[24];
+    char rxtx[8];
+    int procno;
+    int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate, siProcno;
+
+    //m_Logger->debug("BEFORE DBHandler::getIncompleteTaskFromSelf - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
+    
+    if (connSet)
+    {
+        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM TBL_JOB_SELF_INFO WHERE STATE='U'");
+
+        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
+        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+        if (retcode == SQL_SUCCESS) {
+            while (SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+            {
+                memset(callid, 0, sizeof(callid));
+                memset(path, 0, sizeof(path));
+                memset(filename, 0, sizeof(filename));
+
+                SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
+                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
+                SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
+                SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
+                SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
+                SQLGetData(connSet->stmt, 7, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
+
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("TBL_JOB_SELF_INFO"), procno);
+                v.push_back(item);
+            }
+        }
+        else if (retcode < 0) {
+            int odbcret = extract_error("DBHandler::getIncompleteTaskFromSelf() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
+            if (odbcret == 2006) {
+                m_pSolDBConnPool->reconnectConnection(connSet);
+            }
+            ret = retcode;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::getIncompleteTaskFromSelf() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
+        }
+        retcode = SQLCloseCursor(connSet->stmt);
+        m_pSolDBConnPool->restoreConnection(connSet);
+
+        ret = v.size();
+    }
+    else
+    {
+        m_Logger->error("DBHandler::getIncompleteTaskFromSelf - can't get connection from pool");
+        ret = -1;
+    }
+
+    return ret;
+}
+
+int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v) 
+{
+    PConnSet connSet = m_pSolDBConnPool->getConnection();
+    int ret=0;
+    char sqlbuff[512];
+    SQLRETURN retcode;
+    
+    char callid[256];
+    int counselorcode;
+    char path[500];
+    char filename[256];
+    char regdate[24];
+    char rxtx[8];
+    int procno;
+    int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate, siProcno;
+
+    //m_Logger->debug("BEFORE DBHandler::getIncompleteTaskFromRetry - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
+    
+    if (connSet)
+    {
+        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM TBL_JOB_RETRY_INFO WHERE STATE='U'");
+
+        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
+        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+        if (retcode == SQL_SUCCESS) {
+            while (SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+            {
+                memset(callid, 0, sizeof(callid));
+                memset(path, 0, sizeof(path));
+                memset(filename, 0, sizeof(filename));
+
+                SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
+                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
+                SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
+                SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
+                SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
+                SQLGetData(connSet->stmt, 7, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
+
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("TBL_JOB_RETRY_INFO"), procno);
+                v.push_back(item);
+            }
+        }
+        else if (retcode < 0) {
+            int odbcret = extract_error("DBHandler::getIncompleteTaskFromRetry() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            #if 0
+            if (odbcret == 2006) {
+                m_pSolDBConnPool->reconnectConnection(connSet);
+            }
+            ret = retcode;
+            #endif
+            // if (odbcret == 2006) {
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::getIncompleteTaskFromRetry() - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
+        }
+        retcode = SQLCloseCursor(connSet->stmt);
+        m_pSolDBConnPool->restoreConnection(connSet);
+
+        ret = v.size();
+    }
+    else
+    {
+        m_Logger->error("DBHandler::getIncompleteTaskFromRetry - can't get connection from pool");
+        ret = -1;
+    }
+
+    return ret;
+}
+
 int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string counselorcode, std::string regdate, char state, int fsize, int plen, int wtime, const char *tbName, const char *errcode, const char *svr_nm)
 {
     // Connection_T con;
@@ -1735,6 +1973,7 @@ void DBHandler::updateAllTask2Fail2()
         vItems.clear();
     } 
 }
+
 void DBHandler::updateAllTask2Fail()
 {
     // 추후(필요 시) getTimeoutTaskInfo()를 활용하고 CALL PROCEDURE 형태로 바꾸어야 한다.
@@ -1784,6 +2023,147 @@ void DBHandler::updateAllTask2Fail()
         m_Logger->error("DBHandler::updateAllTask2Fail - can't get connection from pool");
     }
 
+}
+
+void DBHandler::updateAllIncompleteTask2Fail()
+{
+    std::vector< JobInfoItem* > vItems;
+    std::vector< JobInfoItem* >::iterator iter;
+    JobInfoItem *jobInfo = nullptr;
+    PConnSet connSet = m_pSolDBConnPool->getConnection();
+    char sqlbuff[512];
+    SQLRETURN retcode;
+
+    getIncompleteTask(vItems);
+
+    if(connSet && vItems.size()) {
+        // time_t rawtime;
+        // struct tm * timeinfo;
+        // char timebuff [32];
+
+        // time (&rawtime);
+        // timeinfo = localtime (&rawtime);
+        // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
+
+        for(iter= vItems.begin(); iter != vItems.end(); iter++) {
+            jobInfo = (*iter);
+            sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s')",
+                jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
+            retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+            if SQL_SUCCEEDED(retcode) {
+                m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
+            }
+            else {
+                int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateAllTask2Fail2() - failed to re-connect to DB, erase connection from pool");
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    delete jobInfo;
+                    vItems.clear();
+                    return;
+                }
+
+            }
+
+            delete jobInfo;
+        }
+
+        vItems.clear();
+    } 
+
+
+    getIncompleteTaskFromRetry(vItems);
+
+    if(connSet && vItems.size()) {
+        // time_t rawtime;
+        // struct tm * timeinfo;
+        // char timebuff [32];
+
+        // time (&rawtime);
+        // timeinfo = localtime (&rawtime);
+        // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
+
+        for(iter= vItems.begin(); iter != vItems.end(); iter++) {
+            jobInfo = (*iter);
+            sprintf(sqlbuff, "CALL PROC_JOB_RETRY_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s','%d')",
+                jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str(), jobInfo->m_procNo);
+            retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+            if SQL_SUCCEEDED(retcode) {
+                m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
+            }
+            else {
+                int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateAllTask2Fail2() - failed to re-connect to DB, erase connection from pool");
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    delete jobInfo;
+                    vItems.clear();
+                    return;
+                }
+
+            }
+
+            delete jobInfo;
+        }
+
+        vItems.clear();
+    } 
+
+
+    getIncompleteTaskFromSelf(vItems);
+
+    if(connSet && vItems.size()) {
+        // time_t rawtime;
+        // struct tm * timeinfo;
+        // char timebuff [32];
+
+        // time (&rawtime);
+        // timeinfo = localtime (&rawtime);
+        // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
+
+        for(iter= vItems.begin(); iter != vItems.end(); iter++) {
+            jobInfo = (*iter);
+            sprintf(sqlbuff, "CALL PROC_JOB_SELF_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s','%d')",
+                jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str(), jobInfo->m_procNo);
+            retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+            if SQL_SUCCEEDED(retcode) {
+                m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
+            }
+            else {
+                int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::updateAllTask2Fail2() - failed to re-connect to DB, erase connection from pool");
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    delete jobInfo;
+                    vItems.clear();
+                    return;
+                }
+
+            }
+
+            delete jobInfo;
+        }
+
+        vItems.clear();
+    } 
+
+    retcode = SQLCloseCursor(connSet->stmt);
+    m_pSolDBConnPool->restoreConnection(connSet);
 }
 
 void DBHandler::setInterDBEnable(std::string dsn, std::string id, std::string pw, int connCount=10)
