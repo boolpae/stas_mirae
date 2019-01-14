@@ -83,14 +83,23 @@ void FileHandler::thrdMain(FileHandler * dlv)
             currTm = time(NULL);
             timeinfo = localtime(&currTm);
             strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
-            fullpath = dlv->m_sResultPath + "/" + datebuff + "/";
-            if ( access(fullpath.c_str(), F_OK) ) {
-                MakeDirectory(fullpath.c_str());
+			if (item->getJobType() == 'R') {
+                fullpath = dlv->m_sResultPath + "/REALTIME/" + datebuff + "/" + item->getCSCode() + "/";
+                if ( access(fullpath.c_str(), F_OK) ) {
+                    MakeDirectory(fullpath.c_str());
+                }
+            }
+            else
+            {
+                fullpath = dlv->m_sResultPath + "/FILETIME/" + datebuff + "/" ;
+                if ( access(fullpath.c_str(), F_OK) ) {
+                    MakeDirectory(fullpath.c_str());
+                }
             }
 
 			// item으로 로직 수행
 			if (item->getJobType() == 'R') {
-				sttFilename = fullpath + item->getCallId();
+				sttFilename = fullpath + item->getCSCode() + "_" + item->getCallId();
                 /*
 				sttFilename += "_";
 				sttFilename += std::to_string(item->getSpkNo());
@@ -153,9 +162,9 @@ void FileHandler::thrdMain(FileHandler * dlv)
 
 // desc:	spkNo의 값이 0인 경우 실시간 STT 결과값이 아님(이 경우 jobtype의 값도 'F' 이어야 함)
 //			실시간 STT 결과인 경우 jobtype : 'R' 이며 spkNo의 값도 1 이상의 값이어야 함
-void FileHandler::insertSTT(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos)
+void FileHandler::insertSTT(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode)
 {
-	insertSTT(new STTQueItem(callid, uint8_t('R'), spkNo, stt, bpos, epos));
+	insertSTT(new STTQueItem(callid, uint8_t('R'), spkNo, stt, bpos, epos, cscode));
 }
 
 void FileHandler::insertSTT(std::string callid, std::string& stt, std::string filename)
@@ -211,8 +220,8 @@ void FileHandler::release()
     }
 }
 
-STTQueItem::STTQueItem(std::string callid, uint8_t jobtype, uint8_t spkno, std::string& sttvalue, uint64_t bpos, uint64_t epos)
-	:m_sCallId(callid), m_cJobType(jobtype), m_nSpkNo(spkno), m_sFilename(""), m_sSTTValue(sttvalue), m_nBpos(bpos), m_nEpos(epos)
+STTQueItem::STTQueItem(std::string callid, uint8_t jobtype, uint8_t spkno, std::string& sttvalue, uint64_t bpos, uint64_t epos, std::string cscode)
+	:m_sCallId(callid), m_cJobType(jobtype), m_nSpkNo(spkno), m_sFilename(""), m_sSTTValue(sttvalue), m_nBpos(bpos), m_nEpos(epos), m_sCSCode(cscode)
 {
 }
 

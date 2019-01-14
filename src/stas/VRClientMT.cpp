@@ -781,7 +781,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10);
+                                        client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -926,7 +926,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10);
+                                client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
                             }
                             
                         }
@@ -1409,7 +1409,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                     //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10);
+                                        client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -1547,7 +1547,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10);
+                                client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
                             }
                             
                         }

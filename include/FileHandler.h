@@ -19,8 +19,10 @@ class STTQueItem {
 	uint64_t m_nBpos;
 	uint64_t m_nEpos;
 
+	std::string m_sCSCode;
+
 public:
-	STTQueItem(std::string callid, uint8_t jobtype, uint8_t spkno, std::string& sttvalue, uint64_t bpos, uint64_t epos);
+	STTQueItem(std::string callid, uint8_t jobtype, uint8_t spkno, std::string& sttvalue, uint64_t bpos, uint64_t epos, std::string cscode);
 	STTQueItem(std::string callid, uint8_t jobtype, std::string filename, std::string& sttvalue);
 	virtual ~STTQueItem();
 
@@ -31,6 +33,7 @@ public:
 	std::string& getSTTValue() { return m_sSTTValue; }
     uint64_t getBpos() { return m_nBpos; }
     uint64_t getEpos() { return m_nEpos; }
+	std::string getCSCode() { return m_sCSCode; }
 };
 
 class FileHandler
@@ -52,7 +55,7 @@ public:
 	static void release();
 	static FileHandler* getInstance();
 
-	void insertSTT(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos);		// for Realtime
+	void insertSTT(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode);		// for Realtime
 	void insertSTT(std::string callid, std::string& stt, std::string filename);	// for FILE, BATCH
 
 private:
