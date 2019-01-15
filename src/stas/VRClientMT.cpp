@@ -384,6 +384,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
     std::string svr_nm;
     char fname[64];
 
+    std::string fhCallId;
     char timebuff [32];
     char datebuff[32];
     struct tm * timeinfo = localtime(&client->m_tStart);
@@ -403,6 +404,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
     framelen = client->m_framelen * 2;
 
     sprintf(fname, "%s", client->m_sFname.c_str());
+
+    fhCallId = std::string(timebuff) + "_" + client->m_sCallId;
 
 #ifdef USE_REDIS_POOL
     bool useRedis = (!config->getConfig("redis.use", "false").compare("true") & !config->getConfig("redis.send_rt_stt", "false").compare("true"));
@@ -781,7 +784,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
+                                        client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -926,7 +929,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
                             }
                             
                         }
@@ -1025,6 +1028,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
     std::string svr_nm;
     char fname[64];
 
+    std::string fhCallId;
     char timebuff [32];
     char datebuff[32];
     struct tm * timeinfo = localtime(&client->m_tStart);
@@ -1044,6 +1048,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
     framelen = client->m_framelen * 2;
 
     sprintf(fname, "%s", client->m_sFname.c_str());
+
+    fhCallId = std::string(timebuff) + "_" + client->m_sCallId;
 
 #ifdef USE_REDIS_POOL
     bool useRedis = (!config->getConfig("redis.use", "false").compare("true") & !config->getConfig("redis.send_rt_stt", "false").compare("true"));
@@ -1409,7 +1415,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                     //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
+                                        client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -1547,7 +1553,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(client->m_sCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
                             }
                             
                         }

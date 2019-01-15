@@ -208,6 +208,7 @@ void VRClient::thrdMain(VRClient* client) {
     char buf[BUFLEN];
     uint16_t nHeadLen=0;
 
+    std::string fhCallId;
     char timebuff [32];
     char datebuff[32];
     struct tm * timeinfo = localtime(&client->m_tStart);
@@ -235,6 +236,7 @@ void VRClient::thrdMain(VRClient* client) {
     framelen = client->m_framelen * 2;
 #endif // FAD_FUNC
 
+    fhCallId = std::string(timebuff) + "_" + client->m_sCallId;
     MakeDirectory(fullpath.c_str());
 
 #ifdef USE_REDIS_POOL
@@ -604,7 +606,7 @@ void VRClient::thrdMain(VRClient* client) {
                                     //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(client->m_sCallId, modValue/*boost::replace_all_copy(std::string((const char*)value), "\n", " ")*/, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, client->m_sCounselCode);
+                                        client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue/*boost::replace_all_copy(std::string((const char*)value), "\n", " ")*/, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -686,7 +688,7 @@ void VRClient::thrdMain(VRClient* client) {
                             //FileHandler::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to FileHandler(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(client->m_sCallId, modValue/*boost::replace_all_copy(std::string((const char*)dstBuff+sttIdx), "\n", " ")*/, item->spkNo, pEndpos ? start : vPos[item->spkNo -1].bpos/160, pEndpos ? end : vPos[item->spkNo -1].epos/160, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue/*boost::replace_all_copy(std::string((const char*)dstBuff+sttIdx), "\n", " ")*/, item->spkNo, pEndpos ? start : vPos[item->spkNo -1].bpos/160, pEndpos ? end : vPos[item->spkNo -1].epos/160, client->m_sCounselCode);
                             }
                             
                         }
@@ -826,7 +828,7 @@ void VRClient::thrdMain(VRClient* client) {
                             //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(client->m_sCallId, modValue/*boost::replace_all_copy(std::string((const char*)value), "\n", " ")*/, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue/*boost::replace_all_copy(std::string((const char*)value), "\n", " ")*/, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, client->m_sCounselCode);
                             }
                             
                             diaNumber++;
