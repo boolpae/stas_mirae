@@ -263,7 +263,10 @@ void VRClient::thrdMain(VRClient* client) {
         sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"I\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
         strRedisValue = redisValue;
         
-        xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+        // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+        vVal.push_back( strRedisValue );
+        xRedis.lpush( dbi, redisKey, vVal, zCount );
+        vVal.clear();
 
         redisKey = "G_RTSTT:";
         redisKey.append(client->getCallId());
@@ -880,7 +883,8 @@ void VRClient::thrdMain(VRClient* client) {
                                 sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
                                 strRedisValue = redisValue;
                                 
-                                xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+                                // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+                                xRedis.lset( dbi, redisKey, 0, strRedisValue );
 
                             }
 #endif
