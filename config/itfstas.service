@@ -1,0 +1,23 @@
+[Units]
+Description=Gearman Service
+Wants=syslog.target network.target
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=stt
+Group=stt
+Environment=STASPID=/home/stt/Smart-VR/bin/itfstas.pid
+Environment=STASLOG=/home/stt/Smart-VR/bin/itfstas.log
+Environment=LD_LIBRARY_PATH=$LD_LIBRARY_PATH:
+Environment=NLS_LANG=UTF-8
+Environment=TB_HOME=
+Environment=
+PIDFile=/home/stt/Smart-VR/bin/itfstas.pid
+
+ExecStart=/home/stt/Smart-VR/bin/itf_stas_odbc -d -l $STASLOG -P $STASPID
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

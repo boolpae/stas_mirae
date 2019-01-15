@@ -114,6 +114,9 @@ public:
 #ifdef USE_REDIS_POOL
 	xRedisClient& getXRdedisClient();
 #endif
+#ifdef EN_RINGBACK_LEN
+	uint32_t getRingbackLen() { return m_nRingbackLen; }
+#endif
 
 private:
 	virtual ~VRClient();

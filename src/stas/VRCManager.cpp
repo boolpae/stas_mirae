@@ -392,7 +392,11 @@ void VRCManager::outputVRCStat()
 	for (iter = m_mWorkerTable.begin(); iter != m_mWorkerTable.end(); iter++) {
 		//client = (VRClient*)iter->second;
 		//printf("\t[DEBUG] VRCManager::outputVRCStat() - VRClient(%s)\n", iter->first.c_str());
-        m_Logger->debug("VRCManager::outputVRCStat() - VRClient(%s, %s)", iter->first.c_str(), iter->second->getCallId().c_str());
+#ifdef EN_RINGBACK_LEN
+        m_Logger->debug("VRCManager::outputVRCStat() - VRClient(%s, %s, %zu, %s)", iter->first.c_str(), iter->second->getCounselCode().c_str(), iter->second->getRingbackLen(), iter->second->getCallId().c_str());
+#else
+        m_Logger->debug("VRCManager::outputVRCStat() - VRClient(%s, %s, %s)", iter->first.c_str(), iter->second->getCounselCode().c_str(), iter->second->getCallId().c_str());
+#endif
 	}
     
     if ( m_mWorkerTable.size() )

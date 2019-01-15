@@ -1,0 +1,19 @@
+[Units]
+Description=Gearman Service
+Wants=syslog.target network.target
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=boolpae
+Group=boolpae
+Environment=GEARPID=/home/stt/gearman/gearman.pid
+Environment=GEARLOG=/home/stt/gearman/gearman.log
+PIDFile=/home/stt/gearman/gearman.pid
+#ExecStart=/usr/sbin/gearmand -t 1 -w 20 -d -l /home/boolpae/gearman/gearman.log -P /home/boolpae/gearman/gearman.pid
+ExecStart=/usr/sbin/gearmand -t 1 -w 20 -d -l $GEARLOG -P $GEARPID
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
