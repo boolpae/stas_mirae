@@ -7,17 +7,18 @@ After=syslog.target network.target
 Type=forking
 User=stt
 Group=stt
-Environment=STASPID=/home/stt/Smart-VR/bin/itfstas.pid
-Environment=STASLOG=/home/stt/Smart-VR/bin/itfstas.log
-Environment=LD_LIBRARY_PATH=$LD_LIBRARY_PATH:
-Environment=NLS_LANG=UTF-8
-Environment=TB_HOME=
-Environment=
-PIDFile=/home/stt/Smart-VR/bin/itfstas.pid
+Environment=ITFSTAS=/home/stt/Dev/STAS
+Environment=STASPID=/home/stt/Dev/STAS/config/itfstas.pid
+Environment=STASLOG=/home/stt/Dev/STAS/logs/itfstas.log
+Environment=LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/tibero6/client/lib
+Environment=NLS_LANG=UTF8
+Environment=TB_HOME=/usr/local/tibero6
+PIDFile=$ITFSTAS/config/itfstas.pid
 
-ExecStart=/home/stt/Smart-VR/bin/itf_stas_odbc -d -l $STASLOG -P $STASPID
+ExecStart=/home/stt/Dev/STAS/bin/Debug/Linux_x86_64/itf_stas_odbc -i /home/stt/Dev/STAS/config/stas.conf -d -l $STASLOG -P $STASPID --verbose DEBUG
 
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
+
