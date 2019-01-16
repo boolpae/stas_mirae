@@ -267,7 +267,7 @@ void VRClient::thrdMain(VRClient* client) {
 
         // 2019-01-10, 호 시작 시 상담원 상태 변경 전달 - 호 시작
         zCount=0;
-        redisKey.append(client->getCallId());
+        redisKey.append(client->getCounselCode());
 
         //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
         timeinfo = localtime(&client->m_tStart);
@@ -311,7 +311,7 @@ void VRClient::thrdMain(VRClient* client) {
             client->m_Logger->error("VRClient::thrdMain(%s) - redis publish(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
 
         redisKey = "G_CS:";
-        redisKey.append(client->getCallId());
+        redisKey.append(client->getCounselCode());
 
         //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);

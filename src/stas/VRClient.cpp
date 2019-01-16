@@ -256,7 +256,7 @@ void VRClient::thrdMain(VRClient* client) {
 
         // 2019-01-10, 호 시작 시 상담원 상태 변경 전달 - 호 시작
         int64_t zCount=0;
-        redisKey.append(client->getCallId());
+        redisKey.append(client->getCounselCode());
 
         //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
@@ -876,7 +876,7 @@ void VRClient::thrdMain(VRClient* client) {
                                 }
 
                                 redisKey = "G_CS:";
-                                redisKey.append(client->getCallId());
+                                redisKey.append(client->getCounselCode());
 
                                 //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
                                 strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
