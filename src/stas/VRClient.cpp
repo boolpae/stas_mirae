@@ -220,6 +220,10 @@ void VRClient::thrdMain(VRClient* client) {
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
 
     char fname[64];
+    uint64_t totalVLen=0;
+
+    bool useDelCallInfo = !config->getConfig("stas.use_del_callinfo", "false").compare("true");
+    int nDelSecs = config->getConfig("stas.del_secs", 0);
 
 #ifdef FAD_FUNC
     uint8_t *vpBuf = NULL;
@@ -850,7 +854,7 @@ void VRClient::thrdMain(VRClient* client) {
                     } // only_record
 
 					if (!(--client->m_nNumofChannel)) {
-                        uint64_t totalVLen = totalVoiceDataLen[item->spkNo-1];
+                        totalVLen = totalVoiceDataLen[item->spkNo-1];
 
 						client->m_Mgr->removeVRC(client->m_sCallId);
 
@@ -973,6 +977,23 @@ void VRClient::thrdMain(VRClient* client) {
         iconv_close(it);
 #endif
     // 3초 이하 호관련 정보 삭제 - totalVoiceDataLen[i]/16000 < 3 인 호 정보 삭제
+    // 3초 이하 호 정보 삭제 - totalVLen/16000 < 3 인경우 호 정보 삭제
+    if ( useDelCallInfo && nDelSecs ) {
+        if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
+            redisKey = "G_CS:";
+            redisKey.append(client->m_sCallId);
+            xRedis.del(dbi, redisKey);
+
+            redisKey = "G_RTSTT:";
+            redisKey.append(client->m_sCallId);
+            xRedis.del(dbi, redisKey);
+
+        }
+        if ( client->m_s2d && (totalVLen/16000 <= nDelSecs) ) {
+            client->m_s2d->deleteJobInfo(client->m_sCallId);
+        }
+    }
+
 
 
 	client->m_thrd.detach();

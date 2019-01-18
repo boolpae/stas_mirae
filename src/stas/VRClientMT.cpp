@@ -246,6 +246,8 @@ void VRClient::thrdMain(VRClient* client) {
     char timebuff [32];
     struct tm * timeinfo;
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
+    bool useDelCallInfo = !config->getConfig("stas.use_del_callinfo", "false").compare("true");
+    int nDelSecs = config->getConfig("stas.del_secs", 0);
 
 #ifdef USE_REDIS_POOL
     int64_t zCount=0;
@@ -360,6 +362,21 @@ void VRClient::thrdMain(VRClient* client) {
 	WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
     // 3초 이하 호 정보 삭제 - totalVLen/16000 < 3 인경우 호 정보 삭제
+    if ( useDelCallInfo && nDelSecs ) {
+        if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
+            redisKey = "G_CS:";
+            redisKey.append(client->m_sCallId);
+            xRedis.del(dbi, redisKey);
+
+            redisKey = "G_RTSTT:";
+            redisKey.append(client->m_sCallId);
+            xRedis.del(dbi, redisKey);
+
+        }
+        if ( client->m_s2d && (totalVLen/16000 <= nDelSecs) ) {
+            client->m_s2d->deleteJobInfo(client->m_sCallId);
+        }
+    }
 
 	// client->m_thrd.detach();
 	delete client;

@@ -159,6 +159,7 @@ public:
     void setInterDBDisable();
 
     int deleteJobData(std::string counselorcode);
+    int deleteJobInfo(std::string counselorcode);
 
 private:
     DBHandler(std::string dsn, int connCount);

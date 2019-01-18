@@ -2248,6 +2248,52 @@ int DBHandler::deleteJobData(std::string callid)
     return ret;
 }
 
+int DBHandler::deleteJobInfo(std::string callid)
+{
+    PConnSet connSet = m_pSolDBConnPool->getConnection();
+    int ret=0;
+    char sqlbuff[512];
+    SQLRETURN retcode;
+    RETCODE rc = SQL_SUCCESS;
+
+    if (connSet)
+    {
+        //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
+        sprintf(sqlbuff, "DELETE FROM TBL_JOB_INFO WHERE CALL_ID='%s'", callid.c_str());
+        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+        if SQL_SUCCEEDED(retcode) {
+            m_Logger->debug("DBHandler::deleteJobInfo - succeeded to delete job info(%s)", callid.c_str());
+        }
+        else {
+            int odbcret = extract_error("DBHandler::deleteJobInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+                {
+                    m_pSolDBConnPool->eraseConnection(connSet);
+                    m_Logger->error("DBHandler::deleteJobInfo - failed to re-connect to DB, erase connection from pool");
+                    ret = -1;
+                    retcode = SQLCloseCursor(connSet->stmt);
+
+                    return ret;
+                }
+            // }
+            ret = 1;
+
+        }
+
+        retcode = SQLCloseCursor(connSet->stmt);
+        m_pSolDBConnPool->restoreConnection(connSet);
+    }
+    else
+    {
+        // error
+        m_Logger->error("DBHandler::deleteJobInfo - can't get connection from pool");
+        ret = -1;
+    }
+
+    return ret;
+}
+
 
 RTSTTQueItem::RTSTTQueItem(uint32_t idx, std::string callid, uint8_t spkno, std::string &sttvalue, uint64_t bpos, uint64_t epos)
 	:m_nDiaIdx(idx), m_sCallId(callid), m_nSpkNo(spkno), m_sSTTValue(sttvalue), m_nBpos(bpos), m_nEpos(epos)

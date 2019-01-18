@@ -81,7 +81,7 @@ endif
 # STAS compile options
 ###############################################################################
 ENABLE_REALTIME:="TRUE"
-USE_REALTIME_MT:="FALSE"
+USE_REALTIME_MT:="TRUE"
 USE_REALTIME_MF:="FALSE"
 USE_REDIS:="TRUE"
 USE_TIBERO="FALSE"
