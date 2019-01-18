@@ -108,7 +108,7 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 					// 1. VRC 요청 : 성공 시 VDC 요청, 실패 패킷 생성하여 sendto
 					WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_REQ_WORKER);
 #ifdef EN_RINGBACK_LEN
-                    if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt()), cs->getRingbackLen()))
+                    if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt(), cs->getRingbackLen())))
 #else
                     if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt())))
 #endif

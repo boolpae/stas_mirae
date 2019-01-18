@@ -99,6 +99,7 @@ uint16_t VDClient::init(uint16_t port)
 #define BUFLEN 65000  //Max length of buffer
 #define VOICE_BUFF_LEN (16000 * 5 + 64)
 #define LEN_OF_VOICE ( 16000 * 5 )
+#define SIL_BUFLEN 19200
 void VDClient::thrdMain(VDClient * client)
 {
 	char buf[BUFLEN];
@@ -111,15 +112,22 @@ void VDClient::thrdMain(VDClient * client)
 	QueItem* item = NULL;
 	char* pos = NULL;
 	uint16_t nVDSize;
+	char silBuf[SIL_BUFLEN];
+	bool bUseSilBuf = false;
+	int nTimeout = 30;
 #if 0 // save pcm file
     int nRecvCount=0;
     std::string filename;
     std::ofstream pcmFile;
 #endif
+	memset(silBuf, 0, SIL_BUFLEN);
+	bUseSilBuf = !config->getConfig("stas.send_sil_during_no_voice", "false").compare("true");
+	nTimeout = config->getConfig("stas.call_timeout_sec", 30);
+
 	while (client->m_nLiveFlag) {
 		//clear the buffer by filling null, it might have previously received data
-		tv.tv_sec = 0;	// for debug
-		tv.tv_usec = 500000;
+		tv.tv_sec = 1;	// for debug
+		tv.tv_usec = 200000;
 		FD_ZERO(&rfds);
 		FD_SET(client->m_nSockfd, &rfds);
 
@@ -234,12 +242,36 @@ void VDClient::thrdMain(VDClient * client)
             }
             
 			// timeout : 현재 30초로 고정
-			if ((time(NULL) - client->m_tTimeout) > 30) {
+			if ((time(NULL) - client->m_tTimeout) > nTimeout) {
 				WorkTracer::instance()->insertWork(client->m_sCallId, 'R', WorkQueItem::PROCTYPE::R_END_VOICE, client->m_nSpkNo);
 
                 client->m_Logger->debug("VDClient::thrdMain(%d) - Working... timeout(%llu)", client->m_nPort, (time(NULL) - client->m_tTimeout));
 				recv_len = 0;
 				goto END_CALL;
+			}
+
+			if (bUseSilBuf)
+			{
+				// 호 진행 중 데이터가 들어오지 않을 경우 묵음 데이터 생성 및 전달, 2019-01-18
+				if (!item) {
+					item = new QueItem;
+					item->voiceData = new uint8_t[VOICE_BUFF_LEN];
+					// 시작 패킷 표시
+					if (client->m_nWorkStat == 3) {
+						item->flag = 2;
+						client->m_nWorkStat = 1;
+					}
+					else {
+						item->flag = 1;
+					}
+					item->spkNo = client->m_nSpkNo;
+					item->lenVoiceData = 0;
+					memset(item->voiceData, 0x00, VOICE_BUFF_LEN);
+				}
+
+				memcpy( item->voiceData + item->lenVoiceData, silBuf, (client->m_nPlaytime - item->lenVoiceData) ) ;
+				client->m_pVrc->insertQueItem(item);
+				item = NULL;
 			}
 
 			//printf("\t[DEBUG] VDClient::thrdMain(%d) - Working... timeout(%llu)\n", client->m_nPort, (time(NULL) - client->m_tTimeout));

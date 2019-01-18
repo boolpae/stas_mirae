@@ -53,7 +53,7 @@ uint16_t Protocol::CallSignal::parsePacket(uint8_t * packet)
     int32_t valRate;
 
 #ifdef EN_RINGBACK_LEN
-	uint32_t valRingbackLen;
+	uint32_t valRingbackLen=0;
 #endif
 
 
@@ -120,9 +120,11 @@ uint16_t Protocol::CallSignal::parsePacket(uint8_t * packet)
 	this->pacFingerPrint[sizeof(this->pacFingerPrint)-1] = 0;
 
 #ifdef EN_RINGBACK_LEN
-	pos += sizeof(uint32_t);
-	memcpy((void*)&valRingbackLen, pos, sizeof(uint32_t));
-	this->pacRingbackLen = ::ntohl(valRingbackLen);
+	if (pacFlag == 'B') {
+		pos += sizeof(uint32_t);
+		memcpy((void*)&valRingbackLen, pos, sizeof(uint32_t));
+		this->pacRingbackLen = ::ntohl(valRingbackLen);
+	}
 #endif
 
 	return uint16_t(200);
@@ -192,9 +194,11 @@ int16_t Protocol::CallSignal::makePacket(uint8_t flag)
 	memcpy(pos, pacFingerPrint, ::strlen((const char*)pacFingerPrint));
 
 #ifdef EN_RINGBACK_LEN
-	pos += (sizeof(uint32_t));
-	ringbackLen = ::htonl(pacRingbackLen);
-	memcpy(pos, &ringbackLen, sizeof(uint32_t));
+	if (flag == 'B') {
+		pos += (sizeof(uint32_t));
+		ringbackLen = ::htonl(pacRingbackLen);
+		memcpy(pos, &ringbackLen, sizeof(uint32_t));
+	}
 #endif
 
 	return int16_t(0);

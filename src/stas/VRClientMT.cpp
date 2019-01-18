@@ -290,7 +290,7 @@ void VRClient::thrdMain(VRClient* client) {
     while (search->getRxState() || search->getTxState())// client->m_RxState || client->m_TxState)
     {
         // client->m_Logger->debug("VRClient::thrdMain(%s) - RxState(%d), TxState(%d)", client->m_sCallId.c_str(), search->getRxState(), search->getTxState());
-        std::this_thread::sleep_for(std::chrono::seconds(1));//microseconds(10));//milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));//microseconds(10));//seconds(1));
     }
     
     uint64_t totalVLen = search->getTotalVoiceDataLen();//client->getTotalVoiceDataLen();
@@ -358,6 +358,8 @@ void VRClient::thrdMain(VRClient* client) {
     client->m_Logger->debug("VRClient::thrdMain(%s) - FINISH CALL.", client->m_sCallId.c_str());
 
 	WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
+
+    // 3초 이하 호 정보 삭제
 
 	// client->m_thrd.detach();
 	delete client;
