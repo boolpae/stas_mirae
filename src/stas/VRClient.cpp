@@ -384,6 +384,7 @@ void VRClient::thrdMain(VRClient* client) {
 #endif
             return;
         }
+        fvad_set_sample_rate(vad, 8000);
         fvad_set_mode(vad, client->m_mode);
 
 #endif // FAD_FUNC
@@ -422,7 +423,6 @@ void VRClient::thrdMain(VRClient* client) {
         totalVoiceDataLen[1] = 0;
 #endif
         auto t1 = std::chrono::high_resolution_clock::now();
-        auto tLast = t1;
             
 		while (client->m_nLiveFlag)
 		{
@@ -440,7 +440,6 @@ void VRClient::thrdMain(VRClient* client) {
                 memset(buf, 0, sizeof(buf));
                 if (!item->flag) {
                     sprintf(buf, "%s_%d|%s|", client->m_sCallId.c_str(), item->spkNo, "LAST");
-                    tLast = std::chrono::high_resolution_clock::now();
                 }
                 else if (item->flag == 2) {
                     sprintf(buf, "%s_%d|%s|", client->m_sCallId.c_str(), item->spkNo, "FIRS");
@@ -973,7 +972,7 @@ void VRClient::thrdMain(VRClient* client) {
     if ( useRedis )
         iconv_close(it);
 #endif
-    // 3초 이하 호관련 정보 삭제
+    // 3초 이하 호관련 정보 삭제 - totalVoiceDataLen[i]/16000 < 3 인 호 정보 삭제
 
 
 	client->m_thrd.detach();

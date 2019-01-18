@@ -359,7 +359,7 @@ void VRClient::thrdMain(VRClient* client) {
 
 	WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-    // 3초 이하 호 정보 삭제
+    // 3초 이하 호 정보 삭제 - totalVLen/16000 < 3 인경우 호 정보 삭제
 
 	// client->m_thrd.detach();
 	delete client;
@@ -514,6 +514,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
             // delete client;
             return;
         }
+        fvad_set_sample_rate(vad, 8000);
         fvad_set_mode(vad, client->m_mode);
 
 		// 실시간의 경우 통화가 종료되기 전까지 Queue에서 입력 데이터를 받아 처리
@@ -532,7 +533,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
         // write wav heaer to file(mmap);
         vBuff.clear();
         client->rx_sframe = 0;
-        client->rx_eframe = 0;
+        // client->rx_eframe = 0;
         client->rx_hold = 0;
         aDianum = 0;
         totalVoiceDataLen = 0;
@@ -1154,6 +1155,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
             // delete client;
             return;
         }
+        fvad_set_sample_rate(vad, 8000);
         fvad_set_mode(vad, client->m_mode);
 
 		// 실시간의 경우 통화가 종료되기 전까지 Queue에서 입력 데이터를 받아 처리
@@ -1172,7 +1174,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
         // write wav heaer to file(mmap);
         vBuff.clear();
         client->tx_sframe = 0;
-        client->tx_eframe = 0;
+        // client->tx_eframe = 0;
         client->tx_hold = 0;
         aDianum = 0;
         totalVoiceDataLen = 0;
