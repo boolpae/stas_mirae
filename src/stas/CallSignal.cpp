@@ -121,7 +121,7 @@ uint16_t Protocol::CallSignal::parsePacket(uint8_t * packet)
 
 #ifdef EN_RINGBACK_LEN
 	if (pacFlag == 'B') {
-		pos += sizeof(this->pacFingerPrint) - 1;//sizeof(uint32_t);
+		pos += 64;//sizeof(uint32_t);
 		memcpy((void*)&valRingbackLen, pos, sizeof(uint32_t));
 		this->pacRingbackLen = ::ntohl(valRingbackLen);
 	}
@@ -195,7 +195,7 @@ int16_t Protocol::CallSignal::makePacket(uint8_t flag)
 
 #ifdef EN_RINGBACK_LEN
 	if (flag == 'B') {
-		pos += sizeof(this->pacFingerPrint) - 1;//(sizeof(uint32_t));
+		pos += 64;//(sizeof(uint32_t));
 		ringbackLen = ::htonl(pacRingbackLen);
 		memcpy(pos, &ringbackLen, sizeof(uint32_t));
 	}
