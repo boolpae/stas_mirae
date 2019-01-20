@@ -241,8 +241,8 @@ void VDClient::thrdMain(VDClient * client)
                 continue;
             }
             
-			// timeout : 현재 30초로 고정
-			if ((time(NULL) - client->m_tTimeout) > nTimeout) {
+			// timeout : 현재 30초로 고정, timeout이 0이 아닐 경우에만
+			if (nTimeout && ((time(NULL) - client->m_tTimeout) > nTimeout)) {
 				WorkTracer::instance()->insertWork(client->m_sCallId, 'R', WorkQueItem::PROCTYPE::R_END_VOICE, client->m_nSpkNo);
 
                 client->m_Logger->debug("VDClient::thrdMain(%d) - Working... timeout(%llu)", client->m_nPort, (time(NULL) - client->m_tTimeout));
