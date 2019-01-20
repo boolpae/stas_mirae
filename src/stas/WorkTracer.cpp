@@ -31,7 +31,7 @@ void WorkTracer::thrdMain(WorkTracer * trc)
 			item = trc->m_qTraceQue.front();
 			trc->m_qTraceQue.pop();
 			delete g;
-#ifdef TEMP_DISABLE
+
             if (!trc->m_Logger) {
                 // item을 이용하여 처리
                 std::cout << item->getWorkDescription() << std::endl;
@@ -39,7 +39,7 @@ void WorkTracer::thrdMain(WorkTracer * trc)
             else {
                 trc->m_Logger->info(item->getWorkDescription());
 			}
-#endif // TEMP_DISABLE
+            
 			delete item;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));
