@@ -224,6 +224,9 @@ void VRClient::thrdMain(VRClient* client) {
 
     bool useDelCallInfo = !config->getConfig("stas.use_del_callinfo", "false").compare("true");
     int nDelSecs = config->getConfig("stas.del_secs", 0);
+    int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
+    int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
+    int nCurrWaitNo = 0;
 
 #ifdef FAD_FUNC
     uint8_t *vpBuf = NULL;
@@ -519,7 +522,7 @@ void VRClient::thrdMain(VRClient* client) {
                     }
 
                     if (!vadres && (vBuff[item->spkNo-1].size()>nHeadLen)) {
-                        if (vBuff[item->spkNo-1].size() > 3200) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
+                        if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff[item->spkNo-1].size() > nMinVBuffSize)) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
                             // send buff to gearman
                             if (aDianum[item->spkNo-1] == 0) {
                                 sprintf(buf, "%s_%d|%s|", client->m_sCallId.c_str(), item->spkNo, "FIRS");
@@ -625,17 +628,24 @@ void VRClient::thrdMain(VRClient* client) {
                             else if (gearman_failed(rc)){
                                 client->m_Logger->error("VRClient::thrdMain(%s) - failed gearman_client_do(). [%lu : %lu], timeout(%d)", client->m_sCallId.c_str(), sframe[item->spkNo -1], eframe[item->spkNo -1], client->m_nGearTimeout);
                             }
+
+
+                            // and clear buff, set msg header
+                            vBuff[item->spkNo-1].clear();
+
+                            for(size_t i=0; i<nHeadLen; i++) {
+                                //vBuff[item->spkNo-1][i] = buf[i];
+                                vBuff[item->spkNo-1].push_back(buf[i]);
+
+                            }
+                            sframe[item->spkNo-1] = eframe[item->spkNo-1];
+
+                            nCurrWaitNo = 0;
                         }
-
-                        // and clear buff, set msg header
-                        vBuff[item->spkNo-1].clear();
-
-                        for(size_t i=0; i<nHeadLen; i++) {
-                            //vBuff[item->spkNo-1][i] = buf[i];
-                            vBuff[item->spkNo-1].push_back(buf[i]);
-
+                        else
+                        {
+                            nCurrWaitNo++;
                         }
-                        sframe[item->spkNo-1] = eframe[item->spkNo-1];
                     }
                     
                     posBuf += framelen;
