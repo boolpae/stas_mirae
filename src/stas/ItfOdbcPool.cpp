@@ -57,6 +57,7 @@ int ItfOdbcPool::createConnections(int setCount)
         ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
                                         (SQLPOINTER)1, 0);
 #endif
+        SQLSetConnectAttr(dbc, SQL_ATTR_CONNECTION_TIMEOUT, reinterpret_cast<SQLPOINTER>(0), SQL_IS_UINTEGER);
         ret = SQLConnect(dbc, (SQLCHAR*)m_sDsn, SQL_NTS,
                          (SQLCHAR*) m_sId, strlen(m_sId), (SQLCHAR*) m_sPw, strlen(m_sPw));
         if (SQL_SUCCEEDED(ret)) {
