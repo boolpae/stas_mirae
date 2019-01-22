@@ -543,8 +543,8 @@ void VRClient::thrdMain(VRClient* client) {
                             {
                                 FILE *pPcm;
 
-                                pcmFilename += std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
-                                pPcm = fopen(pcmFilename.c_str(), "wb");
+                                std::string tempPcmFile = pcmFilename + std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
+                                pPcm = fopen(tempPcmFile.c_str(), "wb");
                                 if (pPcm)
                                 {
                                     fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
@@ -781,8 +781,8 @@ void VRClient::thrdMain(VRClient* client) {
                     {
                         FILE *pPcm;
 
-                        pcmFilename += std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
-                        pPcm = fopen(pcmFilename.c_str(), "wb");
+                        std::string tempPcmFile = pcmFilename + std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
+                        pPcm = fopen(tempPcmFile.c_str(), "wb");
                         if (pPcm)
                         {
                             fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);

@@ -734,8 +734,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             {
                                 FILE *pPcm;
 
-                                pcmFilename += std::to_string(aDianum) + std::string("_r.pcm");
-                                pPcm = fopen(pcmFilename.c_str(), "wb");
+                                std::string tempPcmFile = pcmFilename + std::to_string(aDianum) + std::string("_r.pcm");
+                                pPcm = fopen(tempPcmFile.c_str(), "wb");
                                 if (pPcm)
                                 {
                                     fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
@@ -897,8 +897,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     {
                         FILE *pPcm;
 
-                        pcmFilename += std::to_string(aDianum) + std::string("_r.pcm");
-                        pPcm = fopen(pcmFilename.c_str(), "wb");
+                        std::string tempPcmFile = pcmFilename + std::to_string(aDianum) + std::string("_r.pcm");
+                        pPcm = fopen(tempPcmFile.c_str(), "wb");
                         if (pPcm)
                         {
                             fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
@@ -1414,8 +1414,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             {
                                 FILE *pPcm;
 
-                                pcmFilename += std::to_string(aDianum) + std::string("_l.pcm");
-                                pPcm = fopen(pcmFilename.c_str(), "wb");
+                                std::string tempPcmFile = pcmFilename + std::to_string(aDianum) + std::string("_l.pcm");
+                                pPcm = fopen(tempPcmFile.c_str(), "wb");
                                 if (pPcm)
                                 {
                                     fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
@@ -1571,8 +1571,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     {
                         FILE *pPcm;
 
-                        pcmFilename += std::to_string(aDianum) + std::string("_l.pcm");
-                        pPcm = fopen(pcmFilename.c_str(), "wb");
+                        std::string tempPcmFile = pcmFilename + std::to_string(aDianum) + std::string("_l.pcm");
+                        pPcm = fopen(tempPcmFile.c_str(), "wb");
                         if (pPcm)
                         {
                             fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
