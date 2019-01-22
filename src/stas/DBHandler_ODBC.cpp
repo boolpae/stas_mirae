@@ -51,6 +51,22 @@ static int extract_error(const char *fn, SQLHANDLE handle, SQLSMALLINT type)
     return NativeError;
 }
 
+static void UpdateConnection(PConnSet connSet)
+{
+    char sqlbuff[512];
+    SQLRETURN retcode;
+
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+        sprintf(sqlbuff, "SELECT 1 FROM DUAL");
+#else
+        sprintf(sqlbuff, "SELECT 1");
+#endif
+
+        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+        retcode = SQLCloseCursor(connSet->stmt);
+}
+
 DBHandler* DBHandler::m_instance = nullptr;
 #ifdef USE_UPDATE_POOL
 bool DBHandler::m_bThrdMain = false;
@@ -202,6 +218,8 @@ void DBHandler::thrdMain(DBHandler * s2d)
 
     // retcode = SQLNumParams(connSet->stmt, &NumParams);
     // printf("SQLNumParams RET(%d) NumParams(%d)\n", retcode, NumParams);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
 
 	while (s2d->m_bLiveFlag) {
 		while (!s2d->m_qRtSttQue.empty()) {
@@ -356,8 +374,16 @@ void DBHandler::thrdMain(DBHandler * s2d)
 #endif
             if (utf_buf) free(utf_buf);
 			delete item;
+
+            t1 = std::chrono::high_resolution_clock::now();
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        t2 = std::chrono::high_resolution_clock::now();
+        if ( std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count() > 100 )
+        {
+            UpdateConnection(connSet);
+            t1 = std::chrono::high_resolution_clock::now();
+        }
+		// std::this_thread::sleep_for(std::chrono::milliseconds(5));
         //printf("DBHandler::thrdMain()\n");
 	}
 
@@ -386,6 +412,8 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
 
     logger = config->getLogger();
     PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();//ConnectionPool_getConnection(s2d->m_pool);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto t2 = std::chrono::high_resolution_clock::now();
 
 	while (s2d->m_bLiveFlag) {
 		while (!s2d->m_qUpdateInfoQue.empty()) {
@@ -460,8 +488,15 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                 ret = 1;
             }
 			delete item;
+            t1 = std::chrono::high_resolution_clock::now();
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        t2 = std::chrono::high_resolution_clock::now();
+        if ( std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count() > 100 )
+        {
+            UpdateConnection(connSet);
+            t1 = std::chrono::high_resolution_clock::now();
+        }
+		// std::this_thread::sleep_for(std::chrono::milliseconds(5));
         //printf("DBHandler::thrdMain()\n");
 	}
 

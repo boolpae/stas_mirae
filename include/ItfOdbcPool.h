@@ -7,6 +7,8 @@
 #include <map>
 #include <mutex>
 
+#include <time.h>
+
 typedef struct _ConnSet {
     unsigned int id;
     SQLHENV env;
@@ -14,6 +16,7 @@ typedef struct _ConnSet {
     SQLHSTMT stmt;
     bool useStat;   // 사용이 가능한지 아닌지를 나타내는 Flag: true - 사용가능, false - 사용불가
     bool currStat;  // 현재 사용 중인지 아닌지를 나타내는 flag: true - 현재 사용 중, false - 현재 대기 중
+    time_t lastTime;    // 마지막으로 사용된 시간
 } ConnSet, *PConnSet;
 
 class ItfOdbcPool {
@@ -30,6 +33,10 @@ public:
     PConnSet    reconnectConnection(ConnSet *conn);    // 사용 중 문제가 생긴 커넥션에 대해 재연결
     int         getConnSetCount() { return m_nConnSetCount; }
     void        eraseConnection(ConnSet *conn);
+    void        restoreConnectionNoSetTime(ConnSet *conn);
+
+private:
+    static void updateConnection(ItfOdbcPool *pool);
     
 private:
     mutable std::mutex m_mxDb;
@@ -38,6 +45,7 @@ private:
     char m_sDsn[128];
     char m_sId[64];
     char m_sPw[64];
+    int m_nNextId;
 
 };
 

@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <thread>
+#include <chrono>
 
 ItfOdbcPool::ItfOdbcPool(const char* dsn, const char* id, const char* pw)
 {
@@ -12,6 +14,7 @@ ItfOdbcPool::ItfOdbcPool(const char* dsn, const char* id, const char* pw)
     sprintf(m_sId, "%s", id);
     sprintf(m_sPw, "%s", pw);
     m_nConnSetCount = 0;
+    m_nNextId = 0;
 }
 
 ItfOdbcPool::~ItfOdbcPool()
@@ -30,7 +33,7 @@ int ItfOdbcPool::createConnections(int setCount)
 
     if (m_nConnSetCount > 0) return m_nConnSetCount;
 
-    m_nConnSetCount = 0;
+    m_nConnSetCount = setCount;
     for(int i=0; i<setCount; i++) {
         /* Allocate an environment handle */
         fsts = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
@@ -57,7 +60,7 @@ int ItfOdbcPool::createConnections(int setCount)
         ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
                                         (SQLPOINTER)1, 0);
 #endif
-        SQLSetConnectAttr(dbc, SQL_ATTR_CONNECTION_TIMEOUT, reinterpret_cast<SQLPOINTER>(0), SQL_IS_UINTEGER);
+        // SQLSetConnectAttr(dbc, SQL_ATTR_CONNECTION_TIMEOUT, reinterpret_cast<SQLPOINTER>(0), SQL_IS_UINTEGER);
         ret = SQLConnect(dbc, (SQLCHAR*)m_sDsn, SQL_NTS,
                          (SQLCHAR*) m_sId, strlen(m_sId), (SQLCHAR*) m_sPw, strlen(m_sPw));
         if (SQL_SUCCEEDED(ret)) {
@@ -79,9 +82,10 @@ int ItfOdbcPool::createConnections(int setCount)
             connSet->stmt = stmt;
             connSet->useStat = true;
             connSet->currStat = false;
+            connSet->lastTime = time(NULL);
 
             m_mConnSets.insert(std::make_pair(i, connSet));
-            m_nConnSetCount++;
+            // m_nConnSetCount++;
         }
         else {
             SQLFreeHandle(SQL_HANDLE_DBC, dbc);
@@ -89,6 +93,9 @@ int ItfOdbcPool::createConnections(int setCount)
             continue;
         }
     }
+
+    std::thread thrd = std::thread(ItfOdbcPool::updateConnection, this);
+    thrd.detach();
     
     return m_nConnSetCount;
 }
@@ -118,9 +125,11 @@ PConnSet    ItfOdbcPool::getConnection()   // race condition 방지를 위해 mu
     PConnSet connSet = nullptr;
 
     for(iter=m_mConnSets.begin(); iter!=m_mConnSets.end(); iter++) {
-        if ((iter->second)->useStat && !(iter->second)->currStat) {
+        if ((iter->second)->useStat && !(iter->second)->currStat && ((iter->second)->id >= m_nNextId) ) {
             connSet = iter->second;
             connSet->currStat = true;
+            m_nNextId = connSet->id + 1;
+            if ( m_nNextId > m_nConnSetCount ) m_nNextId = 0;
             break;
         }
     }
@@ -129,6 +138,12 @@ PConnSet    ItfOdbcPool::getConnection()   // race condition 방지를 위해 mu
 }
 
 void        ItfOdbcPool::restoreConnection(ConnSet *conn)  // 사용 완료된 커넥션은 반드시 반환해야 함.
+{
+    conn->currStat = false;
+    conn->lastTime = time(NULL);
+}
+
+void        ItfOdbcPool::restoreConnectionNoSetTime(ConnSet *conn)  // 사용 완료된 커넥션은 반드시 반환해야 함.
 {
     conn->currStat = false;
 }
@@ -183,6 +198,7 @@ PConnSet    ItfOdbcPool::reconnectConnection(ConnSet *conn)    // 사용 중 문
                     conn->env = env;
                     conn->dbc = dbc;
                     conn->stmt = stmt;
+                    conn->lastTime = time(NULL);
                     return conn;
                 }
 
@@ -241,3 +257,37 @@ void ItfOdbcPool::eraseConnection(ConnSet *conn)
     m_mConnSets.clear();
 }
 
+void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
+{
+    PConnSet connSet = nullptr;
+    char sqlbuff[512];
+    SQLRETURN retcode;
+    RETCODE rc = SQL_SUCCESS;
+    time_t currT = time(NULL);
+    // char callid[33];
+
+    while(1) {
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        connSet = pool->getConnection();
+
+        if (connSet)
+        {
+            currT = time(NULL);
+            if ( (currT - connSet->lastTime) < 100 )
+            {
+                pool->restoreConnectionNoSetTime(connSet);
+                continue;
+            }
+    #if defined(USE_ORACLE) || defined(USE_TIBERO)
+            sprintf(sqlbuff, "SELECT 1 FROM DUAL");
+    #else
+            sprintf(sqlbuff, "SELECT 1");
+    #endif
+
+            retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+            retcode = SQLCloseCursor(connSet->stmt);
+            pool->restoreConnection(connSet);
+        }
+    }
+}
