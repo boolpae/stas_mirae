@@ -86,6 +86,7 @@ USE_REALTIME_MF:="FALSE"
 USE_REDIS:="TRUE"
 USE_TIBERO="FALSE"
 EN_RINGBACK_LEN="TRUE"
+EN_SAVE_PCM="TRUE"
 ###############################################################################
 
 all: $(SUB_LIBRARIES) $(SUB_PROJECTS)

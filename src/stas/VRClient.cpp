@@ -227,6 +227,10 @@ void VRClient::thrdMain(VRClient* client) {
     int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
     int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
     int nCurrWaitNo = 0;
+#ifdef EN_SAVE_PCM
+    bool bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
+    std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
+#endif
 
 #ifdef FAD_FUNC
     uint8_t *vpBuf = NULL;
@@ -534,6 +538,20 @@ void VRClient::thrdMain(VRClient* client) {
                                 vBuff[item->spkNo-1][i] = buf[i];
                             }
                             //client->m_Logger->debug("VRClient::thrdMain(%d, %d, %s)(%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", nHeadLen, item->spkNo, buf, client->m_sCallId.c_str(), vBuff[item->spkNo-1].size(), sframe[item->spkNo-1], eframe[item->spkNo-1]);
+                            #ifdef EN_SAVE_PCM
+                            if (bUseSavePcm)
+                            {
+                                FILE *pPcm;
+
+                                pcmFilename += std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
+                                pPcm = fopen(pcmFilename.c_str(), "wb");
+                                if (pPcm)
+                                {
+                                    fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
+                                    fclose(pPcm);
+                                }
+                            }
+                            #endif
                             value= gearman_client_do(gearClient, fname/*"vr_realtime"*//*client->m_sFname.c_str()*/, NULL, 
                                                             (const void*)&vBuff[item->spkNo-1][0], vBuff[item->spkNo-1].size(),
                                                             &result_size, &rc);
@@ -758,6 +776,20 @@ void VRClient::thrdMain(VRClient* client) {
                             vBuff[item->spkNo-1].push_back(buf[i]);
                         }
                     }
+                    #ifdef EN_SAVE_PCM
+                    if (bUseSavePcm)
+                    {
+                        FILE *pPcm;
+
+                        pcmFilename += std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
+                        pPcm = fopen(pcmFilename.c_str(), "wb");
+                        if (pPcm)
+                        {
+                            fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
+                            fclose(pPcm);
+                        }
+                    }
+                    #endif
                     value= gearman_client_do(gearClient, fname/*"vr_realtime"*//*client->m_sFname.c_str()*/, NULL, 
                                                     (const void*)&vBuff[item->spkNo-1][0], vBuff[item->spkNo-1].size(),
                                                     &result_size, &rc);

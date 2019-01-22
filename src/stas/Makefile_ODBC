@@ -63,6 +63,9 @@ endif
 ifeq ($(EN_RINGBACK_LEN), "TRUE")
 FLAGS			+= -DEN_RINGBACK_LEN # 통화연결음 길이를 이용할 경우 - 추후 Define을 이요하지 않고 기본으로 빌드할 예정
 endif
+ifeq ($(EN_SAVE_PCM), "TRUE")
+FLAGS			+= -DEN_SAVE_PCM # 실제 VR로 보내는 PCM데이터 확인용 코드, 테스트를 위해서만 사용해야 함
+endif
 endif
 
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 
