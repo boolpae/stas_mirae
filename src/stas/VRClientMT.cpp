@@ -365,8 +365,8 @@ void VRClient::thrdMain(VRClient* client) {
     if ( useDelCallInfo && nDelSecs ) {
         if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
             redisKey = "G_CS:";
-            redisKey.append(client->m_sCallId);
-            xRedis.del(dbi, redisKey);
+            redisKey.append(client->m_sCounselCode);
+            xRedis.lpop(dbi, redisKey, strRedisValue);
 
             redisKey = "G_RTSTT:";
             redisKey.append(client->m_sCallId);

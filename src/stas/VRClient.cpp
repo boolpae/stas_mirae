@@ -547,7 +547,7 @@ void VRClient::thrdMain(VRClient* client) {
                                 pPcm = fopen(tempPcmFile.c_str(), "wb");
                                 if (pPcm)
                                 {
-                                    fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
+                                    fwrite((const void*)&vBuff[item->spkNo-1][0], sizeof(char), vBuff[item->spkNo-1].size(), pPcm);
                                     fclose(pPcm);
                                 }
                             }
@@ -785,7 +785,7 @@ void VRClient::thrdMain(VRClient* client) {
                         pPcm = fopen(tempPcmFile.c_str(), "wb");
                         if (pPcm)
                         {
-                            fwrite((const void*)&vBuff[0], sizeof(char), vBuff.size(), pPcm);
+                            fwrite((const void*)&vBuff[item->spkNo-1][0], sizeof(char), vBuff[item->spkNo-1].size(), pPcm);
                             fclose(pPcm);
                         }
                     }
@@ -1023,8 +1023,8 @@ void VRClient::thrdMain(VRClient* client) {
     if ( useDelCallInfo && nDelSecs ) {
         if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
             redisKey = "G_CS:";
-            redisKey.append(client->m_sCallId);
-            xRedis.del(dbi, redisKey);
+            redisKey.append(client->m_sCounselCode);
+            xRedis.lpop(dbi, redisKey, strRedisValue);
 
             redisKey = "G_RTSTT:";
             redisKey.append(client->m_sCallId);
