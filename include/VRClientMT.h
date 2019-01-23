@@ -124,7 +124,7 @@ private:
 	static void thrdRxProcess(VRClient* client);
 	static void thrdTxProcess(VRClient* client);
 
-	static std::map<std::string, std::shared_ptr<CtrlThreadInfo>> ThreadInfoTable;
+	// static std::map<std::string, std::shared_ptr<CtrlThreadInfo>> ThreadInfoTable;
 
 
     size_t rx_sframe;
@@ -135,6 +135,8 @@ private:
 
 	uint8_t rx_hold;
 	uint8_t tx_hold;
+
+	CtrlThreadInfo thrdInfo;
 };
 
 

@@ -55,16 +55,27 @@ static void UpdateConnection(PConnSet connSet)
 {
     char sqlbuff[512];
     SQLRETURN retcode;
+    RETCODE rc = SQL_SUCCESS;
+    log4cpp::Category *logger = config->getLogger();
 
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-        sprintf(sqlbuff, "SELECT 1 FROM DUAL");
+    sprintf(sqlbuff, "SELECT 1 FROM DUAL");
 #else
-        sprintf(sqlbuff, "SELECT 1");
+    sprintf(sqlbuff, "SELECT 1");
 #endif
 
-        retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+    retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
-        retcode = SQLCloseCursor(connSet->stmt);
+    if SQL_SUCCEEDED(retcode) {
+        while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+        {
+            rc = SQLFetch( connSet->stmt );
+            break;
+        }
+    }
+    retcode = SQLCloseCursor(connSet->stmt);
+    connSet->lastTime = time(NULL);
+    logger->debug("UpdateConnection - UPDATED CONNSET(%d)", connSet->id);
 }
 
 DBHandler* DBHandler::m_instance = nullptr;

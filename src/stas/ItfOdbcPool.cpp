@@ -1,5 +1,8 @@
 
 #include "ItfOdbcPool.h"
+#include "stas.h"
+
+#include <log4cpp/Category.hh>
 
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +33,7 @@ int ItfOdbcPool::createConnections(int setCount)
     SQLHDBC dbc;
     SQLHSTMT stmt;
     SQLRETURN ret;
+    log4cpp::Category *logger = config->getLogger();
 
     if (m_nConnSetCount > 0) return m_nConnSetCount;
 
@@ -86,6 +90,7 @@ int ItfOdbcPool::createConnections(int setCount)
 
             m_mConnSets.insert(std::make_pair(i, connSet));
             // m_nConnSetCount++;
+            logger->debug("ItfOdbcPool::createConnectinos - id(%d), m_nConnSetCount(%d)", i, m_nConnSetCount);
         }
         else {
             SQLFreeHandle(SQL_HANDLE_DBC, dbc);
@@ -123,17 +128,19 @@ PConnSet    ItfOdbcPool::getConnection()   // race condition 방지를 위해 mu
     std::lock_guard<std::mutex> g(m_mxDb);
     std::map<int, PConnSet>::iterator iter;
     PConnSet connSet = nullptr;
+    log4cpp::Category *logger = config->getLogger();
 
     for(iter=m_mConnSets.begin(); iter!=m_mConnSets.end(); iter++) {
         if ((iter->second)->useStat && !(iter->second)->currStat && ((iter->second)->id >= m_nNextId) ) {
             connSet = iter->second;
             connSet->currStat = true;
             m_nNextId = connSet->id + 1;
-            if ( m_nNextId > m_nConnSetCount ) m_nNextId = 0;
+            if ( m_nNextId >= m_nConnSetCount ) m_nNextId = 0;
             break;
         }
     }
     
+    logger->debug("ItfOdbcPool::getConnection - m_nNextId(%d), connSet(%d)", m_nNextId, connSet?1:0);
     return connSet;
 }
 
@@ -265,6 +272,7 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
     RETCODE rc = SQL_SUCCESS;
     time_t currT = time(NULL);
     // char callid[33];
+    log4cpp::Category *logger = config->getLogger();
 
     while(1) {
         std::this_thread::sleep_for(std::chrono::seconds(10));
@@ -273,6 +281,7 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
         if (connSet)
         {
             currT = time(NULL);
+            logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld)", currT, connSet->lastTime);
             if ( (currT - connSet->lastTime) < 100 )
             {
                 pool->restoreConnectionNoSetTime(connSet);
@@ -285,6 +294,16 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
     #endif
 
             retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+            if SQL_SUCCEEDED(retcode) {
+                while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+                {
+                    rc = SQLFetch( connSet->stmt );
+                    break;
+                }
+            }
+
+            logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld), UPDATED CONNSET(%d)", currT, connSet->lastTime, connSet->id);
 
             retcode = SQLCloseCursor(connSet->stmt);
             pool->restoreConnection(connSet);
