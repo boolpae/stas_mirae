@@ -281,12 +281,12 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
         if (connSet)
         {
             currT = time(NULL);
-            logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld)", currT, connSet->lastTime);
-            if ( (currT - connSet->lastTime) < 100 )
-            {
-                pool->restoreConnectionNoSetTime(connSet);
-                continue;
-            }
+            // logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld)", currT, connSet->lastTime);
+            // if ( (currT - connSet->lastTime) < 100 )
+            // {
+            //     pool->restoreConnectionNoSetTime(connSet);
+            //     continue;
+            // }
     #if defined(USE_ORACLE) || defined(USE_TIBERO)
             sprintf(sqlbuff, "SELECT 1 FROM DUAL");
     #else
@@ -303,7 +303,7 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
                 }
             }
 
-            logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld), UPDATED CONNSET(%d)", currT, connSet->lastTime, connSet->id);
+            logger->debug("ItfOdbcPool::updateConnection - timeoffset(%ld), UPDATED CONNSET(%d)", (currT - connSet->lastTime), connSet->id);
 
             retcode = SQLCloseCursor(connSet->stmt);
             pool->restoreConnection(connSet);
