@@ -243,8 +243,8 @@ int main(int argc, const char** argv)
     while (gRunning)
     {
 #ifdef ENABLE_REALTIME
-        vdcm->outputVDCStat();
         vrcm->outputVRCStat();
+        vdcm->outputVDCStat();
 #endif // ENABLE_REALTIME
         if (vfcm) vfcm->outputVFCStat();
         if (!config->getConfig("ha.use", "false").compare("true")) {
@@ -256,8 +256,8 @@ int main(int argc, const char** argv)
 #endif
 
 #ifdef ENABLE_REALTIME
-	vdcm->outputVDCStat();
 	vrcm->outputVRCStat();
+	vdcm->outputVDCStat();
 #endif
 
 FINISH:
