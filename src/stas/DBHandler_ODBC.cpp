@@ -705,6 +705,17 @@ int DBHandler::searchCallInfo(std::string counselorcode)
     SQLRETURN retcode;
     RETCODE rc = SQL_SUCCESS;
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
@@ -770,6 +781,17 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
     SQLRETURN retcode;
     int ret=0;
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
@@ -830,6 +852,17 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
     char sqlbuff[512];
     SQLRETURN retcode;
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         if (!end) {
@@ -888,6 +921,17 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
     int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
+
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
 
     if (connSet)
     {
@@ -989,6 +1033,17 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
     time_t startT;
     struct tm * timeinfo;
     char timebuff [32];
+
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
 
     if (connSet)
     {
@@ -1102,6 +1157,17 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
     struct tm * timeinfo;
     char timebuff [32];
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         timeinfo = localtime(&startT);
@@ -1179,6 +1245,17 @@ int DBHandler::updateTaskInfo(std::string callid, std::string regdate, std::stri
     char sqlbuff[512];
     SQLRETURN retcode;
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         time (&rawtime);
@@ -1231,6 +1308,17 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
     int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
+
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
 
     if (connSet)
     {
@@ -1299,6 +1387,17 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
 
     //m_Logger->debug("BEFORE DBHandler::getIncompleteTask - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM TBL_JOB_INFO WHERE STATE='U'");
@@ -1378,6 +1477,17 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
 
     //m_Logger->debug("BEFORE DBHandler::getIncompleteTaskFromSelf - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM TBL_JOB_SELF_INFO WHERE STATE='U'");
@@ -1458,6 +1568,17 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
 
     //m_Logger->debug("BEFORE DBHandler::getIncompleteTaskFromRetry - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM TBL_JOB_RETRY_INFO WHERE STATE='U'");
@@ -1528,6 +1649,17 @@ int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string 
     char sqlbuff[512];
     SQLRETURN retcode;
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         // sprintf(sqlbuff, "UPDATE TBL_JOB_INFO SET STATE='%c' WHERE CALL_ID='%s' AND CS_CODE='%s' AND REG_DTM='%s'",
@@ -1591,6 +1723,17 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
     SQLRETURN retcode;
     RETCODE rc = SQL_SUCCESS;
     // char callid[33];
+
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
 
     if (connSet)
     {
@@ -1725,6 +1868,17 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
     int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate;
     //m_Logger->debug("BEFORE DBHandler::getTaskInfo - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
@@ -1811,6 +1965,17 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
 
     //m_Logger->debug("BEFORE DBHandler::getTaskInfo - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
@@ -1893,6 +2058,17 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
 
     //m_Logger->debug("BEFORE DBHandler::getTimeoutTaskInfo - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
@@ -1972,6 +2148,18 @@ void DBHandler::updateAllTask2Fail2()
         // time_t rawtime;
         // struct tm * timeinfo;
         // char timebuff [32];
+        int ret=0;
+
+        if (!connSet)
+        {
+            for(ret=0; ret<100; ret++)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                connSet = m_pSolDBConnPool->getConnection();
+                if (connSet) break;
+            }
+        }
+        ret=0;
 
         if (connSet)
         {
@@ -2028,6 +2216,18 @@ void DBHandler::updateAllTask2Fail()
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     char sqlbuff[512];
     SQLRETURN retcode;
+    int ret =0;
+
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
 
     if (connSet)
     {
@@ -2249,6 +2449,17 @@ int DBHandler::deleteJobData(std::string callid)
     SQLRETURN retcode;
     RETCODE rc = SQL_SUCCESS;
 
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
+
     if (connSet)
     {
         //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
@@ -2301,6 +2512,17 @@ int DBHandler::deleteJobInfo(std::string callid)
     char sqlbuff[512];
     SQLRETURN retcode;
     RETCODE rc = SQL_SUCCESS;
+
+    if (!connSet)
+    {
+        for(ret=0; ret<100; ret++)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            connSet = m_pSolDBConnPool->getConnection();
+            if (connSet) break;
+        }
+    }
+    ret=0;
 
     if (connSet)
     {
