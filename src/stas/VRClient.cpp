@@ -1036,6 +1036,16 @@ void VRClient::thrdMain(VRClient* client) {
         if ( client->m_s2d && (totalVLen/16000 <= nDelSecs) ) {
             client->m_s2d->deleteJobInfo(client->m_sCallId);
         }
+
+        // delete wav files
+        if ( client->m_is_save_pcm )
+        {
+            for (int i=0; i<2; i++) {
+                std::string spker = (i == 0)?std::string("_r.wav"):std::string("_l.wav");
+                std::string l_filename = filename + spker;
+                remove( l_filename.c_str() ) ;
+            }
+        }
     }
 
 

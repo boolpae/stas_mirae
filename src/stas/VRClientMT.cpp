@@ -366,6 +366,20 @@ void VRClient::thrdMain(VRClient* client) {
 
     // 3초 이하 호 정보 삭제 - totalVLen/16000 < 3 인경우 호 정보 삭제
     if ( useDelCallInfo && nDelSecs ) {
+        if ( client->m_is_save_pcm )
+        {
+            char datebuff[32];
+            timeinfo = localtime(&client->m_tStart);
+            strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",timeinfo);
+            strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
+            std::string fullpath = client->m_pcm_path + "/" + datebuff + "/" + client->m_sCounselCode + "/";
+            for (int i=0; i<2; i++) {
+                std::string spker = (i == 0)?std::string("_r.wav"):std::string("_l.wav");
+                std::string filename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + spker;
+                remove( filename.c_str() ) ;
+            }
+        }
+
         if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
             redisKey = "G_CS:";
             redisKey.append(client->m_sCounselCode);
