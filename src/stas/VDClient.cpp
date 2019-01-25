@@ -163,7 +163,7 @@ void VDClient::thrdMain(VDClient * client)
 				client->m_tTimeout = time(NULL);
 				if (!item) {
 					item = new QueItem;
-					item->voiceData = new uint8_t[VOICE_BUFF_LEN];
+					// item->voiceData = new uint8_t[VOICE_BUFF_LEN];
                     // 시작 패킷 표시
                     if (client->m_nWorkStat == 3) {
                         item->flag = 2;
@@ -206,17 +206,17 @@ void VDClient::thrdMain(VDClient * client)
                         client->m_Logger->debug("VDClient::thrdMain() - VDClient(%d) work ending...", client->m_nPort);
                         if (!item) {
                             item = new QueItem;
-                            item->voiceData = NULL;
+                            // item->voiceData = NULL;
                             item->lenVoiceData = 0;
                             item->spkNo = client->m_nSpkNo;
                         }
 
                         item->flag = 0;
                         if (recv_len) {
-                            if (!item->voiceData) {
-                                item->voiceData = new uint8_t[VOICE_BUFF_LEN];
-                                memset(item->voiceData, 0x00, VOICE_BUFF_LEN);
-                            }
+                            // if (!item->voiceData) {
+                            //     item->voiceData = new uint8_t[VOICE_BUFF_LEN];
+                            //     memset(item->voiceData, 0x00, VOICE_BUFF_LEN);
+                            // }
                             memcpy(item->voiceData + item->lenVoiceData, pos, recv_len);
                             item->lenVoiceData += recv_len;
                         }
@@ -255,7 +255,7 @@ void VDClient::thrdMain(VDClient * client)
 				// 호 진행 중 데이터가 들어오지 않을 경우 묵음 데이터 생성 및 전달, 2019-01-18
 				if (!item) {
 					item = new QueItem;
-					item->voiceData = new uint8_t[VOICE_BUFF_LEN];
+					// item->voiceData = new uint8_t[VOICE_BUFF_LEN];
 					// 시작 패킷 표시
 					if (client->m_nWorkStat == 3) {
 						item->flag = 2;

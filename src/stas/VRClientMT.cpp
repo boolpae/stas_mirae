@@ -209,7 +209,7 @@ VRClient::~VRClient()
 		item = m_qRXQue.front();
 		m_qRXQue.pop();
 
-		delete[] item->voiceData;
+		// delete[] item->voiceData;
 		delete item;
 	}
 
@@ -217,7 +217,7 @@ VRClient::~VRClient()
 		item = m_qTXQue.front();
 		m_qTXQue.pop();
 
-		delete[] item->voiceData;
+		// delete[] item->voiceData;
 		delete item;
 	}
 
@@ -1025,7 +1025,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     // and clear buff, set msg header
                     vBuff.clear();
 
-                    if ( item->voiceData != NULL ) delete[] item->voiceData;
+                    // if ( item->voiceData != NULL ) delete[] item->voiceData;
                     delete item;
 
                     if (client->m_is_save_pcm) {
@@ -1049,7 +1049,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     break;
 				}
 
-				delete[] item->voiceData;
+				// delete[] item->voiceData;
 				delete item;
 				// 예외 발생 시 처리 내용 : VDCManager의 removeVDC를 호출할 수 있어야 한다. - 이 후 VRClient는 item->flag(0)에 대해서만 처리한다.
 			}
@@ -1692,7 +1692,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     // and clear buff, set msg header
                     vBuff.clear();
 
-                    if ( item->voiceData != NULL ) delete[] item->voiceData;
+                    // if ( item->voiceData != NULL ) delete[] item->voiceData;
                     delete item;
 
                     if (client->m_is_save_pcm) {
@@ -1715,7 +1715,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     break;
 				}
 
-				delete[] item->voiceData;
+				// delete[] item->voiceData;
 				delete item;
 				// 예외 발생 시 처리 내용 : VDCManager의 removeVDC를 호출할 수 있어야 한다. - 이 후 VRClient는 item->flag(0)에 대해서만 처리한다.
 			}
@@ -1759,7 +1759,7 @@ void VRClient::insertQueItem(QueItem* item)
     else if (item->spkNo == 2)
         m_qTXQue.push(item);
     else {
-        delete[] item->voiceData;
+        // delete[] item->voiceData;
         delete item;
     }
 }

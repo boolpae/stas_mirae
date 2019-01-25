@@ -164,7 +164,7 @@ VRClient::~VRClient()
 		item = m_qRTQue.front();
 		m_qRTQue.pop();
 
-		delete[] item->voiceData;
+		// delete[] item->voiceData;
 		delete item;
 	}
 
@@ -900,7 +900,7 @@ void VRClient::thrdMain(VRClient* client) {
 
 						client->m_Mgr->removeVRC(client->m_sCallId);
 
-						if ( item->voiceData != NULL ) delete[] item->voiceData;
+						// if ( item->voiceData != NULL ) delete[] item->voiceData;
 						delete item;
 
                         if (client->m_s2d) {
@@ -987,7 +987,7 @@ void VRClient::thrdMain(VRClient* client) {
 					}
 				}
 
-				delete[] item->voiceData;
+				// delete[] item->voiceData;
 				delete item;
 				// 예외 발생 시 처리 내용 : VDCManager의 removeVDC를 호출할 수 있어야 한다. - 이 후 VRClient는 item->flag(0)에 대해서만 처리한다.
 			}
