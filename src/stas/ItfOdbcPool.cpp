@@ -275,38 +275,44 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
     log4cpp::Category *logger = config->getLogger();
 
     while(1) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        connSet = pool->getConnection();
+        std::this_thread::sleep_for(std::chrono::seconds(100));
 
-        if (connSet)
+        for(int i=0; i<pool->m_nConnSetCount; i++)
         {
-            currT = time(NULL);
-            // logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld)", currT, connSet->lastTime);
-            // if ( (currT - connSet->lastTime) < 100 )
-            // {
-            //     pool->restoreConnectionNoSetTime(connSet);
-            //     continue;
-            // }
-    #if defined(USE_ORACLE) || defined(USE_TIBERO)
-            sprintf(sqlbuff, "SELECT 1 FROM DUAL");
-    #else
-            sprintf(sqlbuff, "SELECT 1");
-    #endif
+            connSet = pool->getConnection();
 
-            retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
-
-            if SQL_SUCCEEDED(retcode) {
-                while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+            if (connSet)
+            {
+                currT = time(NULL);
+                // logger->debug("ItfOdbcPool::updateConnection - currT(%ld), connSet_lastTime(%ld)", currT, connSet->lastTime);
+                if ( (currT - connSet->lastTime) < 100 )
                 {
-                    rc = SQLFetch( connSet->stmt );
-                    break;
+                    pool->restoreConnectionNoSetTime(connSet);
+                    continue;
                 }
+        #if defined(USE_ORACLE) || defined(USE_TIBERO)
+                sprintf(sqlbuff, "SELECT 1 FROM DUAL");
+        #else
+                sprintf(sqlbuff, "SELECT 1");
+        #endif
+
+                retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+
+                if SQL_SUCCEEDED(retcode) {
+                    while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+                    {
+                        rc = SQLFetch( connSet->stmt );
+                        break;
+                    }
+                }
+
+                logger->debug("ItfOdbcPool::updateConnection - timeoffset(%ld), UPDATED CONNSET(%d)", (currT - connSet->lastTime), connSet->id);
+
+                retcode = SQLCloseCursor(connSet->stmt);
+                pool->restoreConnection(connSet);
             }
-
-            logger->debug("ItfOdbcPool::updateConnection - timeoffset(%ld), UPDATED CONNSET(%d)", (currT - connSet->lastTime), connSet->id);
-
-            retcode = SQLCloseCursor(connSet->stmt);
-            pool->restoreConnection(connSet);
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
     }
 }
