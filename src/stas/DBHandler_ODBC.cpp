@@ -394,7 +394,7 @@ void DBHandler::thrdMain(DBHandler * s2d)
             UpdateConnection(connSet);
             t1 = std::chrono::high_resolution_clock::now();
         }
-		// std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
         //printf("DBHandler::thrdMain()\n");
 	}
 
@@ -507,7 +507,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
             UpdateConnection(connSet);
             t1 = std::chrono::high_resolution_clock::now();
         }
-		// std::this_thread::sleep_for(std::chrono::milliseconds(5));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
         //printf("DBHandler::thrdMain()\n");
 	}
 
