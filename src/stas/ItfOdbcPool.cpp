@@ -277,7 +277,7 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
     while(1) {
         std::this_thread::sleep_for(std::chrono::seconds(100));
 
-        for(int i=0; i<pool->m_nConnSetCount; i++)
+        for(int i=0; i<=pool->m_nConnSetCount; i++)
         {
             connSet = pool->getConnection();
 
