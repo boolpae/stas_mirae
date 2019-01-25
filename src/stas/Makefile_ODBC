@@ -66,6 +66,9 @@ endif
 ifeq ($(EN_SAVE_PCM), "TRUE")
 FLAGS			+= -DEN_SAVE_PCM # 실제 VR로 보내는 PCM데이터 확인용 코드, 테스트를 위해서만 사용해야 함
 endif
+ifeq ($(FOR_TEST), "TRUE")
+FLAGS			+= -DFOR_TEST # 상담원, 고객 간의 STT결과를 하나의 파일에 저장하기 위한 테스트 코드(실시간 전용)
+endif
 endif
 
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 

@@ -38,6 +38,9 @@ void FileHandler::thrdMain(FileHandler * dlv)
 	std::string sttFilename;
     std::string fullpath;
     int ret=0;
+#ifdef FOR_TEST
+    std::string testSttFilename;
+#endif
 
     char datebuff[32];
     struct tm * timeinfo;
@@ -100,6 +103,9 @@ void FileHandler::thrdMain(FileHandler * dlv)
 			// item으로 로직 수행
 			if (item->getJobType() == 'R') {
 				sttFilename = fullpath + item->getCSCode() + "_" + item->getCallId();
+#ifdef FOR_TEST
+				testSttFilename = fullpath + item->getCSCode() + "_" + item->getCallId() + "_test.stt";
+#endif
                 /*
 				sttFilename += "_";
 				sttFilename += std::to_string(item->getSpkNo());
@@ -154,6 +160,33 @@ void FileHandler::thrdMain(FileHandler * dlv)
 #ifdef ENC_UTF8
             if (utf_buf) free(utf_buf);
 #endif
+
+#ifdef FOR_TEST
+			std::ofstream testSttresult(testSttFilename, std::ios::out | std::ios::app);
+			if (testSttresult.is_open()) {
+
+                if (item->getJobType() == 'R') {
+                    if (item->getSpkNo() == 1) {
+                        testSttresult << "<< COUNSELOR >> : ";
+                    }
+                    else if (item->getSpkNo() == 2) {
+                        testSttresult << "<< CUSTOMER >> : ";
+                    }
+
+                    testSttresult << std::to_string(item->getBpos()) << " - " << std::to_string(item->getEpos()) << std::endl;
+                }
+
+                testSttresult << item->getSTTValue() ;
+
+                // if (item->getJobType() == 'R') {
+                //     testSttresult << std::to_string(item->getEpos()) << std::endl;
+                // }
+
+                testSttresult << std::endl;
+				testSttresult.close();
+			}
+#endif // FOR_TEST
+
 			delete item;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));

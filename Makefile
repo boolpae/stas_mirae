@@ -87,6 +87,7 @@ USE_REDIS:="TRUE"
 USE_TIBERO="FALSE"
 EN_RINGBACK_LEN="TRUE"
 EN_SAVE_PCM="TRUE"
+FOR_TEST="TRUE"
 ###############################################################################
 
 all: $(SUB_LIBRARIES) $(SUB_PROJECTS)
