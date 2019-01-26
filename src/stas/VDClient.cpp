@@ -271,9 +271,9 @@ void VDClient::thrdMain(VDClient * client)
 				}
 
 				memcpy( item->voiceData + item->lenVoiceData, silBuf, (client->m_nPlaytime - item->lenVoiceData) ) ;
-				item->lenVoiceData = (client->m_nPlaytime - item->lenVoiceData);
-				client->m_pVrc->insertQueItem(item);
 				client->m_Logger->debug("VDClient::thrdMain(%d) - Send Silence Data Len(%d)", client->m_nPort, item->lenVoiceData);
+				item->lenVoiceData = client->m_nPlaytime;
+				client->m_pVrc->insertQueItem(item);
 				item = NULL;
 
 			}
