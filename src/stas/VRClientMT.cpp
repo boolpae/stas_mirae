@@ -366,7 +366,7 @@ void VRClient::thrdMain(VRClient* client) {
 
     // 3초 이하 호 정보 삭제 - totalVLen/16000 < 3 인경우 호 정보 삭제
     if ( useDelCallInfo && nDelSecs ) {
-        if ( client->m_is_save_pcm )
+        if ( client->m_is_save_pcm && (totalVLen/16000 <= nDelSecs) )
         {
             char datebuff[32];
             timeinfo = localtime(&client->m_tStart);

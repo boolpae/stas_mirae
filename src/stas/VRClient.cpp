@@ -1038,7 +1038,7 @@ void VRClient::thrdMain(VRClient* client) {
         }
 
         // delete wav files
-        if ( client->m_is_save_pcm )
+        if ( client->m_is_save_pcm && (totalVLen/16000 <= nDelSecs) )
         {
             for (int i=0; i<2; i++) {
                 std::string spker = (i == 0)?std::string("_r.wav"):std::string("_l.wav");
