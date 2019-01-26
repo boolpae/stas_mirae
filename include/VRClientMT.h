@@ -25,7 +25,7 @@ class VRCManager;
 class FileHandler;
 class DBHandler;
 
-#define VOICE_BUFF_LEN (16000 * 5 + 64)
+#define VOICE_BUFF_LEN (19200 + 64)
 
 typedef struct _queItem {
 	uint8_t flag;	// 통화 시작: 2, 과 통화 중: 1, 마지막 데이터 또는 통화 종료: 0

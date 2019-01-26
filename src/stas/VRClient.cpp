@@ -186,7 +186,7 @@ typedef struct _posPair {
 
 #define WAV_HEADER_SIZE 44
 #define WAV_BUFF_SIZE 19200
-#define MM_SIZE (WAV_HEADER_SIZE + WAV_BUFF_SIZE)
+#define MM_SIZE (1024 * 1024 * 5)
 
 void VRClient::thrdMain(VRClient* client) {
 
@@ -998,8 +998,8 @@ void VRClient::thrdMain(VRClient* client) {
 #ifdef FAD_FUNC
         fvad_free(vad);
 
-        std::vector<uint8_t>().swap(vBuff[0]);
-        std::vector<uint8_t>().swap(vBuff[1]);
+        // std::vector<uint8_t>().swap(vBuff[0]);
+        // std::vector<uint8_t>().swap(vBuff[1]);
 #endif
 
 #if 0 // for DEBUG

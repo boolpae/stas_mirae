@@ -241,7 +241,7 @@ typedef struct _posPair {
 
 #define WAV_HEADER_SIZE 44
 #define WAV_BUFF_SIZE 19200
-#define MM_SIZE (WAV_HEADER_SIZE + WAV_BUFF_SIZE)
+#define MM_SIZE (1024 * 1024 * 5)
 
 void VRClient::thrdMain(VRClient* client) {
     char timebuff [32];
@@ -1063,7 +1063,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
         fvad_free(vad);
 
-        std::vector<uint8_t>().swap(vBuff);
+        // std::vector<uint8_t>().swap(vBuff);
 
 #if 0 // for DEBUG
 		if (client->m_is_save_pcm && pcmFile.is_open()) pcmFile.close();
@@ -1729,7 +1729,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
         fvad_free(vad);
 
-        std::vector<uint8_t>().swap(vBuff);
+        // std::vector<uint8_t>().swap(vBuff);
 
 #if 0 // for DEBUG
 		if (client->m_is_save_pcm && pcmFile.is_open()) pcmFile.close();

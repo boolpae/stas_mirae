@@ -97,7 +97,7 @@ uint16_t VDClient::init(uint16_t port)
 }
 
 #define BUFLEN 65000  //Max length of buffer
-#define VOICE_BUFF_LEN (16000 * 5 + 64)
+#define VOICE_BUFF_LEN (19200 + 64)
 #define LEN_OF_VOICE ( 16000 * 5 )
 #define SIL_BUFLEN 19200
 void VDClient::thrdMain(VDClient * client)
@@ -209,6 +209,7 @@ void VDClient::thrdMain(VDClient * client)
                             // item->voiceData = NULL;
                             item->lenVoiceData = 0;
                             item->spkNo = client->m_nSpkNo;
+							memset(item->voiceData, 0x00, VOICE_BUFF_LEN);
                         }
 
                         item->flag = 0;
