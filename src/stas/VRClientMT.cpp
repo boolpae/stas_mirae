@@ -188,6 +188,12 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
     m_nRingbackLen = ringbacklen;
 #endif
 
+	ServerName="DEFAULT";
+	TotalVoiceDataLen=0;
+	DiaNumber=0;
+	RxState=1;
+	TxState=1;
+
 	m_thrd = std::thread(VRClient::thrdMain, this);
     m_thrd.detach();
 	m_thrdRx = std::thread(VRClient::thrdRxProcess, this);
@@ -296,15 +302,15 @@ void VRClient::thrdMain(VRClient* client) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
       
-    while (client->thrdInfo.getRxState() || client->thrdInfo.getTxState())// client->m_RxState || client->m_TxState)
+    while (client->RxState || client->TxState)// client->m_RxState || client->m_TxState)
     {
         // client->m_Logger->debug("VRClient::thrdMain(%s) - RxState(%d), TxState(%d)", client->m_sCallId.c_str(), search->getRxState(), search->getTxState());
         std::this_thread::sleep_for(std::chrono::milliseconds(1));//microseconds(10));//seconds(1));
     }
     
-    uint64_t totalVLen = client->thrdInfo.getTotalVoiceDataLen();//client->getTotalVoiceDataLen();
-    std::string svr_nm = client->thrdInfo.getServerName();//client->getServerName();
-    client->m_Logger->debug("VRClient::thrdMain(%s) - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->thrdInfo.getServerName().c_str(), client->thrdInfo.getTotalVoiceDataLen());
+    uint64_t totalVLen = client->TotalVoiceDataLen;//client->getTotalVoiceDataLen();
+    std::string svr_nm = client->ServerName;//client->getServerName();
+    client->m_Logger->debug("VRClient::thrdMain(%s) - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), svr_nm.c_str(), totalVLen);
 
     client->m_Mgr->removeVRC(client->m_sCallId);
 
@@ -517,7 +523,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
         // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-        client->thrdInfo.setRxState(0);//client->m_RxState = 0;
+        client->RxState = 0;//client->m_RxState = 0;
         // std::this_thread::sleep_for(std::chrono::milliseconds(1));
         // client->m_thrdRx.detach();
         // delete client;
@@ -532,7 +538,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
         // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-        client->thrdInfo.setRxState(0);// client->m_RxState = 0;
+        client->RxState =0;// client->m_RxState = 0;
         // std::this_thread::sleep_for(std::chrono::milliseconds(1));
         // client->m_thrdRx.detach();
         // delete client;
@@ -554,7 +560,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
             client->m_Logger->error("VRClient::thrdRxProcess() - ERROR (Failed fvad_new(%s))", client->m_sCallId.c_str());
             if ( !bOnlyRecord ) gearman_client_free(gearClient);
             // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-            client->thrdInfo.setRxState(0);// client->m_RxState = 0;
+            client->RxState = 0;// client->m_RxState = 0;
             // std::this_thread::sleep_for(std::chrono::milliseconds(1));
             // client->m_thrdRx.detach();
             // delete client;
@@ -586,7 +592,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
         svr_nm = "DEFAULT";
 
         vadres = before_vadres = 0;
-		while (client->thrdInfo.getRxState())//(client->m_nLiveFlag)
+		while (client->RxState)//(client->m_nLiveFlag)
 		{
 			while (!client->m_qRXQue.empty()) {
 				// g = new std::lock_guard<std::mutex>(client->m_mxQue);
@@ -781,7 +787,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
                                     // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
                                     //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                                    diaNumber = client->thrdInfo.getDiaNumber();//client->getDiaNumber();
+                                    diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
                                         int64_t zCount=0;
@@ -945,7 +951,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
                             // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
                             //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                            diaNumber = client->thrdInfo.getDiaNumber();//client->getDiaNumber();
+                            diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
                                 int64_t zCount=0;
@@ -1049,9 +1055,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         }
                     }
 
-                    client->thrdInfo.setRxState(0);//client->m_RxState = 0;
+                    client->RxState =0;//client->m_RxState = 0;
                     client->syncBreak = 1;
-                    client->m_Logger->debug("VRClient::thrdRxProcess(%s) - FINISH CALL.(%d)", client->m_sCallId.c_str(), client->thrdInfo.getRxState());
+                    client->m_Logger->debug("VRClient::thrdRxProcess(%s) - FINISH CALL.(%d)", client->m_sCallId.c_str(), client->RxState);
                     break;
 				}
 
@@ -1063,9 +1069,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
 			std::this_thread::sleep_for(std::chrono::microseconds(10));//milliseconds(1));
 		}
         
-        client->thrdInfo.setServerName(svr_nm); // client->setServerName(svr_nm);
-        client->thrdInfo.setTotalVoiceDataLen(totalVoiceDataLen);// client->setTotalVoiceDataLen(totalVoiceDataLen);
-        client->m_Logger->debug("VRClient::thrdRxProcess(%s) - ServerName(%s), TotalVoiceDataLen(%d)", client->m_sCallId.c_str(), client->thrdInfo.getServerName().c_str(), client->thrdInfo.getTotalVoiceDataLen());
+        client->ServerName = svr_nm; // client->setServerName(svr_nm);
+        client->TotalVoiceDataLen = totalVoiceDataLen;// client->setTotalVoiceDataLen(totalVoiceDataLen);
+        client->m_Logger->debug("VRClient::thrdRxProcess(%s) - ServerName(%s), TotalVoiceDataLen(%d)", client->m_sCallId.c_str(), svr_nm.c_str(), totalVoiceDataLen);
 
         fvad_free(vad);
 
@@ -1084,7 +1090,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 #endif
 
     // search->setRxState(0);// client->m_RxState = 0;
-    client->m_Logger->debug("VRClient::thrdRxProcess(%s) - RxState(%d)", client->m_sCallId.c_str(), client->thrdInfo.getRxState());
+    client->m_Logger->debug("VRClient::thrdRxProcess(%s) - RxState(%d)", client->m_sCallId.c_str(), client->RxState);
     // std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	// client->m_thrdRx.detach();
 	// delete client;
@@ -1199,7 +1205,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
         // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-        client->thrdInfo.setTxState(0);// client->m_TxState = 0;
+        client->TxState =0;// client->m_TxState = 0;
         // std::this_thread::sleep_for(std::chrono::milliseconds(1));
         // client->m_thrdTx.detach();
         // delete client;
@@ -1214,7 +1220,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
         // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-        client->thrdInfo.setTxState(0);//// client->m_TxState = 0;
+        client->TxState =0;//// client->m_TxState = 0;
         // std::this_thread::sleep_for(std::chrono::milliseconds(1));
         // client->m_thrdTx.detach();
         // delete client;
@@ -1236,7 +1242,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
             client->m_Logger->error("VRClient::thrdTxProcess() - ERROR (Failed fvad_new(%s))", client->m_sCallId.c_str());
             if ( !bOnlyRecord ) gearman_client_free(gearClient);
             // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-            client->thrdInfo.setTxState(0);// client->m_TxState = 0;
+            client->TxState =0;// client->m_TxState = 0;
             // std::this_thread::sleep_for(std::chrono::milliseconds(1));
             // client->m_thrdTx.detach();
             // delete client;
@@ -1268,7 +1274,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
         svr_nm = "DEFAULT";
 
         vadres = before_vadres = 0;
-		while (client->thrdInfo.getTxState())//(client->m_nLiveFlag)
+		while (client->TxState)//(client->m_nLiveFlag)
 		{
 			while (!client->m_qTXQue.empty()) {
 				// g = new std::lock_guard<std::mutex>(client->m_mxQue);
@@ -1459,7 +1465,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
                                     // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
                                     //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                                    diaNumber = client->thrdInfo.getDiaNumber();//client->getDiaNumber();
+                                    diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
                                         int64_t zCount=0;
@@ -1619,7 +1625,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
                             // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
                             //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                            diaNumber = client->thrdInfo.getDiaNumber();//client->getDiaNumber();
+                            diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
                                 int64_t zCount=0;
@@ -1715,9 +1721,9 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             pcmFile.close();
                         }
                     }
-                    client->thrdInfo.setTxState(0);// client->m_TxState = 0;
+                    client->TxState=0;// client->m_TxState = 0;
                     client->syncBreak = 1;
-                    client->m_Logger->debug("VRClient::thrdTxProcess(%s) - FINISH CALL.(%d)", client->m_sCallId.c_str(), client->thrdInfo.getTxState());
+                    client->m_Logger->debug("VRClient::thrdTxProcess(%s) - FINISH CALL.(%d)", client->m_sCallId.c_str(), client->TxState);
                     break;
 				}
 
@@ -1750,7 +1756,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 #endif
 
     // search->setTxState(0);// client->m_TxState = 0;
-    client->m_Logger->debug("VRClient::thrdTxProcess(%s) - TxState(%d)", client->m_sCallId.c_str(), client->thrdInfo.getTxState());
+    client->m_Logger->debug("VRClient::thrdTxProcess(%s) - TxState(%d)", client->m_sCallId.c_str(), client->TxState);
     // std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	// client->m_thrdTx.detach();
 }
@@ -1778,6 +1784,12 @@ xRedisClient& VRClient::getXRdedisClient()
 }
 #endif
 
+
+uint32_t VRClient::getDiaNumber()
+{
+    std::lock_guard<std::mutex> g(m_mxDianum);
+    return ++DiaNumber;
+}
 
 
 

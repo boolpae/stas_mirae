@@ -96,7 +96,13 @@ class VRClient
 	uint8_t rx_hold;
 	uint8_t tx_hold;
 
-	CtrlThreadInfo thrdInfo;
+	std::string ServerName;
+	uint64_t TotalVoiceDataLen;
+	uint32_t DiaNumber;
+	uint8_t RxState;
+	uint8_t TxState;
+	mutable std::mutex m_mxDianum;
+	// CtrlThreadInfo thrdInfo;
 
     bool m_is_save_pcm;
     string m_pcm_path;
@@ -139,6 +145,7 @@ private:
 	static void thrdTxProcess(VRClient* client);
 
 	// static std::map<std::string, std::shared_ptr<CtrlThreadInfo>> ThreadInfoTable;
+	uint32_t getDiaNumber();
 };
 
 
