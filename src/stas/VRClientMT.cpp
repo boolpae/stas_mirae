@@ -140,6 +140,12 @@ CtrlThreadInfo::CtrlThreadInfo()
 {
 
 }
+
+CtrlThreadInfo::~CtrlThreadInfo()
+{
+
+}
+
 uint32_t CtrlThreadInfo::getDiaNumber()
 {
     std::lock_guard<std::mutex> g(m_mxDianum);

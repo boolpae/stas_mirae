@@ -147,10 +147,10 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
 	m_Mgr = mgr;
     m_tStart = startT;
 	m_thrd = std::thread(VRClient::thrdMain, this);
+    m_thrd.detach();
 #ifdef EN_RINGBACK_LEN
     m_nRingbackLen = ringbacklen;
 #endif
-	//thrd.detach();
 	//printf("\t[DEBUG] VRClinet Constructed.\n");
     m_Logger = config->getLogger();
     m_Logger->debug("VRClinet Constructed(%s)(%s)(%d).", m_sCallId.c_str(), m_sFname.c_str(), m_mode);
@@ -333,7 +333,7 @@ void VRClient::thrdMain(VRClient* client) {
 
         WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-        client->m_thrd.detach();
+        // client->m_thrd.detach();
         delete client;
 
 #ifdef USE_REDIS_POOL
@@ -351,7 +351,7 @@ void VRClient::thrdMain(VRClient* client) {
 
         WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-        client->m_thrd.detach();
+        // client->m_thrd.detach();
         delete client;
 
 #ifdef USE_REDIS_POOL
@@ -386,7 +386,7 @@ void VRClient::thrdMain(VRClient* client) {
             client->m_Logger->error("VRClient::thrdMain() - ERROR (Failed fvad_new(%s))", client->m_sCallId.c_str());
             if ( !bOnlyRecord ) gearman_client_free(gearClient);
             WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-            client->m_thrd.detach();
+            // client->m_thrd.detach();
             delete client;
 
 #ifdef USE_REDIS_POOL
@@ -1050,7 +1050,7 @@ void VRClient::thrdMain(VRClient* client) {
 
 
 
-	client->m_thrd.detach();
+	// client->m_thrd.detach();
 	delete client;
 }
 

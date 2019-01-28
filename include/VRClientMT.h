@@ -44,6 +44,7 @@ private:
 	mutable std::mutex m_mxDianum;
 public:
 	CtrlThreadInfo();
+	virtual ~CtrlThreadInfo();
 
 	void setServerName(std::string svrnm) { ServerName = svrnm; }
 	std::string getServerName() { return ServerName; }
@@ -85,7 +86,18 @@ class VRClient
     FileHandler *m_deliver;
     log4cpp::Category *m_Logger;
     DBHandler* m_s2d;
-    
+
+    size_t rx_sframe;
+    size_t rx_eframe;
+    size_t tx_sframe;
+    size_t tx_eframe;
+	uint8_t syncBreak;
+
+	uint8_t rx_hold;
+	uint8_t tx_hold;
+
+	CtrlThreadInfo thrdInfo;
+
     bool m_is_save_pcm;
     string m_pcm_path;
 
@@ -127,18 +139,6 @@ private:
 	static void thrdTxProcess(VRClient* client);
 
 	// static std::map<std::string, std::shared_ptr<CtrlThreadInfo>> ThreadInfoTable;
-
-
-    size_t rx_sframe;
-    size_t rx_eframe;
-    size_t tx_sframe;
-    size_t tx_eframe;
-	uint8_t syncBreak;
-
-	uint8_t rx_hold;
-	uint8_t tx_hold;
-
-	CtrlThreadInfo thrdInfo;
 };
 
 
