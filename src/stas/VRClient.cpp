@@ -169,7 +169,7 @@ VRClient::~VRClient()
 	}
 
 	//printf("\t[DEBUG] VRClinet Destructed.\n");
-    m_Logger->debug("VRClinet Destructed.");
+    m_Logger->debug("VRClinet Destructed. CALLID(%s), CS_CD(%s)", m_sCallId.c_str(), m_sCounselCode.c_str());
 }
 
 void VRClient::finish()
