@@ -219,6 +219,12 @@ void VRClient::thrdMain(VRClient* client) {
     std::ofstream pcmFile;
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
 
+    #ifdef USE_FIND_KEYWORD
+    std::list< std::string > keywordList;
+    std::list< std::string >::iterator klIter;
+    #endif
+
+
     char fname[64];
     uint64_t totalVLen=0;
 
@@ -285,6 +291,10 @@ void VRClient::thrdMain(VRClient* client) {
 #endif
 
     sprintf(fname, "%s", client->m_sFname.c_str());
+
+#ifdef USE_FIND_KEYWORD
+    keywordList = DBHandler::getKeywords();
+#endif
 
     for(int i=0; i<2; i++) {
         //memset(wHdr[i], 0, sizeof(WAVE_HEADER));
@@ -611,6 +621,18 @@ void VRClient::thrdMain(VRClient* client) {
                                                 d.Accept(writer);
 
                                                 sJsonValue = strbuf.GetString();
+
+                                                #ifdef USE_FIND_KEYWORD
+                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                {
+                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    {
+                                                        client->m_Logger->debug("VRClient::thrdMain(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                        break;
+                                                    }
+                                                }
+                                                #endif
+
                                             }
 
                                             vVal.push_back(toString(diaNumber));
@@ -850,6 +872,18 @@ void VRClient::thrdMain(VRClient* client) {
                                         d.Accept(writer);
 
                                         sJsonValue = strbuf.GetString();
+
+                                        #ifdef USE_FIND_KEYWORD
+                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                        {
+                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                            {
+                                                client->m_Logger->debug("VRClient::thrdMain(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                break;
+                                            }
+                                        }
+                                        #endif
+
                                     }
 
                                     vVal.push_back(toString(diaNumber));

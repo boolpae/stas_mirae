@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 #include <vector>
+#include <list>
 
 #include <log4cpp/Category.hh>
 
@@ -172,8 +173,9 @@ private:
     static void maskingSTTValue(char *value);
 
 #ifdef USE_FIND_KEYWORD
-    static void thredUpdateKeywords(DBHandler* handle);
-    static void findKeywords(char *value, std::list< std::string > &keywords);
+    static void thrdUpdateKeywords(DBHandler* handle);
+public:
+    static std::list< std::string > getKeywords();
 #endif
 
 private:
@@ -212,6 +214,7 @@ private:
 
 #ifdef USE_FIND_KEYWORD
     static bool m_bThrdUpdateKeywords;
+    static uint8_t m_bUpdateKeywordFlag;
 #endif
 
 // #ifdef USE_REDIS_POOL

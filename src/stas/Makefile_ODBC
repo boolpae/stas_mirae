@@ -69,6 +69,9 @@ endif
 ifeq ($(FOR_TEST), "TRUE")
 FLAGS			+= -DFOR_TEST # 상담원, 고객 간의 STT결과를 하나의 파일에 저장하기 위한 테스트 코드(실시간 전용)
 endif
+ifeq ($(USE_FIND_KEYWORD), "TRUE")
+FLAGS			+= -DUSE_FIND_KEYWORD
+endif
 endif
 
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 

@@ -437,6 +437,12 @@ void VRClient::thrdRxProcess(VRClient* client) {
     std::string svr_nm;
     char fname[64];
 
+    #ifdef USE_FIND_KEYWORD
+    std::list< std::string > keywordList;
+    std::list< std::string >::iterator klIter;
+    #endif
+
+
     std::string fhCallId;
     char timebuff [32];
     char datebuff[32];
@@ -481,6 +487,10 @@ void VRClient::thrdRxProcess(VRClient* client) {
     }
 
     redisKey.append(client->getCallId());
+#endif
+
+#ifdef USE_FIND_KEYWORD
+    keywordList = DBHandler::getKeywords();
 #endif
 
     memcpy(wHdr.Riff.ChunkID, "RIFF", 4);
@@ -833,6 +843,18 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                                 d.Accept(writer);
 
                                                 sJsonValue = strbuf.GetString();
+
+                                                #ifdef USE_FIND_KEYWORD
+                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                {
+                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    {
+                                                        client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                        break;
+                                                    }
+                                                }
+                                                #endif
+
                                             }
 
                                             vVal.push_back(toString(diaNumber));
@@ -995,6 +1017,18 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                         d.Accept(writer);
 
                                         sJsonValue = strbuf.GetString();
+
+                                        #ifdef USE_FIND_KEYWORD
+                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                        {
+                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                            {
+                                                client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", (*klIter).c_str());
+                                                break;
+                                            }
+                                        }
+                                        #endif
+
                                     }
 
                                     vVal.push_back(toString(diaNumber));
@@ -1122,6 +1156,12 @@ void VRClient::thrdTxProcess(VRClient* client) {
     std::string svr_nm;
     char fname[64];
 
+    #ifdef USE_FIND_KEYWORD
+    std::list< std::string > keywordList;
+    std::list< std::string >::iterator klIter;
+    #endif
+
+
     std::string fhCallId;
     char timebuff [32];
     char datebuff[32];
@@ -1167,6 +1207,10 @@ void VRClient::thrdTxProcess(VRClient* client) {
     }
 
     redisKey.append(client->getCallId());
+#endif
+
+#ifdef USE_FIND_KEYWORD
+    keywordList = DBHandler::getKeywords();
 #endif
 
     memcpy(wHdr.Riff.ChunkID, "RIFF", 4);
@@ -1506,6 +1550,17 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                                 d.Accept(writer);
 
                                                 sJsonValue = strbuf.GetString();
+
+                                                #ifdef USE_FIND_KEYWORD
+                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                {
+                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    {
+                                                        client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                        break;
+                                                    }
+                                                }
+                                                #endif
                                             }
 
                                             vVal.push_back(toString(diaNumber));
@@ -1665,6 +1720,18 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                         d.Accept(writer);
 
                                         sJsonValue = strbuf.GetString();
+
+                                        #ifdef USE_FIND_KEYWORD
+                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                        {
+                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                            {
+                                                client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                break;
+                                            }
+                                        }
+                                        #endif
+
                                     }
 
                                     vVal.push_back(toString(diaNumber));

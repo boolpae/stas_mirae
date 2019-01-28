@@ -87,6 +87,7 @@ bool DBHandler::m_bThrdUpdate = false;
 #ifdef USE_FIND_KEYWORD
 std::list< std::string > DBHandler::m_lKeywords;
 bool DBHandler::m_bThrdUpdateKeywords = false;
+uint8_t DBHandler::m_bUpdateKeywordFlag=0;
 #endif
 
 #ifdef USE_REDIS_POOL
@@ -191,10 +192,6 @@ void DBHandler::thrdMain(DBHandler * s2d)
     SQLRETURN retcode;
 
     SQLSMALLINT NumParams;
-
-#ifdef USE_FIND_KEYWORD
-    std::list< std::string > lKeywords;
-#endif
 
     logger = config->getLogger();
     PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();//ConnectionPool_getConnection(s2d->m_pool);
@@ -376,13 +373,6 @@ void DBHandler::thrdMain(DBHandler * s2d)
             }
             retcode = SQLCloseCursor(connSet->stmt);
 
-#ifdef USE_FIND_KEYWORD
-            lKeywords.clear();
-            findKeywords( utf_buf, lKeywords );
-            if ( lKeywords.size() ) {
-
-            }
-#endif
             if (utf_buf) free(utf_buf);
 			delete item;
 
@@ -614,12 +604,19 @@ void DBHandler::thrdUpdateKeywords(DBHandler *s2d)
 			delete item;
 		}
 #endif
+        if ( nSleepedTime == 0 )
+        {
+            m_bUpdateKeywordFlag = 1;
 
-        if ( nSleepedTime > 60000 )
+
+            m_bUpdateKeywordFlag = 0;
+        }
+
+        if ( nSleepedTime > 60 )
         {   // 60초, 즉 1분 간격으로 keyworkds 리스트 업데이트
             nSleepedTime = 0;
         }
-		std::this_thread::sleep_for(std::chrono::milliseconds(nSleepTime));
+		std::this_thread::sleep_for(std::chrono::seconds(nSleepTime));
         nSleepedTime += nSleepTime;
 	}
 
@@ -633,18 +630,21 @@ void DBHandler::thrdUpdateKeywords(DBHandler *s2d)
     logger->debug("DBHandler::thrdUpdateKeywords() finish!\n");
 }
 
-void DBHandler::findKeywords(char *value, std::list< std::string > &keywords)
+std::list< std::string > DBHandler::getKeywords()
 {
-    std::list< std::string >::iterator iter;
+    uint8_t loop=0;
 
-    for(iter = m_lKeywords.begin(); iter != m_lKeywords.end(); iter++ )
+    if (m_bUpdateKeywordFlag)
     {
-        // 만약 검색된 keyword가 발견되면 keywords 리스트에 입력한다.
-        if ( strstr(value, *iter.c_str()) )
+        while(m_bUpdateKeywordFlag)
         {
-            keywords.push_back( *iter );
+            if(loop > 50) break;
+            loop++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
+
+    return m_lKeywords;
 }
 #endif
 
