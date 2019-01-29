@@ -30,7 +30,7 @@ class VDClient
 	uint16_t m_nPort;				// UDP Port
 	SOCKET m_nSockfd;
 	std::string m_sCallId;
-	uint8_t m_nSpkNo;
+	volatile uint8_t m_nSpkNo;
 
 
 	VRClient* m_pVrc;

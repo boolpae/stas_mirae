@@ -188,7 +188,7 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
     m_nRingbackLen = ringbacklen;
 #endif
 
-	ServerName="DEFAULT";
+	sprintf(ServerName,"%s", "DEFAULT");
 	TotalVoiceDataLen=0;
 	DiaNumber=0;
 	RxState=1;
@@ -1103,7 +1103,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 			std::this_thread::sleep_for(std::chrono::microseconds(10));//milliseconds(1));
 		}
         
-        client->ServerName = svr_nm; // client->setServerName(svr_nm);
+        sprintf(client->ServerName,"%s", svr_nm.c_str()); // client->setServerName(svr_nm);
         client->TotalVoiceDataLen = totalVoiceDataLen;// client->setTotalVoiceDataLen(totalVoiceDataLen);
         client->m_Logger->debug("VRClient::thrdRxProcess(%s) - ServerName(%s), TotalVoiceDataLen(%d)", client->m_sCallId.c_str(), svr_nm.c_str(), totalVoiceDataLen);
 

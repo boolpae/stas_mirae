@@ -26,7 +26,7 @@ private:
 private:
     std::thread m_thrd;
     
-    bool m_LiveFlag;
+    volatile bool m_LiveFlag;
     VFCManager *m_mgr;
 
 	std::string m_sGearHost;

@@ -87,20 +87,20 @@ class VRClient
     log4cpp::Category *m_Logger;
     DBHandler* m_s2d;
 
-    size_t rx_sframe;
-    size_t rx_eframe;
-    size_t tx_sframe;
-    size_t tx_eframe;
-	uint8_t syncBreak;
+    volatile size_t rx_sframe;
+    volatile size_t rx_eframe;
+    volatile size_t tx_sframe;
+    volatile size_t tx_eframe;
+	volatile uint8_t syncBreak;
 
-	uint8_t rx_hold;
-	uint8_t tx_hold;
+	volatile uint8_t rx_hold;
+	volatile uint8_t tx_hold;
 
-	std::string ServerName;
-	uint64_t TotalVoiceDataLen;
-	uint32_t DiaNumber;
-	uint8_t RxState;
-	uint8_t TxState;
+	char ServerName[64];
+	volatile uint64_t TotalVoiceDataLen;
+	volatile uint32_t DiaNumber;
+	volatile uint8_t RxState;
+	volatile uint8_t TxState;
 	mutable std::mutex m_mxDianum;
 	// CtrlThreadInfo thrdInfo;
 
