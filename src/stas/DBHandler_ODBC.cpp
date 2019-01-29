@@ -1330,7 +1330,7 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-        sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND TO_CHAR(REG_DTM, 'YYYY-MM-DD HH24')=TO_CHAR('%s', 'YYYY-MM-DD HH24')",
+        sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND SUBSTR(REG_DTM, 1, 13)=SUBSTT('%s', 1, 13)",
             tbName.c_str(), callid.c_str(), rxtx.c_str(), regdate.c_str());
 #else
         sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND DATE_FORMAT(REG_DTM, '%%Y-%%m-%%d %%H')=DATE_FORMAT('%s', '%%Y-%%m-%%d %%H')",
