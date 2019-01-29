@@ -892,6 +892,8 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
         if SQL_SUCCEEDED(retcode) {
             m_Logger->debug("UPDATE TBL_CS_LIST SET STAT='%c' WHERE CALL_ID='%s'",
                 (end)?'E':'I', callid.c_str());
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         }
         else {
             int odbcret = extract_error("DBHandler::updateCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
@@ -901,6 +903,8 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
             }
             ret = 1;
             #endif
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             // if (odbcret == 2006) {
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
@@ -914,8 +918,8 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
             // }
             ret = 1;
         }
-        retcode = SQLCloseCursor(connSet->stmt);
-        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
+        // retcode = SQLCloseCursor(connSet->stmt);
+        // retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1771,18 +1775,20 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
         }
 #endif
         if SQL_SUCCEEDED(retcode) {
-        while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
-        {
-            rc = SQLFetch( connSet->stmt );
-            if (rc == SQL_NO_DATA_FOUND)
+            while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
             {
-                printf("End of data.\n" );
+                rc = SQLFetch( connSet->stmt );
+                if (rc == SQL_NO_DATA_FOUND)
+                {
+                    printf("End of data.\n" );
+                    break;
+                }
+                ret++;
+                // SQLGetData(connSet->stmt, 1, SQL_C_SLONG, &ret, 0, (SQLLEN *)&siCnt);
                 break;
             }
-            ret++;
-            // SQLGetData(connSet->stmt, 1, SQL_C_SLONG, &ret, 0, (SQLLEN *)&siCnt);
-            break;
-        }
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         }
         else {
             int odbcret = extract_error("DBHandler::searchTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
@@ -1792,6 +1798,8 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
             }
             ret = -1;
             #endif
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             // if (odbcret == 2006) {
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
@@ -1808,8 +1816,6 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
         }
         printf("DEBUG(searchTaskInfo) - ret(%d)\n", ret);
 
-        retcode = SQLCloseCursor(connSet->stmt);
-        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
