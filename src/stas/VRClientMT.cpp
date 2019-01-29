@@ -305,15 +305,16 @@ void VRClient::thrdMain(VRClient* client) {
     while (client->RxState || client->TxState)// client->m_RxState || client->m_TxState)
     {
         // client->m_Logger->debug("VRClient::thrdMain(%s) - RxState(%d), TxState(%d)", client->m_sCallId.c_str(), search->getRxState(), search->getTxState());
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));//microseconds(10));//seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));//microseconds(10));//seconds(1));
     }
     
-    uint64_t totalVLen = client->TotalVoiceDataLen;//client->getTotalVoiceDataLen();
-    std::string svr_nm = client->ServerName;//client->getServerName();
-    client->m_Logger->debug("VRClient::thrdMain(%s) - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), svr_nm.c_str(), totalVLen);
+    // uint64_t totalVLen = client->TotalVoiceDataLen;//client->getTotalVoiceDataLen();
+    // std::string svr_nm = client->ServerName;//client->getServerName();
+    client->m_Logger->debug("VRClient::thrdMain(%s) - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
     client->m_Mgr->removeVRC(client->m_sCallId);
 
+    client->m_Logger->debug("VRClient::thrdMain(%s)[2] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 #ifdef USE_REDIS_POOL
     if ( useRedis ) {
         time_t t;
@@ -338,6 +339,7 @@ void VRClient::thrdMain(VRClient* client) {
 
     }
 #endif
+    client->m_Logger->debug("VRClient::thrdMain(%s)[3] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
     if (client->m_s2d) {
         auto t2 = std::chrono::high_resolution_clock::now();
@@ -345,10 +347,11 @@ void VRClient::thrdMain(VRClient* client) {
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
 
         client->m_s2d->updateCallInfo(client->m_sCallId, true);
-        if ( !useDelCallInfo || ( totalVLen/16000 > nDelSecs ) ) {
-            client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', totalVLen, totalVLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "TBL_JOB_INFO", "", svr_nm.c_str());
+        if ( !useDelCallInfo || ( client->TotalVoiceDataLen/16000 > nDelSecs ) ) {
+            client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', client->TotalVoiceDataLen, client->TotalVoiceDataLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "TBL_JOB_INFO", "", client->ServerName);
         }
     }
+    client->m_Logger->debug("VRClient::thrdMain(%s)[4] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
     // HA
     if (HAManager::getInstance())
@@ -376,9 +379,9 @@ void VRClient::thrdMain(VRClient* client) {
 
 	WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
-    // 3초 이하 호 정보 삭제 - totalVLen/16000 < 3 인경우 호 정보 삭제
+    // 3초 이하 호 정보 삭제 - client->TotalVoiceDataLen/16000 < 3 인경우 호 정보 삭제
     if ( useDelCallInfo && nDelSecs ) {
-        if ( client->m_is_save_pcm && (totalVLen/16000 <= nDelSecs) )
+        if ( client->m_is_save_pcm && (client->TotalVoiceDataLen/16000 <= nDelSecs) )
         {
             char datebuff[32];
             timeinfo = localtime(&client->m_tStart);
@@ -391,8 +394,9 @@ void VRClient::thrdMain(VRClient* client) {
                 remove( filename.c_str() ) ;
             }
         }
+    client->m_Logger->debug("VRClient::thrdMain(%s)[5] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
-        if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
+        if ( useRedis && (client->TotalVoiceDataLen/16000 <= nDelSecs) ) {
             redisKey = "G_CS:";
             redisKey.append(client->m_sCounselCode);
             xRedis.lpop(dbi, redisKey, strRedisValue);
@@ -402,10 +406,11 @@ void VRClient::thrdMain(VRClient* client) {
             xRedis.del(dbi, redisKey);
 
         }
-        if ( client->m_s2d && (totalVLen/16000 <= nDelSecs) ) {
+        if ( client->m_s2d && (client->TotalVoiceDataLen/16000 <= nDelSecs) ) {
             client->m_s2d->deleteJobInfo(client->m_sCallId);
         }
     }
+    client->m_Logger->debug("VRClient::thrdMain(%s)[6] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
 	// client->m_thrd.detach();
 	delete client;
