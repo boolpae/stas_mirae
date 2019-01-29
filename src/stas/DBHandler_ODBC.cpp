@@ -74,6 +74,7 @@ static void UpdateConnection(PConnSet connSet)
         }
     }
     retcode = SQLCloseCursor(connSet->stmt);
+    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
     connSet->lastTime = time(NULL);
     logger->debug("UpdateConnection - UPDATED CONNSET(%d)", connSet->id);
 }
@@ -488,6 +489,9 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                 // }
                 ret = 1;
             }
+
+    retcode = SQLCloseCursor(connSet->stmt);
+    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
 			delete item;
             t1 = std::chrono::high_resolution_clock::now();
 		}
@@ -502,7 +506,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
 	}
 
     if (DBHandler::getInstance() && connSet) {
-        retcode = SQLCloseCursor(connSet->stmt);
+        // retcode = SQLCloseCursor(connSet->stmt);
         s2d->m_pSolDBConnPool->restoreConnection(connSet);
     }
 
@@ -769,6 +773,7 @@ int DBHandler::searchCallInfo(std::string counselorcode)
         }
         printf("DEBUG(searchCallInfo) - SQL(%s), ret(%d)\n", sqlbuff, ret);
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -840,6 +845,7 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -909,7 +915,7 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
-
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -980,7 +986,7 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
-
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1142,7 +1148,7 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
-
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1222,7 +1228,7 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
-
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1297,7 +1303,7 @@ int DBHandler::updateTaskInfo(std::string callid, std::string regdate, std::stri
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
-
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1330,7 +1336,7 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-        sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND SUBSTR(REG_DTM, 1, 13)=SUBSTT('%s', 1, 13)",
+        sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND SUBSTR(REG_DTM, 1, 13)=SUBSTR('%s', 1, 13)",
             tbName.c_str(), callid.c_str(), rxtx.c_str(), regdate.c_str());
 #else
         sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND DATE_FORMAT(REG_DTM, '%%Y-%%m-%%d %%H')=DATE_FORMAT('%s', '%%Y-%%m-%%d %%H')",
@@ -1365,7 +1371,7 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
-
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1453,6 +1459,7 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
 
         ret = v.size();
@@ -1544,6 +1551,7 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
 
         ret = v.size();
@@ -1635,6 +1643,7 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
 
         ret = v.size();
@@ -1708,6 +1717,7 @@ int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string 
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
 
         m_pSolDBConnPool->restoreConnection(connSet);
     }
@@ -1799,6 +1809,7 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
         printf("DEBUG(searchTaskInfo) - ret(%d)\n", ret);
 
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -1937,6 +1948,7 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
 
         ret = v.size();
@@ -2035,6 +2047,7 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
 
         ret = v.size();
@@ -2127,6 +2140,7 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
 
         ret = v.size();
@@ -2208,6 +2222,7 @@ void DBHandler::updateAllTask2Fail2()
                 delete jobInfo;
             }
             retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             m_pSolDBConnPool->restoreConnection(connSet);
         }
 
@@ -2268,6 +2283,7 @@ void DBHandler::updateAllTask2Fail()
 
         }
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
 
         m_pSolDBConnPool->restoreConnection(connSet);
     }
@@ -2323,6 +2339,8 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
             }
 
+    retcode = SQLCloseCursor(connSet->stmt);
+    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             delete jobInfo;
         }
 
@@ -2366,6 +2384,8 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
             }
 
+    retcode = SQLCloseCursor(connSet->stmt);
+    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             delete jobInfo;
         }
 
@@ -2409,13 +2429,16 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
             }
 
+    retcode = SQLCloseCursor(connSet->stmt);
+    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             delete jobInfo;
         }
 
         vItems.clear();
     } 
 
-    retcode = SQLCloseCursor(connSet->stmt);
+    // retcode = SQLCloseCursor(connSet->stmt);
+    // retcode = SQLExecDirectSQLExecDirect(connSet->stmt, SQL_CLOSE);
     m_pSolDBConnPool->restoreConnection(connSet);
 }
 
@@ -2500,6 +2523,7 @@ int DBHandler::deleteJobData(std::string callid)
         }
 
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -2557,6 +2581,7 @@ int DBHandler::deleteJobInfo(std::string callid)
         }
 
         retcode = SQLCloseCursor(connSet->stmt);
+        retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
