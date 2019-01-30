@@ -610,7 +610,7 @@ void VRClient::thrdMain(VRClient* client) {
 
                                                 d.SetObject();
                                                 d.AddMember("IDX", diaNumber, alloc);
-                                                d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                                // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                                 d.AddMember("SPK", rapidjson::Value((item->spkNo==1)?"R":"L", alloc).Move(), alloc);
                                                 d.AddMember("POS_START", sframe[item->spkNo -1]/10, alloc);
                                                 d.AddMember("POS_END", eframe[item->spkNo -1]/10, alloc);
@@ -861,7 +861,7 @@ void VRClient::thrdMain(VRClient* client) {
 
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
-                                        d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                        // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                         d.AddMember("SPK", rapidjson::Value((item->spkNo==1)?"R":"L", alloc).Move(), alloc);
                                         d.AddMember("POS_START", sframe[item->spkNo -1]/10, alloc);
                                         d.AddMember("POS_END", eframe[item->spkNo -1]/10, alloc);

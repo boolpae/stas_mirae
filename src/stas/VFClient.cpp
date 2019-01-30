@@ -420,7 +420,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
-                                        d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                        // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                         d.AddMember("SPK", rapidjson::Value((item->spkNo==1)?"R":"L", alloc).Move(), alloc);
                                         d.AddMember("POS_START", sframe[item->spkNo -1]/10, alloc);
                                         d.AddMember("POS_END", eframe[item->spkNo -1]/10, alloc);
@@ -428,7 +428,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 #endif
                                                 rapidjson::Value o(rapidjson::kObjectType);
                                                 o.AddMember("IDX", idx, alloc);
-                                                o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
+                                                // o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
                                                 o.AddMember("SPK", "R", alloc);
                                                 o.AddMember("POS_START", std::stoi(strs[0].c_str()+4), alloc);
                                                 o.AddMember("POS_END", std::stoi(strs[1].c_str()+4), alloc);
@@ -479,7 +479,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 #endif // CHANGE_STT_DATA
                                                 rapidjson::Value o(rapidjson::kObjectType);
                                                 o.AddMember("IDX", idx, alloc);
-                                                o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
+                                                // o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
                                                 o.AddMember("SPK", "L", alloc);
                                                 o.AddMember("POS_START", std::stoi(strs[0].c_str()+4), alloc);
                                                 o.AddMember("POS_END", std::stoi(strs[1].c_str()+4), alloc);
@@ -671,7 +671,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                             }
                                             rapidjson::Value o(rapidjson::kObjectType);
                                             o.AddMember("IDX", idx, alloc);
-                                            o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
+                                            // o.AddMember("CALL_ID", rapidjson::Value(item->getCallId().c_str(), alloc).Move(), alloc);
                                             o.AddMember("SPK", rapidjson::Value(spk, alloc).Move(), alloc);
                                             o.AddMember("POS_START", std::stoi(strs[0].c_str()+4), alloc);
                                             o.AddMember("POS_END", std::stoi(strs[1].c_str()+4), alloc);

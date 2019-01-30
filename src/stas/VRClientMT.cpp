@@ -837,7 +837,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                                 d.SetObject();
                                                 d.AddMember("IDX", diaNumber, alloc);
-                                                d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                                // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                                 d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
                                                 d.AddMember("POS_START", client->rx_sframe/10, alloc);
                                                 d.AddMember("POS_END", client->rx_eframe/10, alloc);
@@ -1011,7 +1011,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
-                                        d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                        // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                         d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
                                         d.AddMember("POS_START", client->rx_sframe/10, alloc);
                                         d.AddMember("POS_END", client->rx_eframe/10, alloc);
@@ -1544,7 +1544,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                                 d.SetObject();
                                                 d.AddMember("IDX", diaNumber, alloc);
-                                                d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                                // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                                 d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
                                                 d.AddMember("POS_START", client->tx_sframe/10, alloc);
                                                 d.AddMember("POS_END", client->tx_eframe/10, alloc);
@@ -1714,7 +1714,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
-                                        d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
+                                        // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                         d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
                                         d.AddMember("POS_START", client->tx_sframe/10, alloc);
                                         d.AddMember("POS_END", client->tx_eframe/10, alloc);
