@@ -231,8 +231,8 @@ void VRClient::thrdMain(VRClient* client) {
     bool useDelCallInfo = !config->getConfig("stas.use_del_callinfo", "false").compare("true");
     int nDelSecs = config->getConfig("stas.del_secs", 0);
     int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
-    int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
-    int nCurrWaitNo = 0;
+    // int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
+    // int nCurrWaitNo = 0;
 #ifdef EN_SAVE_PCM
     bool bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
     std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
@@ -536,7 +536,8 @@ void VRClient::thrdMain(VRClient* client) {
                     }
 
                     if (!vadres && (vBuff[item->spkNo-1].size()>nHeadLen)) {
-                        if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff[item->spkNo-1].size() > nMinVBuffSize)) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
+                        // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff[item->spkNo-1].size() > nMinVBuffSize)) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
+                        if ( vBuff[item->spkNo-1].size() > nMinVBuffSize ) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
                             // send buff to gearman
                             if (aDianum[item->spkNo-1] == 0) {
                                 sprintf(buf, "%s_%d|%s|", client->m_sCallId.c_str(), item->spkNo, "FIRS");
@@ -680,11 +681,20 @@ void VRClient::thrdMain(VRClient* client) {
                             }
                             sframe[item->spkNo-1] = eframe[item->spkNo-1];
 
-                            nCurrWaitNo = 0;
+                            // nCurrWaitNo = 0;
                         }
                         else
                         {
-                            nCurrWaitNo++;
+                            // and clear buff, set msg header
+                            vBuff[item->spkNo-1].clear();
+
+                            for(size_t i=0; i<nHeadLen; i++) {
+                                //vBuff[item->spkNo-1][i] = buf[i];
+                                vBuff[item->spkNo-1].push_back(buf[i]);
+
+                            }
+                            sframe[item->spkNo-1] = eframe[item->spkNo-1];
+                            // nCurrWaitNo++;
                         }
                     }
                     

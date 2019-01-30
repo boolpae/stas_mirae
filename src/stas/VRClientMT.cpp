@@ -459,8 +459,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
     std::ofstream pcmFile;
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
     int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
-    int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
-    int nCurrWaitNo = 0;
+    // int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
+    // int nCurrWaitNo = 0;
 #ifdef EN_SAVE_PCM
     bool bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
     std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
@@ -736,7 +736,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             vBuff.erase(vBuff.begin() + offset, vBuff.end());
                         }
 #endif
-                        if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        if ( vBuff.size() > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 #if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
                             if (1) {
                                 // 음성 시작 점 - Voice Active Detection Poing
@@ -915,11 +916,29 @@ void VRClient::thrdRxProcess(VRClient* client) {
 #endif
                             }
 
-                            nCurrWaitNo = 0;
+                            // nCurrWaitNo = 0;
                         }
                         else
                         {
-                            nCurrWaitNo++;
+                            // and clear buff, set msg header
+                            vBuff.clear();
+
+                            for(size_t i=0; i<nHeadLen; i++) {
+                                //vBuff[item->spkNo-1][i] = buf[i];
+                                vBuff.push_back(buf[i]);
+
+                            }
+                            client->rx_sframe = client->rx_eframe;
+
+                            if (client->tx_hold) {
+                                client->tx_hold = 0;
+#ifdef DIAL_SYNC_N_BUFF_CTRL
+                                for(vIter=vTempBuff.begin(); vIter!=vTempBuff.end(); vIter++) {
+                                    vBuff.push_back(*vIter);
+                                }
+#endif
+                            }
+                            // nCurrWaitNo++;
                         }
                     }
                     
@@ -1178,8 +1197,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
     std::ofstream pcmFile;
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
     int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
-    int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
-    int nCurrWaitNo = 0;
+    // int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
+    // int nCurrWaitNo = 0;
 #ifdef EN_SAVE_PCM
     bool bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
     std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
@@ -1452,7 +1471,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             vBuff.erase(vBuff.begin() + offset, vBuff.end());
                         }
 #endif
-                        if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        if ( vBuff.size() > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 #if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
                             if (1) {
                                 // 음성 시작 점 - Voice Active Detection Poing
@@ -1621,12 +1641,30 @@ void VRClient::thrdTxProcess(VRClient* client) {
 #endif
                             }
 
-                            nCurrWaitNo = 0;
+                            // nCurrWaitNo = 0;
 
                         }
                         else
                         {
-                            nCurrWaitNo++;
+                            // and clear buff, set msg header
+                            vBuff.clear();
+
+                            for(size_t i=0; i<nHeadLen; i++) {
+                                //vBuff[item->spkNo-1][i] = buf[i];
+                                vBuff.push_back(buf[i]);
+
+                            }
+                            client->tx_sframe = client->tx_eframe;
+
+                            if (client->rx_hold) {
+                                client->rx_hold = 0;
+#ifdef DIAL_SYNC_N_BUFF_CTRL
+                                for(vIter=vTempBuff.begin(); vIter!=vTempBuff.end(); vIter++) {
+                                    vBuff.push_back(*vIter);
+                                }
+#endif
+                            }
+                            // nCurrWaitNo++;
                         }
                     }
                     
