@@ -135,24 +135,6 @@ enum {
 };
 #endif
 
-CtrlThreadInfo::CtrlThreadInfo()
-: ServerName("DEFAULT"), TotalVoiceDataLen(0), DiaNumber(0), RxState(1), TxState(1)
-{
-
-}
-
-CtrlThreadInfo::~CtrlThreadInfo()
-{
-
-}
-
-uint32_t CtrlThreadInfo::getDiaNumber()
-{
-    std::lock_guard<std::mutex> g(m_mxDianum);
-    return ++DiaNumber;
-}
-
-// std::map<std::string, std::shared_ptr<CtrlThreadInfo>> VRClient::ThreadInfoTable;
 
 #ifdef EN_RINGBACK_LEN
 VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gearTimeout, string& fname, string& callid, string& counselcode, uint8_t jobType, uint8_t noc, FileHandler *deliver, DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode, time_t startT, uint32_t ringbacklen)
@@ -161,9 +143,6 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
 #endif
 	: m_sGearHost(gearHost), m_nGearPort(gearPort), m_nGearTimeout(gearTimeout), m_sFname(fname), m_sCallId(callid), m_sCounselCode(counselcode), m_nLiveFlag(1), m_cJobType(jobType), m_nNumofChannel(noc), m_deliver(deliver), m_s2d(s2d), m_is_save_pcm(is_save_pcm), m_pcm_path(pcm_path), m_framelen(framelen*8), m_mode(mode)
 {
-    std::shared_ptr<CtrlThreadInfo> thrdInfo = std::make_shared<CtrlThreadInfo>();
-
-    // ThreadInfoTable[m_sCallId] = thrdInfo;
 
 	m_Mgr = mgr;
 

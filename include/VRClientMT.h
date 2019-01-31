@@ -34,28 +34,6 @@ typedef struct _queItem {
 	uint8_t voiceData[VOICE_BUFF_LEN];	// 디코딩된 3초 분량의 음성 데이터
 } QueItem;
 
-class CtrlThreadInfo {
-private:
-	std::string ServerName;
-	uint64_t TotalVoiceDataLen;
-	uint32_t DiaNumber;
-	uint8_t RxState;
-	uint8_t TxState;
-	mutable std::mutex m_mxDianum;
-public:
-	CtrlThreadInfo();
-	virtual ~CtrlThreadInfo();
-
-	void setServerName(std::string svrnm) { ServerName = svrnm; }
-	std::string getServerName() { return ServerName; }
-	void setTotalVoiceDataLen(uint64_t len) { TotalVoiceDataLen = len; }
-	uint64_t getTotalVoiceDataLen() { return TotalVoiceDataLen; }
-	uint32_t getDiaNumber();
-	uint8_t getRxState() { return RxState; }
-	void setRxState(uint8_t state) { RxState = state; }
-	uint8_t getTxState() { return TxState; }
-	void setTxState(uint8_t state) { TxState = state; }
-};
 
 class VRClient
 {
@@ -102,7 +80,6 @@ class VRClient
 	volatile uint8_t RxState;
 	volatile uint8_t TxState;
 	mutable std::mutex m_mxDianum;
-	// CtrlThreadInfo thrdInfo;
 
     bool m_is_save_pcm;
     string m_pcm_path;
@@ -144,7 +121,6 @@ private:
 	static void thrdRxProcess(VRClient* client);
 	static void thrdTxProcess(VRClient* client);
 
-	// static std::map<std::string, std::shared_ptr<CtrlThreadInfo>> ThreadInfoTable;
 	uint32_t getDiaNumber();
 };
 
