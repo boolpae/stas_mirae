@@ -203,7 +203,7 @@ void VDClient::thrdMain(VDClient * client)
                 if (!HAManager::getInstance() || HAManager::getInstance()->getHAStat()) {
                     if (client->m_pVrc) {
                         //printf("\t[DEBUG] VDClient(%d) work ending...(%d)\n", client->m_nPort, nRecvCount);
-                        client->m_Logger->debug("VDClient::thrdMain() - VDClient(%d) work ending...", client->m_nPort);
+                        client->m_Logger->debug("VDClient::thrdMain() - VDClient(%d, %s) work ending...", client->m_nPort, client->m_pVrc->getCounselCode().c_str());
                         if (!item) {
                             item = new QueItem;
                             // item->voiceData = NULL;
@@ -246,7 +246,7 @@ void VDClient::thrdMain(VDClient * client)
 			if (nTimeout && ((time(NULL) - client->m_tTimeout) > nTimeout)) {
 				WorkTracer::instance()->insertWork(client->m_sCallId, 'R', WorkQueItem::PROCTYPE::R_END_VOICE, client->m_nSpkNo);
 
-                client->m_Logger->debug("VDClient::thrdMain(%d) - Working... timeout(%llu)", client->m_nPort, (time(NULL) - client->m_tTimeout));
+                client->m_Logger->debug("VDClient::thrdMain(%d, %s) - Working... timeout(%llu)", client->m_nPort, client->m_pVrc->getCounselCode().c_str(), (time(NULL) - client->m_tTimeout));
 				recv_len = 0;
 				goto END_CALL;
 			}
@@ -271,7 +271,7 @@ void VDClient::thrdMain(VDClient * client)
 				}
 
 				memcpy( item->voiceData + item->lenVoiceData, silBuf, (client->m_nPlaytime - item->lenVoiceData) ) ;
-				client->m_Logger->debug("VDClient::thrdMain(%d) - Send Silence Data Len(%d)", client->m_nPort, item->lenVoiceData);
+				client->m_Logger->debug("VDClient::thrdMain(%d, %s) - Send Silence Data Len(%d)", client->m_nPort, client->m_pVrc->getCounselCode().c_str(), item->lenVoiceData);
 				item->lenVoiceData = client->m_nPlaytime;
 				client->m_pVrc->insertQueItem(item);
 				item = NULL;
