@@ -444,6 +444,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
     bool bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
     std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
 #endif
+
+    bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
+    bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
     // auto search = client->ThreadInfoTable[client->m_sCallId];
 
     vBuff.reserve(MM_SIZE);
@@ -474,7 +477,10 @@ void VRClient::thrdRxProcess(VRClient* client) {
 #endif
 
 #ifdef USE_FIND_KEYWORD
-    keywordList = DBHandler::getKeywords();
+    if ( bUseFindKeyword ) 
+    {
+        keywordList = DBHandler::getKeywords();
+    }
 #endif
 
     memcpy(wHdr.Riff.ChunkID, "RIFF", 4);
@@ -829,13 +835,21 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                                 sJsonValue = strbuf.GetString();
 
-                                                #ifdef USE_FIND_KEYWORD
-                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    MakeOneWord( sJsonValue );
+                                                }
+
+                                                #ifdef USE_FIND_KEYWORD
+                                                if ( bUseFindKeyword )
+                                                {
+                                                    for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                     {
-                                                        client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                        break;
+                                                        if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                        {
+                                                            client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                                 #endif
@@ -1021,13 +1035,21 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                         sJsonValue = strbuf.GetString();
 
-                                        #ifdef USE_FIND_KEYWORD
-                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                        if ( bUseRemSpaceInNumwords )
                                         {
-                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                            MakeOneWord( sJsonValue );
+                                        }
+
+                                        #ifdef USE_FIND_KEYWORD
+                                        if ( bUseFindKeyword ) 
+                                        {
+                                            for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                             {
-                                                client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", (*klIter).c_str());
-                                                break;
+                                                if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                {
+                                                    client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", (*klIter).c_str());
+                                                    break;
+                                                }
                                             }
                                         }
                                         #endif
@@ -1183,6 +1205,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
     std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
 #endif
 
+    bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
+    bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
     // auto search = client->ThreadInfoTable[client->m_sCallId];
 
     vBuff.reserve(MM_SIZE);
@@ -1213,7 +1237,10 @@ void VRClient::thrdTxProcess(VRClient* client) {
 #endif
 
 #ifdef USE_FIND_KEYWORD
-    keywordList = DBHandler::getKeywords();
+    if ( bUseFindKeyword )
+    {
+        keywordList = DBHandler::getKeywords();
+    }
 #endif
 
     memcpy(wHdr.Riff.ChunkID, "RIFF", 4);
@@ -1555,13 +1582,21 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                                 sJsonValue = strbuf.GetString();
 
-                                                #ifdef USE_FIND_KEYWORD
-                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    MakeOneWord( sJsonValue );
+                                                }
+
+                                                #ifdef USE_FIND_KEYWORD
+                                                if ( bUseFindKeyword ) 
+                                                {
+                                                    for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                     {
-                                                        client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                        break;
+                                                        if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                        {
+                                                            client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                                 #endif
@@ -1743,13 +1778,21 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                         sJsonValue = strbuf.GetString();
 
-                                        #ifdef USE_FIND_KEYWORD
-                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                        if ( bUseRemSpaceInNumwords )
                                         {
-                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                            MakeOneWord( sJsonValue );
+                                        }
+
+                                        #ifdef USE_FIND_KEYWORD
+                                        if ( bUseFindKeyword ) 
+                                        {
+                                            for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                             {
-                                                client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                break;
+                                                if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                {
+                                                    client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                    break;
+                                                }
                                             }
                                         }
                                         #endif

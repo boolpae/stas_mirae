@@ -519,27 +519,38 @@ void DBHandler::maskingSTTValue(char *value)
 {
     std::string str(value);
     std::smatch m;
+    size_t slen = 0;
+    size_t spNo = 0;
+    size_t offNo = 0;
+    std::string fstr;
 
     while (std::regex_search (str,m,pattern)) {
         for (auto x:m) {
-            size_t slen = 0;
-            size_t fpos=0;
-            size_t epos=0;
-            std::string fstr = x;
+            slen = 0;
+            fstr = x;
 
             slen = fstr.size();
-            fpos = fstr.find_first_of(" ");
-            epos = fstr.find_last_of(" ");
 
-            if ((slen - epos) < 4) {
-                fstr.resize(epos+1);
+            for(size_t i=0; i<slen; i++)
+            {
+                if (fstr[i] == ' ') spNo++;
             }
 
-            if (fpos < 3) {
-                fstr.erase(0, fpos+1);
+            offNo = (slen - spNo) % 3;
+
+            if ( offNo > 0 )
+            {
+                fstr.erase( slen-1, 1 );
+                slen = fstr.size();
             }
 
-            str.replace(str.find(fstr), fstr.size(), "*** ");
+            if ( offNo == 2 )
+            {
+                fstr.erase( 0, 1 );
+                slen = fstr.size();
+            }
+
+            str.replace(str.find(fstr), fstr.size(), " *** ");
         }
     }
 
@@ -677,8 +688,11 @@ DBHandler* DBHandler::instance(std::string dsn, std::string id, std::string pw, 
 #endif
 
 #ifdef USE_FIND_KEYWORD
-        m_instance->m_thrdUpdateKeywords = std::thread(DBHandler::thrdUpdateKeywords, m_instance);
-        m_bThrdUpdateKeywords = true;
+        if ( !config->getConfig("stas.use_find_keyword", "false").compare("true") )
+        {
+            m_instance->m_thrdUpdateKeywords = std::thread(DBHandler::thrdUpdateKeywords, m_instance);
+            m_bThrdUpdateKeywords = true;
+        }
 #endif
 
     }
