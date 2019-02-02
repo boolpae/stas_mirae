@@ -837,7 +837,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                                 if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    MakeOneWord( sJsonValue );
+                                                    remSpaceInSentence( sJsonValue );
                                                 }
 
                                                 #ifdef USE_FIND_KEYWORD
@@ -1037,7 +1037,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                         if ( bUseRemSpaceInNumwords )
                                         {
-                                            MakeOneWord( sJsonValue );
+                                            remSpaceInSentence( sJsonValue );
                                         }
 
                                         #ifdef USE_FIND_KEYWORD
@@ -1584,7 +1584,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                                 if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    MakeOneWord( sJsonValue );
+                                                    remSpaceInSentence( sJsonValue );
                                                 }
 
                                                 #ifdef USE_FIND_KEYWORD
@@ -1780,7 +1780,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                         if ( bUseRemSpaceInNumwords )
                                         {
-                                            MakeOneWord( sJsonValue );
+                                            remSpaceInSentence( sJsonValue );
                                         }
 
                                         #ifdef USE_FIND_KEYWORD

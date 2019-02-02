@@ -238,6 +238,9 @@ void VRClient::thrdMain(VRClient* client) {
     std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
 #endif
 
+    bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
+    bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
+
 #ifdef FAD_FUNC
     uint8_t *vpBuf = NULL;
     size_t posBuf = 0;
@@ -623,13 +626,21 @@ void VRClient::thrdMain(VRClient* client) {
 
                                                 sJsonValue = strbuf.GetString();
 
-                                                #ifdef USE_FIND_KEYWORD
-                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    remSpaceInSentence( sJsonValue );
+                                                }
+
+                                                #ifdef USE_FIND_KEYWORD
+                                                if ( bUseFindKeyword )
+                                                {
+                                                    for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                     {
-                                                        client->m_Logger->debug("VRClient::thrdMain(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                        break;
+                                                        if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                        {
+                                                            client->m_Logger->debug("VRClient::thrdMain(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                            break;
+                                                        }
                                                     }
                                                 }
                                                 #endif
@@ -883,13 +894,21 @@ void VRClient::thrdMain(VRClient* client) {
 
                                         sJsonValue = strbuf.GetString();
 
-                                        #ifdef USE_FIND_KEYWORD
-                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                        if ( bUseRemSpaceInNumwords )
                                         {
-                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                            remSpaceInSentence( sJsonValue );
+                                        }
+
+                                        #ifdef USE_FIND_KEYWORD
+                                        if ( bUseFindKeyword )
+                                        {
+                                            for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                             {
-                                                client->m_Logger->debug("VRClient::thrdMain(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                break;
+                                                if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                {
+                                                    client->m_Logger->debug("VRClient::thrdMain(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                    break;
+                                                }
                                             }
                                         }
                                         #endif
