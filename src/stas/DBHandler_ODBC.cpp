@@ -21,8 +21,6 @@
 #include "rapidjson/stringbuffer.h"
 #endif // USE_REDIS_POOL
 
-// std::string pattern_str("[공영일이삼사오육칠팔구\\s]{16,}");
-std::regex pattern("[공영일이삼사오육칠팔구\\s]{20,}");
 
 static int extract_error(const char *fn, SQLHANDLE handle, SQLSMALLINT type)
 {
