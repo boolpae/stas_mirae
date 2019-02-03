@@ -3,6 +3,7 @@
 
 #include "ItfOdbcPool.h"
 #include "stas.h"
+#include "Utils.h"
 
 #include <iconv.h>
 #include <string.h>
@@ -128,6 +129,8 @@ DBHandler::DBHandler(std::string dsn,int connCount)
     m_buseRedisPool = m_buseRedis & !config->getConfig("redis.use_notify_stt", "false").compare("true");
     m_sNotiChannel = config->getConfig("redis.notichannel", "NOTIFY-STT");
 
+    m_bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
+
 	m_Logger->debug("DBHandler Constructed.\n");
 }
 
@@ -194,9 +197,11 @@ void DBHandler::thrdMain(DBHandler * s2d)
 
     SQLSMALLINT NumParams;
 
-    logger = config->getLogger();
+    std::string sUtfResult;
+
     PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();//ConnectionPool_getConnection(s2d->m_pool);
 
+    logger = config->getLogger();
     it = iconv_open("UTF-8", "EUC-KR");
 
     // sprintf(sqlbuff, "INSERT INTO JOB_DATA (idx,call_id,pos_start,pos_end,value,spk) VALUES (?,?,?,?,?)");
@@ -252,10 +257,19 @@ void DBHandler::thrdMain(DBHandler * s2d)
                 ret = iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
                  
                 // iconv_close(it);
+                sUtfResult = utf_buf;
+
+                free(utf_buf); utf_buf = nullptr;
+
+                // 금액과 같은 서수 문장 내 공백을 제거
+                if (s2d->m_bUseRemSpaceInNumwords )
+                {
+                    remSpaceInSentence( sUtfResult );
+                }
 
                 // 정보 보안을 위한 Masking 기능
                 if (s2d->m_bUseMask) {
-                    maskingSTTValue(utf_buf);
+                    maskKeyword( sUtfResult );
                 }
                 
             }
@@ -294,7 +308,7 @@ void DBHandler::thrdMain(DBHandler * s2d)
             nEnd = item->getEpos();
             // sprintf(sSpk, "%c", cSpk);
             sprintf(callId, "%s", item->getCallId().c_str());
-            sprintf(sttValue, "%s", utf_buf);//item->getSTTValue().c_str());
+            sprintf(sttValue, "%s", sUtfResult.c_str());//item->getSTTValue().c_str());
             // lenSpk = strlen(sSpk);
             lenCallid = strlen(callId);
             lenStt = strlen(sttValue);
@@ -374,7 +388,7 @@ void DBHandler::thrdMain(DBHandler * s2d)
             }
             retcode = SQLCloseCursor(connSet->stmt);
 
-            if (utf_buf) free(utf_buf);
+            // if (utf_buf) free(utf_buf);
 			delete item;
 
             t1 = std::chrono::high_resolution_clock::now();
@@ -514,49 +528,6 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
     logger->debug("DBHandler::thrdUpdate() finish!\n");
 }
 #endif
-
-void DBHandler::maskingSTTValue(char *value)
-{
-    std::string str(value);
-    std::smatch m;
-    size_t slen = 0;
-    size_t spNo = 0;
-    size_t offNo = 0;
-    std::string fstr;
-
-    while (std::regex_search (str,m,pattern)) {
-        for (auto x:m) {
-            slen = 0;
-            fstr = x;
-
-            slen = fstr.size();
-
-            for(size_t i=0; i<slen; i++)
-            {
-                if (fstr[i] == ' ') spNo++;
-            }
-
-            offNo = (slen - spNo) % 3;
-
-            if ( offNo > 0 )
-            {
-                fstr.erase( slen-1, 1 );
-                slen = fstr.size();
-            }
-
-            if ( offNo == 2 )
-            {
-                fstr.erase( 0, 1 );
-                slen = fstr.size();
-            }
-
-            str.replace(str.find(fstr), fstr.size(), " *** ");
-        }
-    }
-
-    sprintf(value, "%s", str.c_str());
-
-}
 
 #ifdef USE_FIND_KEYWORD
 char *testKeyword[] = {"하나","둘","감사","안녕","감사"};

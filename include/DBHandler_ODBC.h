@@ -170,8 +170,6 @@ private:
     static void thrdUpdate(DBHandler* handle);
 #endif
 
-    static void maskingSTTValue(char *value);
-
 #ifdef USE_FIND_KEYWORD
     static void thrdUpdateKeywords(DBHandler* handle);
 public:
@@ -229,6 +227,8 @@ private:
 
     bool m_buseRedis;
     bool m_buseRedisPool;
+
+    bool m_bUseRemSpaceInNumwords;
 
 };
 
