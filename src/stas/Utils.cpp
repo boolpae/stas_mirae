@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <string>
 #include <regex>
 #include <algorithm>
 #include <locale>
