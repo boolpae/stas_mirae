@@ -790,7 +790,7 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-        sprintf(sqlbuff, "INSERT INTO TBL_CS_LIST (CS_CD,CT_CD,CALL_ID,STAT,REG_DTM) VALUES ('%s','1','%s','I',TO_CHAR(SYSDATE,'YYYY-MM-DD HH24:MI:SS')",
+        sprintf(sqlbuff, "INSERT INTO TBL_CS_LIST (CS_CD,CT_CD,CALL_ID,STAT,REG_DTM) VALUES ('%s','1','%s','I',TO_CHAR(SYSDATE,'YYYY-MM-DD HH24:MI:SS'))",
             counselorcode.c_str(), callid.c_str());
 #else
         sprintf(sqlbuff, "INSERT INTO TBL_CS_LIST (CS_CD,CT_CD,CALL_ID,STAT,REG_DTM) VALUES ('%s','1','%s','I',now())",
