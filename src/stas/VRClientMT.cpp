@@ -408,6 +408,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
     
     char buf[BUFLEN];
     uint16_t nHeadLen=0;
+    int chkRealSize=0;
     
     uint8_t *vpBuf = NULL;
     size_t posBuf = 0;
@@ -721,8 +722,10 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             vBuff.erase(vBuff.begin() + offset, vBuff.end());
                         }
 #endif
+                        chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
+                        client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(RX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
                         // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
-                        if ( vBuff.size() > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        if ( /*vBuff.size()*/chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 #if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
                             if (1) {
                                 // 음성 시작 점 - Voice Active Detection Poing
@@ -1168,6 +1171,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
     
     char buf[BUFLEN];
     uint16_t nHeadLen=0;
+    int chkRealSize=0;
     
     uint8_t *vpBuf = NULL;
     size_t posBuf = 0;
@@ -1478,7 +1482,10 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         }
 #endif
                         // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
-                        if ( vBuff.size() > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
+                        client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(TX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
+
+                        if ( /*vBuff.size()*/chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 #if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
                             if (1) {
                                 // 음성 시작 점 - Voice Active Detection Poing

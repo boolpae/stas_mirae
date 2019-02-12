@@ -13,6 +13,8 @@
 #include <boost/locale/encoding_utf.hpp>
 #endif
 
+#include <fvad.h>
+
 using namespace std;
 using boost::locale::conv::utf_to_utf;
 
@@ -120,5 +122,39 @@ void maskKeyword(string& org)
     }
 
     org = ws2s( convWStr ) ;
+
+}
+
+int checkRealSize(std::vector<uint8_t> &buff, uint16_t hSize, size_t fSize, size_t vadFSize)
+{
+    Fvad *vad = NULL;
+    int realSize=0;
+    uint32_t lenVoiceData = buff.size() - hSize;
+    uint8_t *voiceData = (uint8_t*)&buff[hSize];
+    uint8_t *vpBuf = nullptr;
+    int vadres = 0;
+
+    vad = fvad_new();
+    if (!vad) {//} || (fvad_set_sample_rate(vad, in_info.samplerate) < 0)) {
+        // client->m_Logger->error("VRClient::thrdMain() - ERROR (Failed fvad_new(%s))", client->m_sCallId.c_str());
+        return buff.size();
+    }
+    fvad_set_sample_rate(vad, 8000);
+    fvad_set_mode(vad, 3);
+
+    size_t posBuf = 0;
+    while ((lenVoiceData >= fSize) && ((lenVoiceData - posBuf) >= fSize)) {
+        vpBuf = (uint8_t *)(voiceData+posBuf);
+        // Convert the read samples to int16
+        vadres = fvad_process(vad, (const int16_t *)vpBuf, vadFSize);
+
+        if (vadres > 0) realSize += fSize;
+
+        posBuf += fSize;
+    }
+
+    fvad_free(vad);
+
+    return realSize;
 
 }

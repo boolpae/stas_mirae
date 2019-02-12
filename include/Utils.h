@@ -2,6 +2,7 @@
 #define _STAS_UTILS_H_
 
 #include <string>
+#include <vector>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,6 +16,8 @@ std::string ws2s(const std::wstring& wstr);
 
 void remSpaceInSentence(std::string& org);
 void maskKeyword(std::string& org);
+
+int checkRealSize(std::vector<uint8_t> &buff, uint16_t hSize, size_t fSize, size_t vadFSize);
 
 
 #ifdef __cplusplus
