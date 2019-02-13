@@ -45,7 +45,12 @@ class FileHandler
 	std::queue< STTQueItem* > m_qSttQue;
 	std::thread m_thrd;
 	mutable std::mutex m_mxQue;
-    
+
+	// for TEST
+	std::queue< STTQueItem* > m_qJsonDataQue;
+	std::thread m_thrdSaveJsonData;
+	mutable std::mutex m_mxJsonDataQue;
+
     std::string m_sResultPath;
     
     log4cpp::Category *m_Logger;
@@ -57,13 +62,19 @@ public:
 
 	void insertSTT(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode);		// for Realtime
 	void insertSTT(std::string callid, std::string& stt, std::string filename);	// for FILE, BATCH
+	// for TEST
+	void insertJsonData(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode);		// for Realtime
 
 private:
 	FileHandler(std::string path/*, log4cpp::Category *logger*/);
 	virtual ~FileHandler();
 
 	static void thrdMain(FileHandler* dlv);
+	// for TEST
+	static void thrdSaveJsonData(FileHandler* dlv);
 
 	void insertSTT(STTQueItem* item);
+	// for TEST
+	void insertJsonData(STTQueItem* item);
 };
 

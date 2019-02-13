@@ -242,6 +242,8 @@ void VRClient::thrdMain(VRClient* client) {
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
 
+    bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
+
 #ifdef FAD_FUNC
     uint8_t *vpBuf = NULL;
     size_t posBuf = 0;
@@ -653,6 +655,11 @@ void VRClient::thrdMain(VRClient* client) {
                                             vVal.push_back(toString(diaNumber));
                                             vVal.push_back(sJsonValue);
 
+                                            // for TEST
+                                            if (bSaveJsonData && client->m_deliver) {
+                                                client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
+                                            }
+
                                             if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
                                                 client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
                                             }
@@ -921,9 +928,10 @@ void VRClient::thrdMain(VRClient* client) {
                                     vVal.push_back(toString(diaNumber));
                                     vVal.push_back(sJsonValue);
 
-                                    
-                                    // vVal.push_back(toString(diaNumber));
-                                    // vVal.push_back(modValue);
+                                    // for TEST
+                                    if (bSaveJsonData && client->m_deliver) {
+                                        client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
+                                    }
 
                                     if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
                                         client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
@@ -969,38 +977,44 @@ void VRClient::thrdMain(VRClient* client) {
 						// if ( item->voiceData != NULL ) delete[] item->voiceData;
 						delete item;
 
+#ifdef USE_REDIS_POOL
+                        if ( useRedis ) {
+                            int64_t zCount=0;
+                            time_t t;
+                            struct tm *tmp;
+
+                            t = time(NULL);
+                            tmp = localtime(&t);
+
+                            if (!xRedis.publish(dbi, sPubCannel.c_str(), client->getCallId().c_str(), zCount)) {
+                                client->m_Logger->error("VRClient::thrdMain(%s) - redis publish(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
+                            }
+
+                            redisKey = "G_CS:";
+                            redisKey.append(client->getCounselCode());
+
+                            //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
+                            strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
+                            sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
+                            strRedisValue = redisValue;
+                            
+                            // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
+                            xRedis.lset( dbi, redisKey, 0, strRedisValue );
+
+                        }
+#endif
+                        // for TEST
+                        if (bSaveJsonData && client->m_deliver) {
+                            std::string emptyStr("");
+                            client->m_deliver->insertJsonData(fhCallId, emptyStr, 2, 0, 0, client->m_sCounselCode);
+                        }
+
                         if (client->m_s2d) {
                             auto t2 = std::chrono::high_resolution_clock::now();
                             // char timebuff [32];
                             // struct tm * timeinfo = localtime(&client->m_tStart);
                             strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
 
-#ifdef USE_REDIS_POOL
-                            if ( useRedis ) {
-                                int64_t zCount=0;
-                                time_t t;
-                                struct tm *tmp;
-
-                                t = time(NULL);
-                                tmp = localtime(&t);
-
-                                if (!xRedis.publish(dbi, sPubCannel.c_str(), client->getCallId().c_str(), zCount)) {
-                                    client->m_Logger->error("VRClient::thrdMain(%s) - redis publish(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
-                                }
-
-                                redisKey = "G_CS:";
-                                redisKey.append(client->getCounselCode());
-
-                                //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
-                                strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
-                                sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
-                                strRedisValue = redisValue;
-                                
-                                // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
-                                xRedis.lset( dbi, redisKey, 0, strRedisValue );
-
-                            }
-#endif
                             client->m_s2d->updateCallInfo(client->m_sCallId, true);
                             if ( !useDelCallInfo || ( totalVLen/16000 > nDelSecs ) ) {
                                 client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', totalVLen, totalVLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "TBL_JOB_INFO", "", svr_nm.c_str());

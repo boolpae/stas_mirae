@@ -251,8 +251,10 @@ void VRClient::thrdMain(VRClient* client) {
     RedisDBIdx dbi(&xRedis);
     VALUES vVal;
 #endif
+    bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
     // auto search = client->ThreadInfoTable[client->m_sCallId];
+    timeinfo = localtime(&client->m_tStart);
 
 #ifdef USE_REDIS_POOL
     if ( useRedis ) 
@@ -264,7 +266,7 @@ void VRClient::thrdMain(VRClient* client) {
         redisKey.append(client->getCounselCode());
 
         //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
-        timeinfo = localtime(&client->m_tStart);
+        // timeinfo = localtime(&client->m_tStart);
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
         sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"I\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
         strRedisValue = redisValue;
@@ -318,11 +320,21 @@ void VRClient::thrdMain(VRClient* client) {
 
     }
 #endif
+
+    // for TEST
+    if (bSaveJsonData && client->m_deliver) {
+        std::string fhCallId;
+        std::string emptyStr("");
+        strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",timeinfo);
+        fhCallId = std::string(timebuff) + "_" + client->m_sCallId;
+        client->m_deliver->insertJsonData(fhCallId, emptyStr, 2, 0, 0, client->m_sCounselCode);
+    }
+
     client->m_Logger->debug("VRClient::thrdMain(%s)[3] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
     if (client->m_s2d) {
         auto t2 = std::chrono::high_resolution_clock::now();
-        timeinfo = localtime(&client->m_tStart);
+        // timeinfo = localtime(&client->m_tStart);
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
 
         client->m_s2d->updateCallInfo(client->m_sCallId, true);
@@ -363,7 +375,7 @@ void VRClient::thrdMain(VRClient* client) {
         if ( client->m_is_save_pcm && (client->TotalVoiceDataLen/16000 <= nDelSecs) )
         {
             char datebuff[32];
-            timeinfo = localtime(&client->m_tStart);
+            // timeinfo = localtime(&client->m_tStart);
             strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",timeinfo);
             strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
             std::string fullpath = client->m_pcm_path + "/" + datebuff + "/" + client->m_sCounselCode + "/";
@@ -413,10 +425,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
     uint8_t *vpBuf = NULL;
     size_t posBuf = 0;
     std::vector<uint8_t> vBuff;
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-    std::vector<uint8_t> vTempBuff;
-    std::vector<uint8_t>::iterator vIter;
-#endif
     uint64_t totalVoiceDataLen;
     size_t framelen;
     std::string svr_nm;
@@ -448,6 +456,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
+
+    bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
     // auto search = client->ThreadInfoTable[client->m_sCallId];
 
     vBuff.reserve(MM_SIZE);
@@ -710,18 +720,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 #endif
                     if (
                         client->tx_hold ||
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                        (client->tx_hold && (client->rx_sframe < client->tx_sframe)) || 
-#endif
                         (!vadres && (vBuff.size()>nHeadLen))) {
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                        vTempBuff.clear();
-                        if ((vBuff.size() > 15000) && client->tx_hold && (client->rx_sframe < client->tx_sframe)) {
-                            size_t offset = (((client->tx_sframe - client->rx_sframe) * 16) + nHeadLen);
-                            vTempBuff.assign(vBuff.begin() + offset, vBuff.end());
-                            vBuff.erase(vBuff.begin() + offset, vBuff.end());
-                        }
-#endif
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
                         client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(RX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
                         // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
@@ -862,6 +861,12 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                             vVal.push_back(toString(diaNumber));
                                             vVal.push_back(sJsonValue);
 
+                                            // for TEST
+                                            if (client->m_deliver) {
+                                                client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
+                                            }
+
+
                                             if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
                                                 client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
                                             }
@@ -905,11 +910,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                             if (client->tx_hold) {
                                 client->tx_hold = 0;
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                                for(vIter=vTempBuff.begin(); vIter!=vTempBuff.end(); vIter++) {
-                                    vBuff.push_back(*vIter);
-                                }
-#endif
                             }
 
                             // nCurrWaitNo = 0;
@@ -928,11 +928,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                             if (client->tx_hold) {
                                 client->tx_hold = 0;
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                                for(vIter=vTempBuff.begin(); vIter!=vTempBuff.end(); vIter++) {
-                                    vBuff.push_back(*vIter);
-                                }
-#endif
                             }
                             // nCurrWaitNo++;
                         }
@@ -1062,9 +1057,11 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     vVal.push_back(toString(diaNumber));
                                     vVal.push_back(sJsonValue);
 
-                                    
-                                    // vVal.push_back(toString(diaNumber));
-                                    // vVal.push_back(modValue);
+                                    // for TEST
+                                    if (bSaveJsonData && client->m_deliver) {
+                                        client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
+                                    }
+
 
                                     if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
                                         client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
@@ -1176,10 +1173,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
     uint8_t *vpBuf = NULL;
     size_t posBuf = 0;
     std::vector<uint8_t> vBuff;
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-    std::vector<uint8_t> vTempBuff;
-    std::vector<uint8_t>::iterator vIter;
-#endif
     uint64_t totalVoiceDataLen;
     size_t framelen;
     std::string svr_nm;
@@ -1212,6 +1205,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
     // auto search = client->ThreadInfoTable[client->m_sCallId];
+    bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
     vBuff.reserve(MM_SIZE);
 
@@ -1469,18 +1463,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 #endif
                     if (
                         client->rx_hold ||
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                        (client->rx_hold && (client->tx_sframe < client->rx_sframe)) || 
-#endif
                         (!vadres && (vBuff.size()>nHeadLen))) {
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                        vTempBuff.clear();
-                        if ((vBuff.size() > 15000) && client->rx_hold && (client->tx_sframe < client->rx_sframe)) {
-                            size_t offset = (((client->rx_sframe - client->tx_sframe) * 16) + nHeadLen);
-                            vTempBuff.assign(vBuff.begin() + offset, vBuff.end());
-                            vBuff.erase(vBuff.begin() + offset, vBuff.end());
-                        }
-#endif
                         // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
                         client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(TX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
@@ -1612,6 +1595,12 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                             vVal.push_back(toString(diaNumber));
                                             vVal.push_back(sJsonValue);
 
+                                            // for TEST
+                                            if (bSaveJsonData && client->m_deliver) {
+                                                client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
+                                            }
+
+
                                             if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
                                                 client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
                                             }
@@ -1655,11 +1644,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                             if (client->rx_hold) {
                                 client->rx_hold = 0;
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                                for(vIter=vTempBuff.begin(); vIter!=vTempBuff.end(); vIter++) {
-                                    vBuff.push_back(*vIter);
-                                }
-#endif
                             }
 
                             // nCurrWaitNo = 0;
@@ -1679,11 +1663,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                             if (client->rx_hold) {
                                 client->rx_hold = 0;
-#ifdef DIAL_SYNC_N_BUFF_CTRL
-                                for(vIter=vTempBuff.begin(); vIter!=vTempBuff.end(); vIter++) {
-                                    vBuff.push_back(*vIter);
-                                }
-#endif
                             }
                             // nCurrWaitNo++;
                         }
@@ -1808,6 +1787,12 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                     vVal.push_back(toString(diaNumber));
                                     vVal.push_back(sJsonValue);
+
+                                    // for TEST
+                                    if (bSaveJsonData && client->m_deliver) {
+                                        client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
+                                    }
+
 
                                     if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
                                         client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);

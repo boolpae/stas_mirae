@@ -193,6 +193,64 @@ void FileHandler::thrdMain(FileHandler * dlv)
 	}
 }
 
+// for TEST
+void FileHandler::thrdSaveJsonData(FileHandler * dlv)
+{
+	std::lock_guard<std::mutex> *g;// (m_mxQue);
+	STTQueItem* item;
+	std::string sttFilename;
+    std::string fullpath;
+    int ret=0;
+
+    char datebuff[32];
+    struct tm * timeinfo;
+    time_t currTm;
+
+
+	while (dlv->m_bLiveFlag) {
+		while (!dlv->m_qJsonDataQue.empty()) {
+			g = new std::lock_guard<std::mutex>(dlv->m_mxJsonDataQue);
+			item = dlv->m_qJsonDataQue.front();
+			dlv->m_qJsonDataQue.pop();
+			delete g;
+
+            currTm = time(NULL);
+            timeinfo = localtime(&currTm);
+            strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
+			if (item->getJobType() == 'R') {
+                fullpath = dlv->m_sResultPath + "/REALTIME/" + datebuff + "/" + item->getCSCode() + "/";
+                if ( access(fullpath.c_str(), F_OK) ) {
+                    MakeDirectory(fullpath.c_str());
+                }
+            }
+            else
+            {
+                delete item;
+                continue;
+            }
+
+			// item으로 로직 수행
+            sttFilename = fullpath + item->getCSCode() + "_" + item->getCallId();
+            sttFilename += ".json";
+
+			std::ofstream sttresult(sttFilename, std::ios::out | std::ios::app);
+			if (sttresult.is_open()) {
+                if (item->getSpkNo() == 0) sttresult << "{";
+                else if (item->getSpkNo() == 1) sttresult << ",";
+
+                sttresult << item->getSTTValue() ;
+
+                if (item->getSpkNo() == 2) sttresult << "}";
+				sttresult.close();
+			}
+
+
+			delete item;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	}
+}
+
 // desc:	spkNo의 값이 0인 경우 실시간 STT 결과값이 아님(이 경우 jobtype의 값도 'F' 이어야 함)
 //			실시간 STT 결과인 경우 jobtype : 'R' 이며 spkNo의 값도 1 이상의 값이어야 함
 void FileHandler::insertSTT(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode)
@@ -210,6 +268,19 @@ void FileHandler::insertSTT(STTQueItem * item)
 	std::lock_guard<std::mutex> g(m_mxQue);
 	m_qSttQue.push(item);
 }
+
+// for TEST
+void FileHandler::insertJsonData(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode)
+{
+	insertSTT(new STTQueItem(callid, uint8_t('R'), spkNo, stt, bpos, epos, cscode));
+}
+void FileHandler::insertJsonData(STTQueItem * item)
+{
+	std::lock_guard<std::mutex> g(m_mxJsonDataQue);
+	m_qJsonDataQue.push(item);
+}
+
+
 
 FileHandler* FileHandler::instance(std::string path/*, log4cpp::Category *logger*/)
 {
@@ -230,6 +301,8 @@ FileHandler* FileHandler::instance(std::string path/*, log4cpp::Category *logger
 	ms_instance = new FileHandler(path/*, logger*/);
 
 	ms_instance->m_thrd = std::thread(FileHandler::thrdMain, ms_instance);
+    // for TEST
+	ms_instance->m_thrdSaveJsonData = std::thread(FileHandler::thrdSaveJsonData, ms_instance);
 
 	return ms_instance;
 }
@@ -246,6 +319,8 @@ void FileHandler::release()
         ms_instance->m_bLiveFlag = false;
 
         ms_instance->m_thrd.join();
+        // for TEST
+        ms_instance->m_thrdSaveJsonData.join();
 
         delete ms_instance;
         ms_instance = NULL;
