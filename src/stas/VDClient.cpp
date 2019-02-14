@@ -153,7 +153,11 @@ void VDClient::thrdMain(VDClient * client)
 			}
 			pos += 6;
 			memcpy(&nVDSize, pos, sizeof(uint16_t));
+			#ifdef FOR_ITFACT
+			recv_len = ::ntohs(nVDSize)/2;
+			#else
 			recv_len = ::ntohs(nVDSize);
+			#endif
 			pos += sizeof(uint16_t);
 
 			// printf("\t[DEBUG] VDClient(%d) recv_len(%d), pVrc(%X), nWorkStat(%d), network_len(%d)\n", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat, nVDSize);

@@ -11,7 +11,11 @@
 #define PROTO_AUTH_TOKEN "RT-STT"
 #define PROTO_AUTH_TOKEN_LEN 6
 
+#ifdef FOR_ITFACT
+#define LEN_CALL_ID 32
+#else
 #define LEN_CALL_ID 128
+#endif
 
 #ifdef EN_RINGBACK_LEN
 #define CALL_BEG_PACKET_LEN (116+LEN_CALL_ID)

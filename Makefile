@@ -89,6 +89,7 @@ EN_RINGBACK_LEN="TRUE"
 EN_SAVE_PCM="TRUE"
 FOR_TEST="TRUE"
 USE_FIND_KEYWORD="TRUE"
+FOR_ITFACT="FALSE"
 ###############################################################################
 
 all: $(SUB_LIBRARIES) $(SUB_PROJECTS)

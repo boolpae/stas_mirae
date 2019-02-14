@@ -72,6 +72,9 @@ endif
 ifeq ($(USE_FIND_KEYWORD), "TRUE")
 FLAGS			+= -DUSE_FIND_KEYWORD
 endif
+ifeq ($(FOR_ITFACT), "TRUE")
+FLAGS			+= -DFOR_ITFACT
+endif
 endif
 
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 

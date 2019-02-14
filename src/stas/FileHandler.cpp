@@ -235,12 +235,12 @@ void FileHandler::thrdSaveJsonData(FileHandler * dlv)
 
 			std::ofstream sttresult(sttFilename, std::ios::out | std::ios::app);
 			if (sttresult.is_open()) {
-                if (item->getSpkNo() == 0) sttresult << "{";
+                if (item->getSpkNo() == 0) sttresult << "[";
                 else if (item->getSpkNo() == 1) sttresult << ",";
 
                 sttresult << item->getSTTValue() ;
 
-                if (item->getSpkNo() == 2) sttresult << "}";
+                if (item->getSpkNo() == 2) sttresult << "]";
 				sttresult.close();
 			}
 
@@ -272,7 +272,7 @@ void FileHandler::insertSTT(STTQueItem * item)
 // for TEST
 void FileHandler::insertJsonData(std::string callid, std::string& stt, uint8_t spkNo, uint64_t bpos, uint64_t epos, std::string cscode)
 {
-	insertSTT(new STTQueItem(callid, uint8_t('R'), spkNo, stt, bpos, epos, cscode));
+	insertJsonData(new STTQueItem(callid, uint8_t('R'), spkNo, stt, bpos, epos, cscode));
 }
 void FileHandler::insertJsonData(STTQueItem * item)
 {

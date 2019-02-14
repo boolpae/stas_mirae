@@ -212,11 +212,9 @@ void VRClient::thrdMain(VRClient* client) {
     std::string fhCallId;
     char timebuff [32];
     char datebuff[32];
-    struct tm * timeinfo = localtime(&client->m_tStart);
-    strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",timeinfo);
-    strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
-    std::string fullpath = client->m_pcm_path + "/"  + datebuff + "/" + client->m_sCounselCode + "/";
-    std::string filename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId;// + std::string("_l.wav");
+    struct tm timeinfo;
+    std::string fullpath;// = client->m_pcm_path + "/"  + datebuff + "/" + client->m_sCounselCode + "/";
+    std::string filename;// = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId;// + std::string("_l.wav");
     std::ofstream pcmFile;
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
 
@@ -235,9 +233,13 @@ void VRClient::thrdMain(VRClient* client) {
     // int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
     // int nCurrWaitNo = 0;
 #ifdef EN_SAVE_PCM
-    bool bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
-    std::string pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
+    bool bOnlySil;
+    bool bUseSavePcm;// = !config->getConfig("stas.use_save_pcm", "false").compare("true");
+    std::string pcmFilename;// = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
 #endif
+
+    bool bUseSkipHanum = !config->getConfig("stas.use_skip_hanum", "false").compare("true");
+    int nSkipHanumSize = config->getConfig("stas.skip_hanum_buff_size", 16000);
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
@@ -258,6 +260,25 @@ void VRClient::thrdMain(VRClient* client) {
     
     framelen = client->m_framelen * 2;
 #endif // FAD_FUNC
+
+    localtime_r(&client->m_tStart, &timeinfo);
+    strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",&timeinfo);
+    strftime (datebuff,sizeof(datebuff),"%Y%m%d",&timeinfo);
+
+    fullpath = client->m_pcm_path + "/"  + datebuff + "/" + client->m_sCounselCode + "/";
+    filename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId;// + std::string("_l.wav");
+#ifdef EN_SAVE_PCM
+    bOnlySil = !config->getConfig("stas.only_silence", "false").compare("true");
+    bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
+
+    if ( config->isSet("stas.pcm_path") && (config->getConfig("stas.pcm_path", "").size() > 0) )
+    {
+        pcmFilename = config->getConfig("stas.pcm_path", client->m_pcm_path.c_str()) + "/" + datebuff + "/" + client->m_sCounselCode + "/";
+        MakeDirectory(pcmFilename.c_str());
+        pcmFilename = pcmFilename + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
+    }
+    else pcmFilename = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
+#endif
 
     fhCallId = std::string(timebuff) + "_" + client->m_sCallId;
     MakeDirectory(fullpath.c_str());
@@ -282,7 +303,7 @@ void VRClient::thrdMain(VRClient* client) {
         redisKey.append(client->getCounselCode());
 
         //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
-        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
+        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&timeinfo);
         sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"I\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
         strRedisValue = redisValue;
         
@@ -530,6 +551,15 @@ void VRClient::thrdMain(VRClient* client) {
                     }
 
                     if (vadres > 0) {
+                        // 직전 버퍼 값을 사용... 인식률 향상 확인용
+                        if (posBuf && (vBuff[item->spkNo-1].size() == nHeadLen))
+                        {
+                            vpBuf = (uint8_t *)(item->voiceData+posBuf-framelen);
+                            for(size_t i=0; i<framelen; i++) {
+                                vBuff[item->spkNo-1].push_back(vpBuf[i]);
+                            }
+                            vpBuf = (uint8_t *)(item->voiceData+posBuf);
+                        }
                         for(size_t i=0; i<framelen; i++) {
                             vBuff[item->spkNo-1].push_back(vpBuf[i]);
                             
@@ -558,7 +588,7 @@ void VRClient::thrdMain(VRClient* client) {
                             }
                             //client->m_Logger->debug("VRClient::thrdMain(%d, %d, %s)(%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", nHeadLen, item->spkNo, buf, client->m_sCallId.c_str(), vBuff[item->spkNo-1].size(), sframe[item->spkNo-1], eframe[item->spkNo-1]);
                             #ifdef EN_SAVE_PCM
-                            if (bUseSavePcm)
+                            if (!bOnlySil && bUseSavePcm)
                             {
                                 FILE *pPcm;
 
@@ -566,7 +596,7 @@ void VRClient::thrdMain(VRClient* client) {
                                 pPcm = fopen(tempPcmFile.c_str(), "wb");
                                 if (pPcm)
                                 {
-                                    fwrite((const void*)&vBuff[item->spkNo-1][0], sizeof(char), vBuff[item->spkNo-1].size(), pPcm);
+                                    fwrite((const void*)&vBuff[item->spkNo-1][nHeadLen], sizeof(char), vBuff[item->spkNo-1].size()-nHeadLen, pPcm);
                                     fclose(pPcm);
                                 }
                             }
@@ -574,17 +604,37 @@ void VRClient::thrdMain(VRClient* client) {
                             value= gearman_client_do(gearClient, fname/*"vr_realtime"*//*client->m_sFname.c_str()*/, NULL, 
                                                             (const void*)&vBuff[item->spkNo-1][0], vBuff[item->spkNo-1].size(),
                                                             &result_size, &rc);
-                                                            
-                            aDianum[item->spkNo-1]++;
                             
+                            aDianum[item->spkNo-1]++;
+
                             if (gearman_success(rc))
                             {
+                                #ifdef EN_SAVE_PCM
+                                if (bOnlySil && (result_size < 4))
+                                {
+                                    FILE *pPcm;
+
+                                    std::string tempPcmFile = pcmFilename + std::to_string(aDianum[item->spkNo-1]) + ((item->spkNo == 1)?std::string("_r.pcm"):std::string("_l.pcm"));
+                                    pPcm = fopen(tempPcmFile.c_str(), "wb");
+                                    if (pPcm)
+                                    {
+                                        fwrite((const void*)&vBuff[item->spkNo-1][nHeadLen], sizeof(char), vBuff[item->spkNo-1].size()-nHeadLen, pPcm);
+                                        fclose(pPcm);
+                                    }
+                                }
+                                #endif
+
+                                // n초 이상 음성데이터에 대해 네, 예 등과 같이 한음절 응답이 경우 무시
+                                if ( bUseSkipHanum && value && (vBuff[item->spkNo-1].size() > nSkipHanumSize) && (result_size < 4) )
+                                {
+                                    free(value);
+                                } else
                                 // Make use of value
                                 if (value) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
                                     // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
                                     //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-
+                                                            
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
                                         int64_t zCount=0;
@@ -830,7 +880,7 @@ void VRClient::thrdMain(VRClient* client) {
                         }
                     }
                     #ifdef EN_SAVE_PCM
-                    if (bUseSavePcm)
+                    if (!bOnlySil && bUseSavePcm)
                     {
                         FILE *pPcm;
 
@@ -838,7 +888,7 @@ void VRClient::thrdMain(VRClient* client) {
                         pPcm = fopen(tempPcmFile.c_str(), "wb");
                         if (pPcm)
                         {
-                            fwrite((const void*)&vBuff[item->spkNo-1][0], sizeof(char), vBuff[item->spkNo-1].size(), pPcm);
+                            fwrite((const void*)&vBuff[item->spkNo-1][nHeadLen], sizeof(char), vBuff[item->spkNo-1].size()-nHeadLen, pPcm);
                             fclose(pPcm);
                         }
                     }
@@ -1013,7 +1063,7 @@ void VRClient::thrdMain(VRClient* client) {
                             auto t2 = std::chrono::high_resolution_clock::now();
                             // char timebuff [32];
                             // struct tm * timeinfo = localtime(&client->m_tStart);
-                            strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
+                            strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&timeinfo);
 
                             client->m_s2d->updateCallInfo(client->m_sCallId, true);
                             if ( !useDelCallInfo || ( totalVLen/16000 > nDelSecs ) ) {
