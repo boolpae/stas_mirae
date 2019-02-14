@@ -1067,7 +1067,7 @@ void VRClient::thrdMain(VRClient* client) {
 
                             client->m_s2d->updateCallInfo(client->m_sCallId, true);
                             if ( !useDelCallInfo || ( totalVLen/16000 > nDelSecs ) ) {
-                                client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', totalVLen, totalVLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "TBL_JOB_INFO", "", svr_nm.c_str());
+                                client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', totalVLen, totalVLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "STT_TBL_JOB_INFO", "", svr_nm.c_str());
                             }
                         }
 #if 0

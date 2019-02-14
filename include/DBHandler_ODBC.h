@@ -32,11 +32,11 @@ class JobInfoItem {
     std::string m_filename;
     std::string m_regdate;
     std::string m_rxtx;
-    std::string m_tableName; // TBL_JOB_INFO, TBL_JOB_SELF_INFO, TBL_JOB_RETRY_INFO
+    std::string m_tableName; // STT_TBL_JOB_INFO, STT_TBL_JOB_SELF_INFO, STT_TBL_JOB_RETRY_INFO
     int m_procNo;
 
     public:
-    JobInfoItem(std::string callid, std::string counselorcode, std::string path, std::string filename, std::string regdate, std::string rxtx, std::string tableName="TBL_JOB_INFO", int procNo=0);
+    JobInfoItem(std::string callid, std::string counselorcode, std::string path, std::string filename, std::string regdate, std::string rxtx, std::string tableName="STT_TBL_JOB_INFO", int procNo=0);
     virtual ~JobInfoItem();
 
     std::string getCallId() { return m_callid; }
@@ -141,11 +141,11 @@ public:
     // VFClient에서 사용되는 api로서 작업 시작 전,
     // 작업 완료 후 아래의 api를 이용하여 해당 task에 대한 정보를 handling한다.
     int insertTaskInfo(std::string downloadPath, std::string filename, std::string callId);
-    int updateTaskInfo(std::string callid, std::string regdate, std::string rxtx, std::string counselorcode, char state, int fsize=0, int plen=0, int wtime=0, int procNo=0, const char *tbName="TBL_JOB_INFO", const char *errcode=nullptr, const char *svr_nm="DEFAULT");
-    int updateTaskInfo(std::string callid, std::string rxtx, std::string counselorcode, std::string regdate, char state, int fsize=0, int plen=0, int wtime=0, const char *tbName="TBL_JOB_INFO", const char *errcode=nullptr, const char *svr_nm="DEFAULT");
+    int updateTaskInfo(std::string callid, std::string regdate, std::string rxtx, std::string counselorcode, char state, int fsize=0, int plen=0, int wtime=0, int procNo=0, const char *tbName="STT_TBL_JOB_INFO", const char *errcode=nullptr, const char *svr_nm="DEFAULT");
+    int updateTaskInfo(std::string callid, std::string rxtx, std::string counselorcode, std::string regdate, char state, int fsize=0, int plen=0, int wtime=0, const char *tbName="STT_TBL_JOB_INFO", const char *errcode=nullptr, const char *svr_nm="DEFAULT");
     int searchTaskInfo(std::string downloadPath, std::string filename, std::string callId);
-    int getTaskInfo(std::vector< JobInfoItem* > &v, int count, const char *tableName="TBL_JOB_INFO");
-    int getTaskInfo2(std::vector< JobInfoItem* > &v, int count, const char *tableName="TBL_JOB_SELF_INFO");
+    int getTaskInfo(std::vector< JobInfoItem* > &v, int count, const char *tableName="STT_TBL_JOB_INFO");
+    int getTaskInfo2(std::vector< JobInfoItem* > &v, int count, const char *tableName="STT_TBL_JOB_SELF_INFO");
     int getTimeoutTaskInfo(std::vector< JobInfoItem* > &v);
     int insertTaskInfoRT(std::string downloadPath, std::string filename, std::string callId, std::string counselcode, time_t startT);
     int updateTaskInfo4Schd(std::string callid, std::string regdate, std::string rxtx, std::string tbName);

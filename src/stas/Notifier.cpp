@@ -201,7 +201,7 @@ void Notifier::thrdFunc(Notifier *noti)
 
                                         if (v.size() > 1) {
                                             if (!noti->m_DBHandler->searchTaskInfo(downpath, v[0], v[1])) {
-                                                logger->debug("insert to TBL_JOB_INFO(%s)", v[0].c_str());
+                                                logger->debug("insert to STT_TBL_JOB_INFO(%s)", v[0].c_str());
                                                 noti->m_DBHandler->insertTaskInfo(downpath, v[0], v[1]);
                                             }
                                         }

@@ -75,7 +75,7 @@ void Scheduler::thrdFuncScheduler(Scheduler *schd, VFCManager *vfcm)
 #endif
 
         // Self테이블
-        if (schd->m_sttdb->getTaskInfo2(v, vfcm->getAvailableCount(), "TBL_JOB_SELF_INFO") > 0) {
+        if (schd->m_sttdb->getTaskInfo2(v, vfcm->getAvailableCount(), "STT_TBL_JOB_SELF_INFO") > 0) {
             for( std::vector< JobInfoItem* >::iterator iter = v.begin(); iter != v.end(); iter++) {
                 item = *iter;
 
@@ -90,7 +90,7 @@ void Scheduler::thrdFuncScheduler(Scheduler *schd, VFCManager *vfcm)
         }
 
         // Retry테이블
-        if (schd->m_sttdb->getTaskInfo2(v, vfcm->getAvailableCount(), "TBL_JOB_RETRY_INFO") > 0) {
+        if (schd->m_sttdb->getTaskInfo2(v, vfcm->getAvailableCount(), "STT_TBL_JOB_RETRY_INFO") > 0) {
             for( std::vector< JobInfoItem* >::iterator iter = v.begin(); iter != v.end(); iter++) {
                 item = *iter;
 
@@ -108,7 +108,7 @@ void Scheduler::thrdFuncScheduler(Scheduler *schd, VFCManager *vfcm)
         }
 #endif
         // get items from DB
-        if (schd->m_sttdb->getTaskInfo(v, vfcm->getAvailableCount(), "TBL_JOB_INFO") > 0) {
+        if (schd->m_sttdb->getTaskInfo(v, vfcm->getAvailableCount(), "STT_TBL_JOB_INFO") > 0) {
             for( std::vector< JobInfoItem* >::iterator iter = v.begin(); iter != v.end(); iter++) {
                 item = *iter;
 
