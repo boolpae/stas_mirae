@@ -284,7 +284,8 @@ void VRClient::thrdMain(VRClient* client) {
     MakeDirectory(fullpath.c_str());
 
 #ifdef USE_REDIS_POOL
-    bool useRedis = (!config->getConfig("redis.use", "false").compare("true") & !config->getConfig("redis.send_rt_stt", "false").compare("true"));
+    bool useRedis = !config->getConfig("redis.use", "false").compare("true");
+    bool bSendDataRedis = !config->getConfig("redis.send_rt_stt", "false").compare("true");
     iconv_t it;
     VALUES vVal;
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
@@ -309,7 +310,12 @@ void VRClient::thrdMain(VRClient* client) {
         
         // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
         vVal.push_back( strRedisValue );
-        xRedis.lpush( dbi, redisKey, vVal, zCount );
+
+        if ( bSendDataRedis )
+        {
+            xRedis.lpush( dbi, redisKey, vVal, zCount );
+        }
+
         vVal.clear();
 
         redisKey = "G_RTSTT:";
@@ -710,9 +716,13 @@ void VRClient::thrdMain(VRClient* client) {
                                                 client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
                                             }
 
-                                            if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
-                                                client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                            if ( bSendDataRedis )
+                                            {
+                                                if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
+                                                    client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                                }
                                             }
+
                                             vVal.clear();
 
                                             free(utf_buf);
@@ -983,9 +993,13 @@ void VRClient::thrdMain(VRClient* client) {
                                         client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
                                     }
 
-                                    if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
-                                        client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                    if ( bSendDataRedis )
+                                    {
+                                        if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
+                                            client->m_Logger->error("VRClient::thrdMain(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                        }
                                     }
+
                                     vVal.clear();
 
                                     free(utf_buf);
@@ -1036,8 +1050,11 @@ void VRClient::thrdMain(VRClient* client) {
                             t = time(NULL);
                             tmp = localtime(&t);
 
-                            if (!xRedis.publish(dbi, sPubCannel.c_str(), client->getCallId().c_str(), zCount)) {
-                                client->m_Logger->error("VRClient::thrdMain(%s) - redis publish(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
+                            if ( bSendDataRedis )
+                            {
+                                if (!xRedis.publish(dbi, sPubCannel.c_str(), client->getCallId().c_str(), zCount)) {
+                                    client->m_Logger->error("VRClient::thrdMain(%s) - redis publish(). [%s], zCount(%d)", client->m_sCallId.c_str(), dbi.GetErrInfo(), zCount);
+                                }
                             }
 
                             redisKey = "G_CS:";
@@ -1049,7 +1066,10 @@ void VRClient::thrdMain(VRClient* client) {
                             strRedisValue = redisValue;
                             
                             // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
-                            xRedis.lset( dbi, redisKey, 0, strRedisValue );
+                            if ( bSendDataRedis )
+                            {
+                                xRedis.lset( dbi, redisKey, 0, strRedisValue );
+                            }
 
                         }
 #endif
@@ -1067,7 +1087,7 @@ void VRClient::thrdMain(VRClient* client) {
 
                             client->m_s2d->updateCallInfo(client->m_sCallId, true);
                             if ( !useDelCallInfo || ( totalVLen/16000 > nDelSecs ) ) {
-                                client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', totalVLen, totalVLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "STT_TBL_JOB_INFO", "", svr_nm.c_str());
+                                client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', totalVLen, totalVLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "TBL_JOB_INFO", "", svr_nm.c_str());
                             }
                         }
 #if 0
@@ -1156,11 +1176,19 @@ void VRClient::thrdMain(VRClient* client) {
         if ( useRedis && (totalVLen/16000 <= nDelSecs) ) {
             redisKey = "G_CS:";
             redisKey.append(client->m_sCounselCode);
-            xRedis.lpop(dbi, redisKey, strRedisValue);
+
+            if ( bSendDataRedis )
+            {
+                xRedis.lpop(dbi, redisKey, strRedisValue);
+            }
 
             redisKey = "G_RTSTT:";
             redisKey.append(client->m_sCallId);
-            xRedis.del(dbi, redisKey);
+
+            if ( bSendDataRedis )
+            {
+                xRedis.del(dbi, redisKey);
+            }
 
         }
         if ( client->m_s2d && (totalVLen/16000 <= nDelSecs) ) {
