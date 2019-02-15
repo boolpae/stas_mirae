@@ -579,7 +579,7 @@ void VRClient::thrdMain(VRClient* client) {
 
                     if (!vadres && (vBuff[item->spkNo-1].size()>nHeadLen)) {
                         chkRealSize = checkRealSize(vBuff[item->spkNo-1], nHeadLen, framelen, client->m_framelen);
-                        client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(%d), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), item->spkNo, vBuff[item->spkNo-1].size(), chkRealSize);
+                        // client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(%d), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), item->spkNo, vBuff[item->spkNo-1].size(), chkRealSize);
                         // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff[item->spkNo-1].size() > nMinVBuffSize)) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
                         if ( /*vBuff[item->spkNo-1].size()*/chkRealSize > nMinVBuffSize ) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
                             // send buff to gearman

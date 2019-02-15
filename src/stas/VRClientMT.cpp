@@ -771,8 +771,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         client->tx_hold ||
                         (!vadres && (vBuff.size()>nHeadLen))) {
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
-                        client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(RX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
-                        // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+                        // client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(RX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
+                        
                         if ( /*vBuff.size()*/chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 #if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
                             if (1) {
@@ -1568,9 +1568,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     if (
                         client->rx_hold ||
                         (!vadres && (vBuff.size()>nHeadLen))) {
-                        // if ( (nCurrWaitNo > nMaxWaitNo) || (vBuff.size() > nMinVBuffSize) ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
-                        client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(TX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
+                        // client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(TX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
 
                         if ( /*vBuff.size()*/chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 #if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
