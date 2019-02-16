@@ -490,7 +490,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
     bOnlySil = !config->getConfig("stas.only_silence", "false").compare("true");
     bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
 
-    if ( config->isSet("stas.pcm_path") && (config->getConfig("stas.pcm_path", "").size() > 0) )
+    if ( (bOnlySil || bUseSavePcm) && config->isSet("stas.pcm_path") && (config->getConfig("stas.pcm_path", "").size() > 0) )
     {
         pcmFilename = config->getConfig("stas.pcm_path", client->m_pcm_path.c_str()) + "/" + datebuff + "/" + client->m_sCounselCode + "/";
         MakeDirectory(pcmFilename.c_str());
@@ -1292,7 +1292,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
     bOnlySil = !config->getConfig("stas.only_silence", "false").compare("true");
     bUseSavePcm = !config->getConfig("stas.use_save_pcm", "false").compare("true");
 
-    if ( config->isSet("stas.pcm_path") && (config->getConfig("stas.pcm_path", "").size() > 0) )
+    if ( (bOnlySil || bUseSavePcm) && config->isSet("stas.pcm_path") && (config->getConfig("stas.pcm_path", "").size() > 0) )
     {
         pcmFilename = config->getConfig("stas.pcm_path", client->m_pcm_path.c_str()) + "/" + datebuff + "/" + client->m_sCounselCode + "/";
         MakeDirectory(pcmFilename.c_str());
