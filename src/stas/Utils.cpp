@@ -72,15 +72,16 @@ void remSpaceInSentence(string& org)
     wstring convWStr;
     wstring tempWStr;
     wstring mResult;
-    size_t spos, slen;
+    size_t spos, slen, epos;
 
     convWStr = s2ws( org );
     tempWStr = convWStr;
 
+    epos = 0;
     while( regex_search( tempWStr, wm, we) )
     {
         mResult = wm.str(0);
-        spos = convWStr.find( mResult );
+        spos = tempWStr.find( mResult ) + epos;
         slen = mResult.size();
 
         mResult.erase(remove(mResult.begin(), mResult.end(), L' '), mResult.end());
@@ -88,7 +89,10 @@ void remSpaceInSentence(string& org)
 
         convWStr.replace(spos, slen, mResult);
 
-        tempWStr = convWStr.substr(spos+mResult.size());
+        epos = spos + mResult.size();
+
+        tempWStr = convWStr.substr(epos);
+
     }
 
     org = ws2s( convWStr ) ;
@@ -105,20 +109,23 @@ void maskKeyword(string& org)
     wstring tempWStr;
     wstring mResult;
     wstring maskValue = L" *** ";
-    size_t spos, slen;
+    size_t spos, slen, epos;
 
     convWStr = s2ws( org );
     tempWStr = convWStr;
 
+    epos = 0;
     while( regex_search( tempWStr, wm, we) )
     {
         mResult = wm.str(0);
-        spos = convWStr.find( mResult );
+        spos = tempWStr.find( mResult ) + epos;
         slen = mResult.size();
 
         convWStr.replace(spos, slen, maskValue);
 
-        tempWStr = convWStr.substr(spos+maskValue.size());
+        epos = spos + maskValue.size();
+
+        tempWStr = convWStr.substr(epos);
     }
 
     org = ws2s( convWStr ) ;
