@@ -167,13 +167,13 @@ void FileHandler::thrdMain(FileHandler * dlv)
 
                 if (item->getJobType() == 'R') {
                     if (item->getSpkNo() == 1) {
-                        testSttresult << "<< COUNSELOR >> : ";
+                        testSttresult << "\n<< COUNSELOR >>\n";
                     }
                     else if (item->getSpkNo() == 2) {
-                        testSttresult << "<< CUSTOMER >> : ";
+                        testSttresult << "\n<< CUSTOMER >>\n";
                     }
 
-                    testSttresult << std::to_string(item->getBpos()) << " - " << std::to_string(item->getEpos()) << std::endl;
+                    // testSttresult << std::to_string(item->getBpos()) << " - " << std::to_string(item->getEpos()) << std::endl;
                 }
 
                 testSttresult << item->getSTTValue() ;
