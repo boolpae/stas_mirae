@@ -446,18 +446,33 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
             if (item->getErrCode().size()) {
                 if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_INFO", item->getTableName().size()) )
                 {
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                    sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_STAT_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','%s','%s')",
+                        item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff);
+#else
                     sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','%s','%s')",
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff);
+#endif
                 }
                 else if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_SELF_INFO", item->getTableName().size()) )
                 {
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                    sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_SELF_STAT_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','%s','%s','%d')",
+                        item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff, item->procNo);
+#else
                     sprintf(sqlbuff, "CALL PROC_JOB_SELF_STATISTIC_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','%s','%s','%d')",
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff, item->procNo);
+#endif
                 }
                 else if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_RETRY_INFO", item->getTableName().size()) )
                 {
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                    sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_RETRY_STAT_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','%s','%s','%d')",
+                        item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff, item->procNo);
+#else
                     sprintf(sqlbuff, "CALL PROC_JOB_RETRY_STATISTIC_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','%s','%s','%d')",
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff, item->procNo);
+#endif
                 }
                 // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',ERR_CD='%s' WHERE CALL_ID='%s' AND RCD_TP='%s'",
                 //     tbName, state, errcode, callid.c_str(), rxtx.c_str());
@@ -465,18 +480,33 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
             else {
                 if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_INFO", item->getTableName().size()) )
                 {
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                    sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_STAT_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','','%s')",
+                        item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff);
+#else
                     sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','','%s')",
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff);
+#endif
                 }
                 else if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_SELF_INFO", item->getTableName().size()) )
                 {
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                    sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_SELF_STAT_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','','%s','%d')",
+                        item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff, item->procNo);
+#else
                     sprintf(sqlbuff, "CALL PROC_JOB_SELF_STATISTIC_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','','%s','%d')",
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff, item->procNo);
+#endif
                 }
                 else if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_RETRY_INFO", item->getTableName().size()) )
                 {
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                    sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_RETRY_STAT_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','','%s','%d')",
+                        item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff, item->procNo);
+#else
                     sprintf(sqlbuff, "CALL PROC_JOB_RETRY_STATISTIC_DAILY_MOD('%s','%s','%s','%d','%d','%d','%c','','%s','%d')",
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff, item->procNo);
+#endif
                 }
                 // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',FILE_SIZE=%d,REC_LENGTH=%d,WORKING_TIME=%d WHERE CALL_ID='%s' AND RCD_TP='%s'",
                 //     tbName, state, fsize, plen, wtime, callid.c_str(), rxtx.c_str());
@@ -2179,8 +2209,13 @@ void DBHandler::updateAllTask2Fail2()
 
             for(iter= vItems.begin(); iter != vItems.end(); iter++) {
                 jobInfo = (*iter);
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+                sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_STAT_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','TM_OUT','%s')",
+                    jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
+#else
                 sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','TM_OUT','%s')",
                     jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
+#endif
                 retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
                 if SQL_SUCCEEDED(retcode) {
@@ -2305,8 +2340,13 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
         for(iter= vItems.begin(); iter != vItems.end(); iter++) {
             jobInfo = (*iter);
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+            sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_STAT_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s')",
+                jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
+#else
             sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s')",
                 jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
+#endif
             retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
             if SQL_SUCCEEDED(retcode) {
@@ -2350,8 +2390,13 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
         for(iter= vItems.begin(); iter != vItems.end(); iter++) {
             jobInfo = (*iter);
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+            sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_RETRY_STAT_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s','%d')",
+                jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str(), jobInfo->m_procNo);
+#else
             sprintf(sqlbuff, "CALL PROC_JOB_RETRY_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s','%d')",
                 jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str(), jobInfo->m_procNo);
+#endif
             retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
             if SQL_SUCCEEDED(retcode) {
@@ -2395,8 +2440,13 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
         for(iter= vItems.begin(); iter != vItems.end(); iter++) {
             jobInfo = (*iter);
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
+            sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_SELF_STAT_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s','%d')",
+                jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str(), jobInfo->m_procNo);
+#else
             sprintf(sqlbuff, "CALL PROC_JOB_SELF_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','UNKNOW','%s','%d')",
                 jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str(), jobInfo->m_procNo);
+#endif
             retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
             if SQL_SUCCEEDED(retcode) {
