@@ -349,7 +349,7 @@ void VRClient::thrdMain(VRClient* client) {
 
         client->m_s2d->updateCallInfo(client->m_sCallId, true);
         if ( !useDelCallInfo || ( client->TotalVoiceDataLen/16000 > nDelSecs ) ) {
-            client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', client->TotalVoiceDataLen, client->TotalVoiceDataLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "TBL_JOB_INFO", "", client->ServerName);
+            client->m_s2d->updateTaskInfo(client->m_sCallId, std::string(timebuff), std::string("MN"), client->m_sCounselCode, 'Y', client->TotalVoiceDataLen, client->TotalVoiceDataLen/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), 0, "STT_TBL_JOB_INFO", "", client->ServerName);
         }
     }
     client->m_Logger->debug("VRClient::thrdMain(%s)[4] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
