@@ -2,11 +2,7 @@
 #include "stas.h"
 #include "Scheduler.h"
 
-#ifndef USE_ODBC
 #include "DBHandler.h"
-#else
-#include "DBHandler_ODBC.h"
-#endif
 
 #include "VFCManager.h"
 #include "HAManager.h"

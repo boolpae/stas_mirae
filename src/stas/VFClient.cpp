@@ -4,11 +4,7 @@
 #include "VFCManager.h"
 #include "DivSpkManager.h"
 
-#ifndef USE_ODBC
 #include "DBHandler.h"
-#else
-#include "DBHandler_ODBC.h"
-#endif
 
 #include "FileHandler.h"
 #include "VASDivSpeaker.h"

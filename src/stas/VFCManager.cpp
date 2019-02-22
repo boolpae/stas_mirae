@@ -12,11 +12,7 @@
 #include "VFClient.h"
 #include "stas.h"
 
-#ifndef USE_ODBC
 #include "DBHandler.h"
-#else
-#include "DBHandler_ODBC.h"
-#endif
 
 using namespace std;
 

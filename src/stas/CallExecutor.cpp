@@ -6,11 +6,7 @@
 #include "VDCManager.h"
 #include "WorkTracer.h"
 
-#ifndef USE_ODBC
 #include "DBHandler.h"
-#else
-#include "DBHandler_ODBC.h"
-#endif
 
 #include "HAManager.h"
 

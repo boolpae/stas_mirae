@@ -19,7 +19,7 @@ DIST_TOOL=/usr/local/bin/gearadmin
 #SCHEDULER=$STT_HOME/bin/scheduler-1.0.0.jar
 #SCHEDULER_OPTIONS="-Dlog4j.configuration=file://$STT_HOME/config/log4j.xml -Dpath.schedule=$STT_HOME/schedule"
 #SCHEDULER_PID=$STT_HOME/scheduler.pid
-STAS=$STT_HOME/bin/Debug/Linux_x86_64/itf_stas_odbc
+STAS=$STT_HOME/bin/Debug/Linux_x86_64/itf_stas
 STAS_PID=$LOGS/itf_stas.pid
 #STAS_OPT="-i /home/boolpae/Dev/stas/config/stas.conf --verbose DEBUG --pid-file=${S_PID} -d"
 SERV_MON=$STT_HOME/config/stas_service.sh
@@ -60,7 +60,7 @@ stop() {
                 fi
         fi
 
-        PID_STAS=$(ps -ef | grep itf_stas_odbc | grep -v grep | awk '{print $2}')
+        PID_STAS=$(ps -ef | grep itf_stas | grep -v grep | awk '{print $2}')
         if [ "$PID_STAS" != "" ] && kill -0 $PID_STAS; then
                 echo -n 'Stopping STAS service: ' >&2
                 kill -15 $PID_STAS

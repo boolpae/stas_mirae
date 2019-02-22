@@ -10,11 +10,7 @@
 #include "FileHandler.h"
 #include "stas.h"
 
-#ifndef USE_ODBC
 #include "DBHandler.h"
-#else
-#include "DBHandler_ODBC.h"
-#endif
 
 #include "HAManager.h"
 #include "VFCManager.h"
@@ -135,21 +131,10 @@ int main(int argc, const char** argv)
     }
 #endif
 
-#ifndef USE_ODBC
-        st2db = DBHandler::instance(config->getConfig("database.type", "mysql"),
-                                config->getConfig("database.addr", "localhost"),
-                                config->getConfig("database.port", "3306"),
-                                config->getConfig("database.id", "stt"),
-                                config->getConfig("database.pw", "rt_stt"),
-                                config->getConfig("database.name", "rt_stt"),
-                                config->getConfig("database.chset", "utf8"),
-                                logger);
-#else
         st2db = DBHandler::instance(config->getConfig("database.dsn", "mysql"),
                                 config->getConfig("database.id", "stt"),
                                 config->getConfig("database.pw", "~dltvor2009"),
                                 std::stoi(config->getConfig("database.connCount", "localhost")));
-#endif
 
         if (!st2db) {
             logger->error("MAIN - ERROR (Failed to get DBHandler instance)");

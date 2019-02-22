@@ -3,7 +3,7 @@
 GEAR_PATH=""
 STAS_PATH="/home/boolpae/Dev/stas"
 GEARMAN="/usr/local/sbin/gearmand"
-STAS="/home/boolpae/Dev/stas/bin/Debug/Linux_x86_64/itf_stas_odbc"
+STAS="/home/boolpae/Dev/stas/bin/Debug/Linux_x86_64/itf_stas"
 #G_PID="/home/boolpae/Dev/stas/config/gearmand.pid"
 G_PID="/home/boolpae/gearmand.pid"
 S_PID="/home/boolpae/Dev/stas/config/itf_stas.pid"
