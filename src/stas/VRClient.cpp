@@ -1117,10 +1117,22 @@ void VRClient::thrdMain(VRClient* client) {
                             }
                             if (config->isSet("stas.merge")) {
                                 std::string cmd = "";
+
+                                strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",&timeinfo);
+                                strftime (datebuff,sizeof(datebuff),"%Y%m%d",&timeinfo);
+
                                 cmd = config->getConfig("stas.merge");
                                 cmd.push_back(' ');
                                 cmd.append(client->m_pcm_path.c_str());
+                                cmd.push_back('/');
+                                cmd.append(datebuff);
+                                cmd.push_back('/');
+                                cmd.append(client->m_sCounselCode.c_str());
                                 cmd.push_back(' ');
+                                cmd.append(client->m_sCounselCode.c_str());
+                                cmd.push_back('_');
+                                cmd.append(timebuff);
+                                cmd.push_back('_');
                                 cmd.append(client->m_sCallId.c_str());
                                 // job_log->debug("[%s, 0x%X] %s", job_name, THREAD_ID, cmd.c_str());
                                 if (std::system(cmd.c_str())) {
