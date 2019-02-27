@@ -464,6 +464,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff, item->procNo);
 #endif
                 }
+#if defined(USE_RETRY_TABLE)
                 else if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_RETRY_INFO", item->getTableName().size()) )
                 {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
@@ -474,6 +475,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff, item->procNo);
 #endif
                 }
+#endif
                 // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',ERR_CD='%s' WHERE CALL_ID='%s' AND RCD_TP='%s'",
                 //     tbName, state, errcode, callid.c_str(), rxtx.c_str());
             }
@@ -498,6 +500,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff, item->procNo);
 #endif
                 }
+#if defined(USE_RETRY_TABLE)
                 else if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_RETRY_INFO", item->getTableName().size()) )
                 {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
@@ -508,6 +511,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                         item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff, item->procNo);
 #endif
                 }
+#endif
                 // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',FILE_SIZE=%d,REC_LENGTH=%d,WORKING_TIME=%d WHERE CALL_ID='%s' AND RCD_TP='%s'",
                 //     tbName, state, fsize, plen, wtime, callid.c_str(), rxtx.c_str());
             }
@@ -2376,6 +2380,7 @@ void DBHandler::updateAllIncompleteTask2Fail()
         vItems.clear();
     } 
 
+#if defined(USE_RETRY_TABLE)
 
     getIncompleteTaskFromRetry(vItems);
 
@@ -2426,6 +2431,7 @@ void DBHandler::updateAllIncompleteTask2Fail()
         vItems.clear();
     } 
 
+#endif
 
     getIncompleteTaskFromSelf(vItems);
 

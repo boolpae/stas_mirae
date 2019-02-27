@@ -90,6 +90,7 @@ EN_SAVE_PCM="TRUE"
 FOR_TEST="TRUE"
 USE_FIND_KEYWORD="TRUE"
 FOR_ITFACT="FALSE"
+USE_RETRY_TABLE="FALSE"
 ###############################################################################
 
 all: $(SUB_LIBRARIES) $(SUB_PROJECTS)
