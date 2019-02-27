@@ -17,6 +17,7 @@
 #include "Notifier.h"
 #include "Scheduler.h"
 #include "RedisHandler.h"
+#include "Utils.h"
 
 #include <log4cpp/Category.hh>
 #include <log4cpp/Appender.hh>
@@ -130,11 +131,23 @@ int main(int argc, const char** argv)
         return -1;
     }
 #endif
+        std:string dbpwd="";
+        if ( !config->getConfig("database.encrypt", "false").compare("true") )
+        {
+            dbpwd = config->getConfig("database.pw", "144977AD622F41F741FF26D1CCF7E6DF");
+            if ( !Decrypt(dbpwd) )
+                dbpwd = config->getConfig("database.pw", "~dltvor2009");
+        }
+        else
+        {
+            dbpwd = config->getConfig("database.pw", "~dltvor2009");
+        }
+        
 
         st2db = DBHandler::instance(config->getConfig("database.dsn", "mysql"),
                                 config->getConfig("database.id", "stt"),
-                                config->getConfig("database.pw", "~dltvor2009"),
-                                std::stoi(config->getConfig("database.connCount", "localhost")));
+                                dbpwd,
+                                config->getConfig("database.connCount", 10));
 
         if (!st2db) {
             logger->error("MAIN - ERROR (Failed to get DBHandler instance)");
