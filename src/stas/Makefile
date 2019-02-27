@@ -84,7 +84,7 @@ endif
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 
 
 SHARED_LIBS		:= -lboost_program_options -lboost_filesystem -lboost_system
-SHARED_LIBS		+= -llog4cpp -lgearman -lodbc
+SHARED_LIBS		+= -llog4cpp -lgearman -lodbc -lcrypto
 
 ifeq ($(ENABLE_REALTIME), "TRUE")
 SHARED_LIBS		+= -lfvad

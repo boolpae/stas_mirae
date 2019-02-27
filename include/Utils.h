@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+int Encrypt(std::string &data);
+int Decrypt(std::string &data);
+
 // 디렉토리 생성
 void MakeDirectory(const char *full_path);
 

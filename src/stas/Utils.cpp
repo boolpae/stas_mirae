@@ -14,9 +14,125 @@
 #endif
 
 #include <fvad.h>
+#include <openssl/evp.h>
+
 
 using namespace std;
 using boost::locale::conv::utf_to_utf;
+
+
+const string key = "fooboo1234567890";
+const string iv = "fooboo1234567890";
+
+int Encrypt(string &data)
+{
+    int length=0;
+    int key_length, iv_length, data_length;
+    key_length = key.size();
+    iv_length = iv.size();
+    data_length = data.size();
+
+    const EVP_CIPHER *cipher;
+    int cipher_key_length, cipher_iv_length;
+    cipher = EVP_aes_128_cbc();
+    cipher_key_length = EVP_CIPHER_key_length(cipher);
+    cipher_iv_length = EVP_CIPHER_iv_length(cipher);
+
+    if (key_length != cipher_key_length || iv_length != cipher_iv_length) {
+        return 0;
+    }
+
+    EVP_CIPHER_CTX *ctx;
+    int i, cipher_length, final_length;
+    unsigned char *ciphertext;
+    char sByte[3];
+
+    // EVP_CIPHER_CTX_init(&ctx);
+    ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) return 0;
+
+    EVP_EncryptInit_ex(ctx, cipher, NULL, (const unsigned char *)key.c_str(), (const unsigned char *)iv.c_str());
+
+    cipher_length = data_length + EVP_MAX_BLOCK_LENGTH;
+    ciphertext = (unsigned char *)malloc(cipher_length);
+
+    EVP_EncryptUpdate(ctx, ciphertext, &cipher_length, (const unsigned char *)data.c_str(), data_length);
+    EVP_EncryptFinal_ex(ctx, ciphertext + cipher_length, &final_length);
+
+    data.clear();
+    for (i = 0; i < cipher_length + final_length; i++)
+    {
+        sprintf(sByte, "%02X", ciphertext[i]);
+        data.append(sByte);
+    }
+    
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    length = cipher_length + final_length;
+    free(ciphertext);
+    return length;
+}
+
+int Decrypt(string &data)
+{
+    int key_length, iv_length;
+    key_length = key.size();
+    iv_length = iv.size();
+    int data_length = data.size() / 2;
+
+    const EVP_CIPHER *cipher;
+    int cipher_key_length, cipher_iv_length;
+    cipher = EVP_aes_128_cbc();
+    cipher_key_length = EVP_CIPHER_key_length(cipher);
+    cipher_iv_length = EVP_CIPHER_iv_length(cipher);
+
+    if (key_length != cipher_key_length || iv_length != cipher_iv_length) {
+        return 0;
+    }
+
+    const char *p = data.c_str();;
+    unsigned char *datax;
+    int i, datax_length;
+
+    datax = (unsigned char *)malloc(data_length);
+
+    for (size_t count = 0; count < data_length; count++) {
+        sscanf(p, "%2hhx", &datax[count]);
+        p += 2;
+    }
+
+    datax_length = data_length;
+
+    EVP_CIPHER_CTX *ctx;
+
+    ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        free(datax);
+        return 0;
+    }
+
+    EVP_DecryptInit_ex(ctx, cipher, NULL, (const unsigned char *)key.c_str(), (const unsigned char *)iv.c_str());
+
+    int plain_length, final_length;
+    unsigned char *plaintext;
+
+    plain_length = datax_length;
+    plaintext = (unsigned char *)malloc(plain_length + 1);
+
+    EVP_DecryptUpdate(ctx, plaintext, &plain_length, (unsigned char *)datax, datax_length);
+    EVP_DecryptFinal_ex(ctx, plaintext + plain_length, &final_length);
+
+    plaintext[plain_length + final_length] = '\0';
+
+    free(datax);
+
+    EVP_CIPHER_CTX_free(ctx);
+
+    data = (const char*)plaintext;
+
+    return data.size();
+}
 
 #if 0
 wstring s2ws(const std::string& str)
