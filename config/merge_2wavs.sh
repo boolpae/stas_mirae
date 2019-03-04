@@ -29,6 +29,10 @@ fi
 
 LWAV_FILE=$1"/"$2"_l.wav"
 RWAV_FILE=$1"/"$2"_r.wav"
+## merge된 녹취 파일을 플레이어에서 사용할 경우 저장 위치와 파일 이름을 지정이 가능
+# RES_PATH='/home/stt/Smart-VR/output'
+# TEMP_FILE=`echo $2|cut -d'_' -f3`
+# RES_FILE=${RES_PATH}"/"${TEMPFILE}".wav"
 RES_FILE=$1"/"$2".wav"
 
 ## For debugging... output variables
