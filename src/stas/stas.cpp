@@ -73,6 +73,24 @@ int main(int argc, const char** argv)
             printf(" %s : Version (%d.%d), Build Date(%s)\n", argv[0], STAS_VERSION_MAJ, STAS_VERSION_MIN, __DATE__);
             return 0;
         }
+        else if (!strncmp(argv[1], "encstr", 6)) {
+            if ( argc == 3 ) {
+                string input = argv[2];
+                if ( Encrypt(input) ) {
+                    std::cout << "ENC STR(" << input << ")" << std::endl;
+                }
+            }
+            return 0;
+        }
+        else if (!strncmp(argv[1], "decstr", 6)) {
+            if ( argc == 3 ) {
+                string input = argv[2];
+                if ( Decrypt(input) ) {
+                    std::cout << "DEC STR(" << input << ")" << std::endl;
+                }
+            }
+            return 0;
+        }
     }
     
     try {
