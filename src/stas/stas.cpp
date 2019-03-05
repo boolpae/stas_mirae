@@ -82,15 +82,6 @@ int main(int argc, const char** argv)
             }
             return 0;
         }
-        else if (!strncmp(argv[1], "decstr", 6)) {
-            if ( argc == 3 ) {
-                string input = argv[2];
-                if ( Decrypt(input) ) {
-                    std::cout << "DEC STR(" << input << ")" << std::endl;
-                }
-            }
-            return 0;
-        }
     }
     
     try {
