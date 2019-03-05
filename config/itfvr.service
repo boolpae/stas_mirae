@@ -1,0 +1,21 @@
+[Unit]
+Description=STT Voice Recognition Service
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=stt
+Group=stt
+Environment=ITFVR=/home/stt/Smart-VR
+Environment=LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64/openmpi/lib:/usr/local/cuda/lib64:/usr/local/lib:/usr/lib64
+Environment=PATH=$PATH:/usr/local/node/bin:/usr/local/cuda/bin:/usr/lib64/openmpi/bin
+WorkingDirectory=/home/stt/Smart-VR
+ExecStart=/home/stt/Smart-VR/bin/itf_vr -i /home/stt/Smart-VR/config/env_rt.cfg --verbose DEBUG
+
+Restart=always
+#RestartSec=10
+#TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
