@@ -5,8 +5,8 @@ After=syslog.target network.target
 
 [Service]
 Type=forking
-User=boolpae
-Group=boolpae
+User=stt
+Group=stt
 Environment=GEARPID=/home/stt/gearman/gearman.pid
 Environment=GEARLOG=/home/stt/gearman/gearman.log
 PIDFile=/home/stt/gearman/gearman.pid
