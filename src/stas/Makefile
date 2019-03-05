@@ -81,6 +81,10 @@ ifeq ($(USE_RETRY_TABLE), "TRUE")
 FLAGS			+= -DUSE_RETRY_TABLE
 endif
 
+ifeq ($(USE_CS_TABLE), "TRUE")
+FLAGS			+= -DUSE_CS_TABLE
+endif
+
 FLAGS			+= -DUSE_UPDATE_POOL # Update Task 시 전용 thread를 이용하는 방법을 이용 
 
 SHARED_LIBS		:= -lboost_program_options -lboost_filesystem -lboost_system

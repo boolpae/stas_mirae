@@ -727,6 +727,7 @@ DBHandler* DBHandler::getInstance()
 
 int DBHandler::searchCallInfo(std::string counselorcode)
 {
+#ifdef USE_CS_TABLE
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     int ret=0, siCnt;
     char sqlbuff[512];
@@ -801,10 +802,14 @@ int DBHandler::searchCallInfo(std::string counselorcode)
     }
 
     return ret;
+#else
+    return 0;
+#endif
 }
 
 int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
 {
+#ifdef USE_CS_TABLE
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     char sqlbuff[512];
     SQLRETURN retcode;
@@ -872,10 +877,14 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
     }
 
     return ret;
+#else
+    return 0;
+#endif
 }
 
 int DBHandler::updateCallInfo(std::string callid, bool end)
 {
+#ifdef USE_CS_TABLE
     // Connection_T con;
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     int ret=0;
@@ -946,10 +955,14 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
     }
 
     return ret;
+#else
+    return 0;
+#endif
 }
 
 int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, bool end)
 {
+#ifdef USE_CS_TABLE
     // Connection_T con;
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     int ret=0;
@@ -1017,6 +1030,9 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
     }
 
     return ret;
+#else
+    return 0;
+#endif
 }
 
 void DBHandler::insertSTTData(uint32_t idx, std::string callid, uint8_t spkno, uint64_t spos, uint64_t epos, std::string &stt)
