@@ -37,7 +37,7 @@ void FileHandler::thrdMain(FileHandler * dlv)
 	STTQueItem* item;
 	std::string sttFilename;
     std::string fullpath;
-    int ret=0;
+
 #ifdef FOR_TEST
     std::string testSttFilename;
 #endif
@@ -200,7 +200,6 @@ void FileHandler::thrdSaveJsonData(FileHandler * dlv)
 	STTQueItem* item;
 	std::string sttFilename;
     std::string fullpath;
-    int ret=0;
 
     char datebuff[32];
     struct tm * timeinfo;

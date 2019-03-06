@@ -48,14 +48,14 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
     gearman_return_t rc;
 
     char buf[256];
-    int buflen=0;
+    // int buflen=0;
     
     std::string reqFilePath;
     std::string line;
 
     JobInfoItem* item;
     
-    str:string sValue;
+    std::string sValue;
     std::string sFuncName="";
     std::string svr_name="DEFAULT";
     std::string err_code="";
@@ -103,7 +103,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 #endif
 
     while(client->m_LiveFlag) {
-        if(item = mgr->popItem()) {
+        if( (item = mgr->popItem()) ) {
 //             struct tm tm;
 // #if defined(USE_ORACLE) || defined(USE_TIBERO)
 //             strptime(item->getRegdate().c_str(), "%Y/%m/%d %H:%M:%S", &tm);
@@ -147,7 +147,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 
 #endif
             memset(buf, 0, sizeof(buf));
-            buflen = 0;
+            // buflen = 0;
             
             auto t1 = std::chrono::high_resolution_clock::now();
 #if 1
@@ -226,7 +226,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                             rapidjson::Document docUnseg;
 
                                             if (!docUnseg.Parse(strValue.c_str()).HasParseError() && docUnseg["RESULT"].GetBool()) {
-                                                std:string sttValue(docUnseg["UNSEGMENT-RESULT"].GetString());
+                                                std::string sttValue(docUnseg["UNSEGMENT-RESULT"].GetString());
                                                 // # 화자 분리
                                                 if (res["CHANNEL-COUNT"].GetInt()==1 && res["SPK-COUNT"].GetInt()==2) {
                                                     VASDivSpeaker divspk(DBHandler, FileHandler, item);
@@ -393,7 +393,9 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                         }
 
                                         {
+#ifdef CHANGE_STT_DATA
                                             uint32_t diaNumber=0;
+#endif
                                             uint8_t spkno=1;
                                             std::istringstream iss(rx_unseg);
                                             std::vector<std::string> strs;
@@ -452,7 +454,9 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                         }
 
                                         {
+#ifdef CHANGE_STT_DATA
                                             uint32_t diaNumber=0;
+#endif
                                             uint8_t spkno=2;
                                             std::istringstream iss(tx_unseg);
                                             std::vector<std::string> strs;
@@ -599,7 +603,9 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                 svr_name = sValue.substr(nPos1, nPos2-nPos1-1);   // SERVER_NAME
                                 // Make use of value
                                 if (value) {
+        #ifdef CODE_EXAM_SECTION
                                     uint32_t diaNumber=0;
+        #endif
                                     uint8_t spkno=0;
                                     std::string strValue(sValue.substr(nPos2));//((const char*)value);
 

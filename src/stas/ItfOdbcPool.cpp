@@ -131,7 +131,7 @@ PConnSet    ItfOdbcPool::getConnection()   // race condition 방지를 위해 mu
     log4cpp::Category *logger = config->getLogger();
 
     for(iter=m_mConnSets.begin(); iter!=m_mConnSets.end(); iter++) {
-        if ((iter->second)->useStat && !(iter->second)->currStat && ((iter->second)->id >= m_nNextId) ) {
+        if ((iter->second)->useStat && !(iter->second)->currStat && ((int)((iter->second)->id) >= m_nNextId) ) {
             connSet = iter->second;
             connSet->currStat = true;
             m_nNextId = connSet->id + 1;

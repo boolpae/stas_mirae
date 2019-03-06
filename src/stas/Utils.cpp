@@ -93,11 +93,11 @@ int Decrypt(string &data)
 
     const char *p = data.c_str();;
     unsigned char *datax;
-    int i, datax_length;
+    int datax_length;
 
     datax = (unsigned char *)malloc(data_length);
 
-    for (size_t count = 0; count < data_length; count++) {
+    for (int count = 0; count < data_length; count++) {
         sscanf(p, "%2hhx", &datax[count]);
         p += 2;
     }

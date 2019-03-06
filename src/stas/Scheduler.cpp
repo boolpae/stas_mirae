@@ -127,7 +127,6 @@ void Scheduler::thrdFuncStateUpdate(Scheduler* schd)
 {
     log4cpp::Category *logger = config->getLogger();
     HAManager *ham = HAManager::getInstance();
-    JobInfoItem *item;
 
     if (ham && !ham->getHAStat()) {
         logger->debug("Scheduler::thrdFuncStateUpdate() - Waiting... for Standby Mode");

@@ -140,7 +140,7 @@ int main(int argc, const char** argv)
         return -1;
     }
 #endif
-        std:string dbpwd="";
+        std::string dbpwd="";
         if ( !config->getConfig("database.encrypt", "false").compare("true") )
         {
             dbpwd = config->getConfig("database.pw", "144977AD622F41F741FF26D1CCF7E6DF");

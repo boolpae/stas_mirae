@@ -236,7 +236,7 @@ void VRClient::thrdMain(VRClient* client) {
     struct tm timeinfo;
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
     bool useDelCallInfo = !config->getConfig("stas.use_del_callinfo", "false").compare("true");
-    int nDelSecs = config->getConfig("stas.del_secs", 0);
+    unsigned int nDelSecs = config->getConfig("stas.del_secs", 0);
 
 #ifdef USE_REDIS_POOL
     int64_t zCount=0;
@@ -437,7 +437,7 @@ void VRClient::thrdMain(VRClient* client) {
 void VRClient::thrdRxProcess(VRClient* client) {
 
 	QueItem* item;
-    gearman_client_st *gearClient;
+    gearman_client_st *gearClient = nullptr;
     gearman_return_t ret;
     void *value = NULL;
     size_t result_size;
@@ -481,7 +481,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 #endif
 
     bool bUseSkipHanum = !config->getConfig("stas.use_skip_hanum", "false").compare("true");
-    int nSkipHanumSize = config->getConfig("stas.skip_hanum_buff_size", 16000);
+    unsigned int nSkipHanumSize = config->getConfig("stas.skip_hanum_buff_size", 16000);
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
@@ -521,7 +521,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 #ifdef USE_REDIS_POOL
     bool useRedis = !config->getConfig("redis.use", "false").compare("true");
     bool bSendDataRedis = !config->getConfig("redis.send_rt_stt", "false").compare("true");
-    iconv_t it;
+    iconv_t it = NULL;
     VALUES vVal;
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
     xRedisClient &xRedis = client->getXRdedisClient();
@@ -1240,7 +1240,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 void VRClient::thrdTxProcess(VRClient* client) {
 
 	QueItem* item;
-    gearman_client_st *gearClient;
+    gearman_client_st *gearClient = nullptr;
     gearman_return_t ret;
     void *value = NULL;
     size_t result_size;
@@ -1284,7 +1284,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 #endif
 
     bool bUseSkipHanum = !config->getConfig("stas.use_skip_hanum", "false").compare("true");
-    int nSkipHanumSize = config->getConfig("stas.skip_hanum_buff_size", 16000);
+    unsigned int nSkipHanumSize = config->getConfig("stas.skip_hanum_buff_size", 16000);
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
@@ -1323,7 +1323,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 #ifdef USE_REDIS_POOL
     bool useRedis = !config->getConfig("redis.use", "false").compare("true");
     bool bSendDataRedis = !config->getConfig("redis.send_rt_stt", "false").compare("true");
-    iconv_t it;
+    iconv_t it = NULL;
     VALUES vVal;
     std::string sPubCannel = config->getConfig("redis.pubchannel", "RT-STT");
     xRedisClient &xRedis = client->getXRdedisClient();

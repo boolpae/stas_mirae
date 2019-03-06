@@ -181,19 +181,17 @@ void DBHandler::thrdMain(DBHandler * s2d)
     iconv_t it;
     char *input_buf_ptr = NULL;
     char *output_buf_ptr = NULL;
-    char cSpk='N';
+    // char cSpk='N';
     char sRxTx[8];
     char sqlbuff[MAX_STT_SIZE + 128];
-    int nIdx;
+    // int nIdx;
 
-    SQLLEN lenStt, lenIdx, lenCallid, /*lenSpk,*/ lenStart, lenEnd;
+    SQLLEN lenStt, lenCallid;//, lenIdx, /*lenSpk,*/ lenStart, lenEnd;
     char sttValue[MAX_STT_SIZE];
     char callId[256];
-    int nStart, nEnd;
+    // int nStart, nEnd;
 
     SQLRETURN retcode;
-
-    SQLSMALLINT NumParams;
 
     std::string sUtfResult;
 
@@ -279,15 +277,15 @@ void DBHandler::thrdMain(DBHandler * s2d)
             // insert rtstt to db
             switch(item->getSpkNo()) {
                 case 1:
-                    cSpk = 'R';
+                    // cSpk = 'R';
                     sprintf(sRxTx, "%s", "RX");
                     break;
                 case 2:
-                    cSpk = 'L';
+                    // cSpk = 'L';
                     sprintf(sRxTx, "%s", "TX");
                     break;
                 default:
-                    cSpk = 'N';
+                    // cSpk = 'N';
                     sprintf(sRxTx, "%s", "MN");
             }
 
@@ -301,9 +299,9 @@ void DBHandler::thrdMain(DBHandler * s2d)
                 extract_error("SQLPrepare()", connSet->stmt, SQL_HANDLE_STMT);
             }
 
-            nIdx = item->getDiaIdx();
-            nStart = item->getBpos();
-            nEnd = item->getEpos();
+            // nIdx = item->getDiaIdx();
+            // nStart = item->getBpos();
+            // nEnd = item->getEpos();
             // sprintf(sSpk, "%c", cSpk);
             sprintf(callId, "%s", item->getCallId().c_str());
             sprintf(sttValue, "%s", sUtfResult.c_str());//item->getSTTValue().c_str());
@@ -420,7 +418,6 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
     // time_t rawtime;
     // struct tm * timeinfo;
     char timebuff [32];
-    int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
 
@@ -522,7 +519,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                 logger->debug("DBHandler::thrdUpdate() - Query<%s>", sqlbuff);
             }
             else {
-                int odbcret = extract_error("DBHandler::thrdUpdate() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                    extract_error("DBHandler::thrdUpdate() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
                 // if (odbcret == 2006) {
                     logger->debug("DBHandler::thrdUpdate() - ReConnecting... DB");
                     if (!s2d->m_pSolDBConnPool->reconnectConnection(connSet))
@@ -533,11 +530,10 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
                         return;
                     }
                 // }
-                ret = 1;
             }
 
-    retcode = SQLCloseCursor(connSet->stmt);
-    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
 			delete item;
             t1 = std::chrono::high_resolution_clock::now();
 		}
@@ -568,13 +564,6 @@ void DBHandler::thrdUpdateKeywords(DBHandler *s2d)
     log4cpp::Category *logger;
     int nSleepedTime=0;
     int nSleepTime=5;
-
-    time_t rawtime;
-    struct tm * timeinfo;
-    char timebuff [32];
-    int ret=0;
-    char sqlbuff[512];
-    SQLRETURN retcode;
 
     logger = config->getLogger();
     PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();
@@ -646,7 +635,7 @@ void DBHandler::thrdUpdateKeywords(DBHandler *s2d)
 	}
 
     if (DBHandler::getInstance() && connSet) {
-        retcode = SQLCloseCursor(connSet->stmt);
+        SQLCloseCursor(connSet->stmt);
         s2d->m_pSolDBConnPool->restoreConnection(connSet);
     }
 
@@ -775,7 +764,7 @@ int DBHandler::searchCallInfo(std::string counselorcode)
         }
         }
         else {
-            int odbcret = extract_error("DBHandler::searchCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                extract_error("DBHandler::searchCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
                     m_pSolDBConnPool->eraseConnection(connSet);
@@ -845,7 +834,7 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
 #endif
         }
         else {
-            int odbcret = extract_error("DBHandler::insertCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::insertCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -922,7 +911,7 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
             retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         }
         else {
-            int odbcret = extract_error("DBHandler::updateCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::updateCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1164,7 +1153,7 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
 
         }
         else {
-            int odbcret = extract_error("DBHandler::insertTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::insertTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1243,7 +1232,7 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
 #endif
         }
         else {
-            int odbcret = extract_error("DBHandler::insertTaskInfoRT() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::insertTaskInfoRT() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1386,7 +1375,7 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
             m_Logger->debug("DBHandler::updateTaskInfo4Schd() - Query<%s>", sqlbuff);
         }
         else {
-            int odbcret = extract_error("DBHandler::updateTaskInfo4Schd() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::updateTaskInfo4Schd() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1474,7 +1463,7 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
             }
         }
         else if (retcode < 0) {
-            int odbcret = extract_error("DBHandler::getIncompleteTask() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::getIncompleteTask() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1566,7 +1555,7 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
             }
         }
         else if (retcode < 0) {
-            int odbcret = extract_error("DBHandler::getIncompleteTaskFromSelf() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::getIncompleteTaskFromSelf() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1658,7 +1647,7 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
             }
         }
         else if (retcode < 0) {
-            int odbcret = extract_error("DBHandler::getIncompleteTaskFromRetry() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::getIncompleteTaskFromRetry() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1732,7 +1721,7 @@ int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string 
             m_Logger->debug("DBHandler::updateTaskInfo2() - Query<%s>", sqlbuff);
         }
         else {
-            int odbcret = extract_error("DBHandler::updateTaskInfo2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::updateTaskInfo2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1772,7 +1761,7 @@ int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string 
 int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, std::string callId)
 {
     PConnSet connSet = m_pSolDBConnPool->getConnection();
-    int ret=0, siCnt=SQL_NTS;
+    int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
     RETCODE rc = SQL_SUCCESS;
@@ -1824,7 +1813,7 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
             retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         }
         else {
-            int odbcret = extract_error("DBHandler::searchTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::searchTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -1965,7 +1954,7 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
             }
         }
         else if (retcode < 0) {
-            int odbcret = extract_error("DBHandler::getTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::getTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -2064,7 +2053,7 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
             }
         }
         else if (retcode < 0) {
-            int odbcret = extract_error("DBHandler::getTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::getTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -2157,7 +2146,7 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
             }
         }
         else if (retcode < 0) {
-            int odbcret = extract_error("DBHandler::getTimeoutTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::getTimeoutTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -2242,7 +2231,7 @@ void DBHandler::updateAllTask2Fail2()
                     m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
                 }
                 else {
-                    int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                    extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
                     #if 0
                     if (odbcret == 2006) {
                         m_pSolDBConnPool->reconnectConnection(connSet);
@@ -2308,7 +2297,7 @@ void DBHandler::updateAllTask2Fail()
             m_Logger->debug("DBHandler::updateAllTask2Fail() - Query<%s>", sqlbuff);
         }
         else {
-            int odbcret = extract_error("DBHandler::updateAllTask2Fail() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+            extract_error("DBHandler::updateAllTask2Fail() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
             #if 0
             if (odbcret == 2006) {
                 m_pSolDBConnPool->reconnectConnection(connSet);
@@ -2373,7 +2362,7 @@ void DBHandler::updateAllIncompleteTask2Fail()
                 m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
             }
             else {
-                int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
 
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
@@ -2424,7 +2413,7 @@ void DBHandler::updateAllIncompleteTask2Fail()
                 m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
             }
             else {
-                int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
 
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
@@ -2439,8 +2428,8 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
             }
 
-    retcode = SQLCloseCursor(connSet->stmt);
-    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             delete jobInfo;
         }
 
@@ -2475,7 +2464,7 @@ void DBHandler::updateAllIncompleteTask2Fail()
                 m_Logger->debug("DBHandler::updateAllTask2Fail2() - Query<%s>", sqlbuff);
             }
             else {
-                int odbcret = extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                extract_error("DBHandler::updateAllTask2Fail2() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
 
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
@@ -2490,8 +2479,8 @@ void DBHandler::updateAllIncompleteTask2Fail()
 
             }
 
-    retcode = SQLCloseCursor(connSet->stmt);
-    retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
+            retcode = SQLCloseCursor(connSet->stmt);
+            retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
             delete jobInfo;
         }
 
@@ -2538,7 +2527,6 @@ int DBHandler::deleteJobData(std::string callid)
     int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
-    RETCODE rc = SQL_SUCCESS;
 
     if (!connSet)
     {
@@ -2568,7 +2556,7 @@ int DBHandler::deleteJobData(std::string callid)
             m_Logger->debug("DBHandler::deleteJobData - succeeded to delete job data(%s)", callid.c_str());
         }
         else {
-            int odbcret = extract_error("DBHandler::deleteJobData() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                extract_error("DBHandler::deleteJobData() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
                     m_pSolDBConnPool->eraseConnection(connSet);
@@ -2603,7 +2591,6 @@ int DBHandler::deleteJobInfo(std::string callid)
     int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
-    RETCODE rc = SQL_SUCCESS;
 
     if (!connSet)
     {
@@ -2626,7 +2613,7 @@ int DBHandler::deleteJobInfo(std::string callid)
             m_Logger->debug("DBHandler::deleteJobInfo - succeeded to delete job info(%s)", callid.c_str());
         }
         else {
-            int odbcret = extract_error("DBHandler::deleteJobInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
+                extract_error("DBHandler::deleteJobInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
                 if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
                     m_pSolDBConnPool->eraseConnection(connSet);
