@@ -644,7 +644,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
         // write wav heaer to file(mmap);
         vBuff.clear();
-        client->rx_sframe = 0;
+        // client->rx_sframe = 0;
         // client->rx_eframe = 0;
         client->rx_hold = 0;
         aDianum = 0;
@@ -1442,7 +1442,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
         // write wav heaer to file(mmap);
         vBuff.clear();
-        client->tx_sframe = 0;
+        // client->tx_sframe = 0;
         // client->tx_eframe = 0;
         client->tx_hold = 0;
         aDianum = 0;

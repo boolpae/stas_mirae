@@ -456,12 +456,13 @@ void VRClient::thrdMain(VRClient* client) {
         // write wav heaer to file(mmap);
         vBuff[0].clear();
         vBuff[1].clear();
+
+#ifdef EN_RINGBACK_LEN
+        sframe[0] = eframe[0] = client->m_nRingbackLen;
+        sframe[1] = eframe[1] = client->m_nRingbackLen;
+#else
         sframe[0] = 0;
         sframe[1] = 0;
-#ifdef EN_RINGBACK_LEN
-        eframe[0] = client->m_nRingbackLen;
-        eframe[1] = client->m_nRingbackLen;
-#else
         eframe[0] = 0;
         eframe[1] = 0;
 #endif
