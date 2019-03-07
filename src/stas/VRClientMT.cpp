@@ -142,12 +142,12 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
 
 	m_Mgr = mgr;
 
+#ifdef EN_RINGBACK_LEN
+    rx_sframe = rx_eframe=ringbacklen;
+    tx_sframe = tx_eframe=ringbacklen;
+#else
     rx_sframe=0;
     tx_sframe=0;
-#ifdef EN_RINGBACK_LEN
-    rx_eframe=ringbacklen;
-    tx_eframe=ringbacklen;
-#else
     rx_eframe=0;
     tx_eframe=0;
 #endif
