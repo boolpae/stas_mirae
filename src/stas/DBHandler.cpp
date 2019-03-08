@@ -594,7 +594,7 @@ int DBHandler::searchCallInfo(std::string counselorcode)
 {
 #ifdef USE_CS_TABLE
     PConnSet connSet = m_pSolDBConnPool->getConnection();
-    int ret=0, siCnt;
+    int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
     RETCODE rc = SQL_SUCCESS;

@@ -19,10 +19,9 @@ using namespace std;
 VFCManager* VFCManager::m_instance = nullptr;
 uint64_t VFCManager::m_nVFCs=0;
 
-VFCManager::VFCManager(int geartimeout/*, log4cpp::Category *logger*/)
-	: m_sGearHost("127.0.0.1"), m_nGearPort(4730), m_GearTimeout(geartimeout), m_nSockGearman(0)/*, m_Logger(logger)*/
+VFCManager::VFCManager(int geartimeout)
+	: m_sGearHost("127.0.0.1"), m_nGearPort(4730), m_GearTimeout(geartimeout), m_nSockGearman(0)
 {
-	//printf("\t[DEBUG] VFCManager Constructed.\n");
     m_Logger = config->getLogger();
     m_bMakeMLF = !config->getConfig("stt_result.make_mlf", "false").compare("true");
     m_sResultPath = config->getConfig("stt_result.path", "./stt_result");
@@ -32,7 +31,6 @@ VFCManager::VFCManager(int geartimeout/*, log4cpp::Category *logger*/)
 
 VFCManager::~VFCManager()
 {
-	//printf("\t[DEBUG] VFCManager Destructed.\n");
     map< string, VFClient* >::iterator iter;
     while(m_mWorkerTable.size()) {
         iter = m_mWorkerTable.begin();
@@ -95,7 +93,6 @@ size_t VFCManager::getWorkerCount()
 
 	RECONNECT:
 	if (!m_nSockGearman && !connectGearman()) {
-		//printf("\t[DEBUG] VFCManager::getWorkerCount() - error connect to GearHost.\n");
         m_Logger->error("VFCManager::getWorkerCount() - error connect to GearHost.");
 		return 0;
 	}
@@ -104,7 +101,6 @@ size_t VFCManager::getWorkerCount()
 		perror("VFCManager::getWorkerCount() - send :");
         m_Logger->error("VFCManager::getWorkerCount() - send : %d", errno);
 		if (++rec > 3) {
-			//printf("\t[DEBUG] VFCManager::getWorkerCount() - error Reconnect count 3 exceeded.\n");
             disconnectGearman();
             m_Logger->warn("VFCManager::getWorkerCount() - error Reconnect count 3 exceeded.");
 			return 0;
@@ -140,7 +136,6 @@ size_t VFCManager::getWorkerCount()
             m_Logger->error("VFCManager::getWorkerCount() - recv timeout : reconnect(%d)", rec);
             if (++rec > 3) {
                 disconnectGearman();
-                //printf("\t[DEBUG] VFCManager::getWorkerCount() - error Reconnect count 3 exceeded.\n");
                 m_Logger->warn("VFCManager::getWorkerCount() - error Reconnect count 3 exceeded.");
                 return 0;
             }
@@ -149,8 +144,6 @@ size_t VFCManager::getWorkerCount()
         }
 	}
 
-	//printf("\t[DEBUG] - Gearman STATUS <<\n%s\n>>\n", sRes.c_str());
-    //m_Logger->debug("\n --- Gearman STATUS --- \n%s ---------------------- \n", sRes.c_str());
     disconnectGearman();
 	
 	return getWorkerCountFromString(sRes);
@@ -190,14 +183,14 @@ size_t VFCManager::getWorkerCountFromString(std::string & gearResult)
 
 }
 
-VFCManager* VFCManager::instance(const std::string gearHostIp, const uint16_t gearHostPort, int geartimeout/*, log4cpp::Category *logger*/)
+VFCManager* VFCManager::instance(const std::string gearHostIp, const uint16_t gearHostPort, int geartimeout)
 {
 	if (m_instance) return m_instance;
 
-	m_instance = new VFCManager(geartimeout/*, logger*/);
+	m_instance = new VFCManager(geartimeout);
 
 	// for DEV
-	m_instance->setGearHost(gearHostIp);//);("192.168.229.135")
+	m_instance->setGearHost(gearHostIp);
 	m_instance->setGearPort(gearHostPort);
     
     std::thread thrd = std::thread(VFCManager::thrdFuncVFCManager, m_instance);
@@ -216,33 +209,23 @@ void VFCManager::release()
 
 void VFCManager::outputVFCStat()
 {
-#if 0
-	//VRClient* client = NULL;
-	map< string, VFClient* >::iterator iter;
-
-	for (iter = m_mWorkerTable.begin(); iter != m_mWorkerTable.end(); iter++) {
-		//client = (VRClient*)iter->second;
-		//printf("\t[DEBUG] VFCManager::outputVRCStat() - VRClient(%s)\n", iter->first.c_str());
-        m_Logger->debug("VFCManager::outputVRCStat() - VFClient(%s, %s)", iter->first.c_str(), iter->second->getCallId().c_str());
-	}
-#endif
     if ( m_mWorkerTable.size() )
         m_Logger->debug("VFCManager::outputVRCStat() - Current working VFClient count(%d)", m_mWorkerTable.size());
 
 }
 
-int VFCManager::pushItem(JobInfoItem* item)//std::string line)
+int VFCManager::pushItem(JobInfoItem* item)
 {
 	std::lock_guard<std::mutex> g(m_mxQue);
     
-    m_qVFQue.push(item);//line);
+    m_qVFQue.push(item);
     
     m_Logger->debug("VFCManager::pushItem() - Item Count(%d)", m_qVFQue.size());
     
     return m_qVFQue.size();
 }
 
-JobInfoItem* VFCManager::popItem()//std::string& line)
+JobInfoItem* VFCManager::popItem()
 {
 	std::lock_guard<std::mutex> g(m_mxQue);
     JobInfoItem* item = nullptr;
@@ -252,9 +235,9 @@ JobInfoItem* VFCManager::popItem()//std::string& line)
     item = m_qVFQue.front();
     m_qVFQue.pop();
     
-    m_Logger->debug("VFCManager::popItem() - Item Content(%s), Count(%d)", item->getCallId().c_str()/*line.c_str()*/, m_qVFQue.size());
+    m_Logger->debug("VFCManager::popItem() - Item Content(%s), Count(%d)", item->getCallId().c_str(), m_qVFQue.size());
 
-    return item;//m_qVFQue.size()+1;
+    return item;
 }
 
 void VFCManager::thrdFuncVFCManager(VFCManager* mgr)

@@ -155,8 +155,6 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
 
     rx_hold = 0;
     tx_hold = 0;
-    //thrd.detach();
-	//printf("\t[DEBUG] VRClinetMT Constructed.\n");
 
     m_tStart = startT;
 #ifdef EN_RINGBACK_LEN
@@ -184,19 +182,11 @@ VRClient::VRClient(VRCManager* mgr, string& gearHost, uint16_t gearPort, int gea
 VRClient::~VRClient()
 {
 	QueItem* item;
-	// while (!m_qRTQue.empty()) {
-	// 	item = m_qRTQue.front();
-	// 	m_qRTQue.pop();
-
-	// 	delete[] item->voiceData;
-	// 	delete item;
-	// }
 
 	while (!m_qRXQue.empty()) {
 		item = m_qRXQue.front();
 		m_qRXQue.pop();
 
-		// delete[] item->voiceData;
 		delete item;
 	}
 
@@ -204,13 +194,9 @@ VRClient::~VRClient()
 		item = m_qTXQue.front();
 		m_qTXQue.pop();
 
-		// delete[] item->voiceData;
 		delete item;
 	}
 
-	//printf("\t[DEBUG] VRClinetMT Destructed.\n");
-    // ThreadInfoTable.erase(ThreadInfoTable.find(m_sCallId));
-    // m_Logger->debug("VRClinetMT Destructed. TableSize(%d)", ThreadInfoTable.size());
     m_Logger->debug("VRClinetMT Destructed. CALLID(%s), CS_CD(%s)", m_sCallId.c_str(), m_sCounselCode.c_str());
 }
 
@@ -251,7 +237,6 @@ void VRClient::thrdMain(VRClient* client) {
 #endif
     bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
-    // auto search = client->ThreadInfoTable[client->m_sCallId];
     localtime_r(&client->m_tStart, &timeinfo);
 
 #ifdef USE_REDIS_POOL
@@ -263,13 +248,10 @@ void VRClient::thrdMain(VRClient* client) {
         zCount=0;
         redisKey.append(client->getCounselCode());
 
-        //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
-        // timeinfo = localtime(&client->m_tStart);
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&timeinfo);
         sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"I\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
         strRedisValue = redisValue;
         
-        // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
         vVal.push_back( strRedisValue );
         if ( bSendDataRedis )
         {
@@ -284,19 +266,17 @@ void VRClient::thrdMain(VRClient* client) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
       
-    while (client->RxState || client->TxState)// client->m_RxState || client->m_TxState)
+    while (client->RxState || client->TxState)
     {
-        // client->m_Logger->debug("VRClient::thrdMain(%s) - RxState(%d), TxState(%d)", client->m_sCallId.c_str(), search->getRxState(), search->getTxState());
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));//microseconds(10));//seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     
-    // uint64_t totalVLen = client->TotalVoiceDataLen;//client->getTotalVoiceDataLen();
-    // std::string svr_nm = client->ServerName;//client->getServerName();
     client->m_Logger->debug("VRClient::thrdMain(%s) - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
     client->m_Mgr->removeVRC(client->m_sCallId);
 
     client->m_Logger->debug("VRClient::thrdMain(%s)[2] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
+
 #ifdef USE_REDIS_POOL
     if ( useRedis ) {
         time_t t;
@@ -314,12 +294,10 @@ void VRClient::thrdMain(VRClient* client) {
         redisKey = "G_CS:";
         redisKey.append(client->getCounselCode());
 
-        //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
         sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
         strRedisValue = redisValue;
         
-        // xRedis.hset( dbi, redisKey, client->getCallId(), strRedisValue, zCount );
         if ( bSendDataRedis )
         {
             xRedis.lset(dbi, redisKey, 0, strRedisValue);
@@ -341,7 +319,6 @@ void VRClient::thrdMain(VRClient* client) {
 
     if (client->m_s2d) {
         auto t2 = std::chrono::high_resolution_clock::now();
-        // timeinfo = localtime(&client->m_tStart);
         strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&timeinfo);
 
         client->m_s2d->updateCallInfo(client->m_sCallId, true);
@@ -379,7 +356,7 @@ void VRClient::thrdMain(VRClient* client) {
             cmd.append(timebuff);
             cmd.push_back('_');
             cmd.append(client->m_sCallId.c_str());
-            // job_log->debug("[%s, 0x%X] %s", job_name, THREAD_ID, cmd.c_str());
+
             if (std::system(cmd.c_str())) {
                 client->m_Logger->error("VRClient::thrdMain(%s) Fail to merge wavs: command(%s)", client->m_sCallId.c_str(), cmd.c_str());
             }
@@ -394,7 +371,7 @@ void VRClient::thrdMain(VRClient* client) {
         if ( client->m_is_save_pcm && (client->TotalVoiceDataLen/16000 <= nDelSecs) )
         {
             char datebuff[32];
-            // timeinfo = localtime(&client->m_tStart);
+
             strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",&timeinfo);
             strftime (datebuff,sizeof(datebuff),"%Y%m%d",&timeinfo);
             std::string fullpath = client->m_pcm_path + "/" + datebuff + "/" + client->m_sCounselCode + "/";
@@ -404,7 +381,7 @@ void VRClient::thrdMain(VRClient* client) {
                 remove( filename.c_str() ) ;
             }
         }
-    client->m_Logger->debug("VRClient::thrdMain(%s)[5] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
+        client->m_Logger->debug("VRClient::thrdMain(%s)[5] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
         if ( useRedis && (client->TotalVoiceDataLen/16000 <= nDelSecs) ) {
             redisKey = "G_CS:";
@@ -430,7 +407,6 @@ void VRClient::thrdMain(VRClient* client) {
     }
     client->m_Logger->debug("VRClient::thrdMain(%s)[6] - ServerName(%s), TotalVoiceLen(%d)", client->m_sCallId.c_str(), client->ServerName, client->TotalVoiceDataLen);
 
-	// client->m_thrd.detach();
 	delete client;
 }
 
@@ -467,17 +443,16 @@ void VRClient::thrdRxProcess(VRClient* client) {
     char timebuff [32];
     char datebuff[32];
     struct tm timeinfo;
-    std::string fullpath;// = client->m_pcm_path + "/" + datebuff + "/" + client->m_sCounselCode + "/";
-    std::string filename;// = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + std::string("_r.wav");
+    std::string fullpath;
+    std::string filename;
     std::ofstream pcmFile;
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
     int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
-    // int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
-    // int nCurrWaitNo = 0;
+
 #ifdef EN_SAVE_PCM
     bool bOnlySil;
-    bool bUseSavePcm;// = !config->getConfig("stas.use_save_pcm", "false").compare("true");
-    std::string pcmFilename;// = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
+    bool bUseSavePcm;
+    std::string pcmFilename;
 #endif
 
     bool bUseSkipHanum = !config->getConfig("stas.use_skip_hanum", "false").compare("true");
@@ -487,7 +462,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
 
     bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
-    // auto search = client->ThreadInfoTable[client->m_sCallId];
 
     localtime_r(&client->m_tStart, &timeinfo);
     strftime (timebuff,sizeof(timebuff),"%Y%m%d%H%M%S",&timeinfo);
@@ -560,8 +534,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
     wHdr.Data.ChunkSize = 0;
 
     if (client->m_is_save_pcm) {
-        // std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_r.wav");
-        // std::ofstream pcmFile;
 
         pcmFile.open(filename, ios::out | ios::trunc | ios::binary);
         if (pcmFile.is_open()) {
@@ -578,30 +550,18 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
     gearClient = gearman_client_create(NULL);
     if (!gearClient) {
-        //printf("\t[DEBUG] VRClient::thrdRxProcess() - ERROR (Failed gearman_client_create - %s)\n", client->m_sCallId.c_str());
         client->m_Logger->error("VRClient::thrdRxProcess() - ERROR (Failed gearman_client_create - %s)", client->m_sCallId.c_str());
 
-        // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-
-        client->RxState = 0;//client->m_RxState = 0;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        // client->m_thrdRx.detach();
-        // delete client;
+        client->RxState = 0;
         return;
     }
     
     ret= gearman_client_add_server(gearClient, client->m_sGearHost.c_str(), client->m_nGearPort);
     if (gearman_failed(ret))
     {
-        //printf("\t[DEBUG] VRClient::thrdRxProcess() - ERROR (Failed gearman_client_add_server - %s)\n", client->m_sCallId.c_str());
         client->m_Logger->error("VRClient::thrdRxProcess() - ERROR (Failed gearman_client_add_server - %s)", client->m_sCallId.c_str());
 
-        // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-
-        client->RxState =0;// client->m_RxState = 0;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        // client->m_thrdRx.detach();
-        // delete client;
+        client->RxState =0;
         return;
     }
 
@@ -616,14 +576,10 @@ void VRClient::thrdRxProcess(VRClient* client) {
         int aDianum;
 
         vad = fvad_new();
-        if (!vad) {//} || (fvad_set_sample_rate(vad, in_info.samplerate) < 0)) {
+        if (!vad) {
             client->m_Logger->error("VRClient::thrdRxProcess() - ERROR (Failed fvad_new(%s))", client->m_sCallId.c_str());
             if ( !bOnlyRecord ) gearman_client_free(gearClient);
-            // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-            client->RxState = 0;// client->m_RxState = 0;
-            // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            // client->m_thrdRx.detach();
-            // delete client;
+            client->RxState = 0;
             return;
         }
         fvad_set_sample_rate(vad, 8000);
@@ -635,30 +591,20 @@ void VRClient::thrdRxProcess(VRClient* client) {
             if ( !bOnlyRecord ) gearman_client_set_timeout(gearClient, client->m_nGearTimeout);
         }
         
-#if 0 // for DEBUG
-		std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_") + std::to_string(client->m_nNumofChannel) + std::string(".pcm");
-		std::ofstream pcmFile;
-        if (client->m_is_save_pcm)
-            pcmFile.open(filename, ios::out | ios::app | ios::binary);
-#endif
 
         // write wav heaer to file(mmap);
         vBuff.clear();
-        // client->rx_sframe = 0;
-        // client->rx_eframe = 0;
         client->rx_hold = 0;
         aDianum = 0;
         totalVoiceDataLen = 0;
         svr_nm = "DEFAULT";
 
         vadres = before_vadres = 0;
-		while (client->RxState)//(client->m_nLiveFlag)
+		while (client->RxState)
 		{
 			while (!client->m_qRXQue.empty()) {
-				// g = new std::lock_guard<std::mutex>(client->m_mxQue);
 				item = client->m_qRXQue.front();
 				client->m_qRXQue.pop();
-				// delete g;
 
                 totalVoiceDataLen += item->lenVoiceData;
 
@@ -690,8 +636,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                 
 
                 if (client->m_is_save_pcm) {
-                    // std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_r.wav");
-                    // std::ofstream pcmFile;
 
                     pcmFile.open(filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
@@ -717,7 +661,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             client->tx_hold || 
 #endif
                             !item->flag) break;
-                        // client->m_Logger->error("VRClient::thrdRxProcess syncBreak(%d), tx_hold(%d), flag(%d) (%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", client->syncBreak, client->tx_hold, item->flag, client->m_sCallId.c_str());
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     }
 #endif
@@ -727,7 +670,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     vadres = fvad_process(vad, (const int16_t *)vpBuf, client->m_framelen);
 
                     if (vadres < 0) {
-                        //client->m_Logger->error("VRClient::thrdMain(%d, %d, %s)(%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", nHeadLen, item->spkNo, buf, client->m_sCallId.c_str(), vBuff[item->spkNo-1].size(), client->rx_sframe[item->spkNo-1], client->rx_eframe[item->spkNo-1]);
                         continue;
                     }
 
@@ -749,53 +691,15 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     
                     if (!vadres && (vBuff.size()<=nHeadLen)) {
                         // start ms
-                        client->rx_sframe = client->rx_eframe - (client->m_framelen/8);//20;
-                    }
-#ifdef DEBUGING
-                    if (vadres && !before_vadres) {
-                        // 음성 시작 점 - Voice Active Detection Poing
-                        std::string filename = client->m_sCallId + std::string("_vadpoint_r.txt");
-                        std::ofstream pcmFile;
-
-                        pcmFile.open(filename, ios::out | ios::app);
-                        if (pcmFile.is_open()) {
-                            pcmFile << client->rx_sframe << " ";
-                            pcmFile.close();
-                        }
+                        client->rx_sframe = client->rx_eframe - (client->m_framelen/8);
                     }
 
-                    if (!vadres && before_vadres) {
-                        // 음성 시작 점 - Voice Active Detection Poing
-                        std::string filename = client->m_sCallId + std::string("_vadpoint_r.txt");
-                        std::ofstream pcmFile;
-
-                        pcmFile.open(filename, ios::out | ios::app);
-                        if (pcmFile.is_open()) {
-                            pcmFile << client->rx_eframe << std::endl;
-                            pcmFile.close();
-                        }
-                    }
-#endif
                     if (
                         client->tx_hold ||
                         (!vadres && (vBuff.size()>nHeadLen))) {
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
-                        // client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(RX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
                         
-                        if ( /*vBuff.size()*/chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
-#if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
-                            if (1) {
-                                // 음성 시작 점 - Voice Active Detection Poing
-                                std::string filename = client->m_sCallId + std::string("_vadpoint_r.txt");
-                                std::ofstream pcmFile;
-
-                                pcmFile.open(filename, ios::out | ios::app);
-                                if (pcmFile.is_open()) {
-                                    pcmFile << client->rx_sframe << " " << client->rx_eframe << " " << vBuff.size()-nHeadLen << std::endl;
-                                    pcmFile.close();
-                                }
-                            }
-#endif
+                        if ( chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 
 #ifdef DIAL_SYNC
                             if (!client->tx_hold) {
@@ -816,9 +720,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             for(size_t i=0; i<strlen(buf); i++) {
                                 vBuff[i] = buf[i];
                             }
-                            //client->m_Logger->debug("VRClient::thrdMain(%d, %d, %s)(%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", nHeadLen, item->spkNo, buf, client->m_sCallId.c_str(), vBuff[item->spkNo-1].size(), client->rx_sframe[item->spkNo-1], client->rx_eframe[item->spkNo-1]);
 
-                            // auto d1 = std::chrono::high_resolution_clock::now();
                             #ifdef EN_SAVE_PCM
                             if (!bOnlySil && bUseSavePcm)
                             {
@@ -833,13 +735,11 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                 }
                             }
                             #endif
-                            value= gearman_client_do(gearClient, fname/*"vr_realtime"*/, NULL, 
+                            value= gearman_client_do(gearClient, fname, NULL, 
                                                             (const void*)&vBuff[0], vBuff.size(),
                                                             &result_size, &rc);
                                                             
                             aDianum++;
-                            // auto d2 = std::chrono::high_resolution_clock::now();
-                            // client->m_Logger->debug("VRClient::thrdRxProcess(%s) - stt working msecs(%d)", client->m_sCallId.c_str(), std::chrono::duration_cast<std::chrono::milliseconds>(d2-d1).count());
                             
                             if (gearman_success(rc))
                             {
@@ -866,8 +766,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                 // Make use of value
                                 if (value) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
-                                    // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
-                                    //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
+
                                     diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
@@ -875,7 +774,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                         std::string sJsonValue;
 
                                         size_t in_size, out_size;
-                                        // iconv_t it;
                                         char *utf_buf = NULL;
                                         char *input_buf_ptr = NULL;
                                         char *output_buf_ptr = NULL;
@@ -890,11 +788,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                             input_buf_ptr = (char *)modValue.c_str();
                                             output_buf_ptr = utf_buf;
 
-                                            // it = iconv_open("UTF-8", "EUC-KR");
-
                                             iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
-                                            
-                                            // iconv_close(it);
                                             
 
                                             {
@@ -903,7 +797,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                                 d.SetObject();
                                                 d.AddMember("IDX", diaNumber, alloc);
-                                                // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                                 d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
                                                 d.AddMember("POS_START", client->rx_sframe/10, alloc);
                                                 d.AddMember("POS_END", client->rx_eframe/10, alloc);
@@ -946,8 +839,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                             if ( bSendDataRedis )
                                             {
-                                                if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
-                                                    client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                                if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                                    client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
                                                 }
                                             }
                                             vVal.clear();
@@ -964,10 +857,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     }
 #endif // DISABLE_ON_REALTIME
 
-                                    //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
+                                        client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -982,7 +874,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             vBuff.clear();
 
                             for(size_t i=0; i<nHeadLen; i++) {
-                                //vBuff[item->spkNo-1][i] = buf[i];
                                 vBuff.push_back(buf[i]);
 
                             }
@@ -992,7 +883,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                 client->tx_hold = 0;
                             }
 
-                            // nCurrWaitNo = 0;
                         }
                         else
                         {
@@ -1000,7 +890,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             vBuff.clear();
 
                             for(size_t i=0; i<nHeadLen; i++) {
-                                //vBuff[item->spkNo-1][i] = buf[i];
                                 vBuff.push_back(buf[i]);
 
                             }
@@ -1009,7 +898,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             if (client->tx_hold) {
                                 client->tx_hold = 0;
                             }
-                            // nCurrWaitNo++;
                         }
                     }
                     
@@ -1021,7 +909,6 @@ void VRClient::thrdRxProcess(VRClient* client) {
                 } // only_record
 
 				if (!item->flag) {	// 호가 종료되었음을 알리는 flag, 채널 갯수와 flag(0)이 들어온 갯수를 비교해야한다.
-					//printf("\t[DEBUG] VRClient::thrdRxProcess(%s) - final item delivered.\n", client->m_sCallId.c_str());
                     client->m_Logger->debug("VRClient::thrdRxProcess(%s, %d) - final item delivered.", client->m_sCallId.c_str(), item->spkNo);
 
                     if ( !bOnlyRecord ) {
@@ -1052,7 +939,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         }
                     }
                     #endif
-                    value= gearman_client_do(gearClient, fname/*"vr_realtime"*/, NULL, 
+                    value= gearman_client_do(gearClient, fname, NULL, 
                                                     (const void*)&vBuff[0], vBuff.size(),
                                                     &result_size, &rc);
                     if (gearman_success(rc))
@@ -1066,9 +953,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         // Make use of value
                         if (svr_nm.size() && svalue.size()) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
-                            // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
-                            //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                            diaNumber = client->getDiaNumber();//client->getDiaNumber();
+                            diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
                                 int64_t zCount=0;
@@ -1089,19 +974,14 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     input_buf_ptr = (char *)modValue.c_str();
                                     output_buf_ptr = utf_buf;
 
-                                    // it = iconv_open("UTF-8", "EUC-KR");
-
                                     iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
                                     
-                                    // iconv_close(it);
-
                                     {
                                         rapidjson::Document d;
                                         rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
 
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
-                                        // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                         d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
                                         d.AddMember("POS_START", client->rx_sframe/10, alloc);
                                         d.AddMember("POS_END", client->rx_eframe/10, alloc);
@@ -1144,8 +1024,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                                     if ( bSendDataRedis )
                                     {
-                                        if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
-                                            client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                        if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                            client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
                                         }
                                     }
                                     vVal.clear();
@@ -1161,10 +1041,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             }
 #endif // DISABLE_ON_REALTIME
 
-                            //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
                             }
                             
                         }
@@ -1178,12 +1057,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     // and clear buff, set msg header
                     vBuff.clear();
 
-                    // if ( item->voiceData != NULL ) delete[] item->voiceData;
                     delete item;
 
                     if (client->m_is_save_pcm) {
-                        // std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_r.wav");
-                        // std::ofstream pcmFile;
 
                         wHdr.Riff.ChunkSize = totalVoiceDataLen + sizeof(WAVE_HEADER) - 8;
                         wHdr.Data.ChunkSize = totalVoiceDataLen;
@@ -1196,31 +1072,24 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         }
                     }
 
-                    client->RxState =0;//client->m_RxState = 0;
+                    client->RxState =0;
                     client->syncBreak = 1;
                     client->m_Logger->debug("VRClient::thrdRxProcess(%s) - FINISH CALL.(%d)", client->m_sCallId.c_str(), client->RxState);
                     break;
 				}
 
-				// delete[] item->voiceData;
 				delete item;
-				// 예외 발생 시 처리 내용 : VDCManager의 removeVDC를 호출할 수 있어야 한다. - 이 후 VRClient는 item->flag(0)에 대해서만 처리한다.
 			}
-            //client->m_Logger->debug("VRClient::thrdMain(%s) - WHILE... [%d : %d], timeout(%d)", client->m_sCallId.c_str(), client->rx_sframe[item->spkNo -1], client->rx_eframe[item->spkNo -1], client->m_nGearTimeout);
+
 			std::this_thread::sleep_for(std::chrono::microseconds(10));//milliseconds(1));
 		}
         
-        sprintf(client->ServerName,"%s", svr_nm.c_str()); // client->setServerName(svr_nm);
-        client->TotalVoiceDataLen = totalVoiceDataLen;// client->setTotalVoiceDataLen(totalVoiceDataLen);
+        sprintf(client->ServerName,"%s", svr_nm.c_str());
+        client->TotalVoiceDataLen = totalVoiceDataLen;
         client->m_Logger->debug("VRClient::thrdRxProcess(%s) - ServerName(%s), TotalVoiceDataLen(%d)", client->m_sCallId.c_str(), svr_nm.c_str(), totalVoiceDataLen);
 
         fvad_free(vad);
 
-        // std::vector<uint8_t>().swap(vBuff);
-
-#if 0 // for DEBUG
-		if (client->m_is_save_pcm && pcmFile.is_open()) pcmFile.close();
-#endif
 	}
 
     if ( !bOnlyRecord ) gearman_client_free(gearClient);
@@ -1230,11 +1099,8 @@ void VRClient::thrdRxProcess(VRClient* client) {
         iconv_close(it);
 #endif
 
-    // search->setRxState(0);// client->m_RxState = 0;
     client->m_Logger->debug("VRClient::thrdRxProcess(%s) - RxState(%d)", client->m_sCallId.c_str(), client->RxState);
-    // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	// client->m_thrdRx.detach();
-	// delete client;
+
 }
 
 void VRClient::thrdTxProcess(VRClient* client) {
@@ -1270,17 +1136,16 @@ void VRClient::thrdTxProcess(VRClient* client) {
     char timebuff [32];
     char datebuff[32];
     struct tm timeinfo;
-    std::string fullpath;// = client->m_pcm_path + "/" + datebuff + "/" + client->m_sCounselCode + "/";
-    std::string filename;// = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + std::string("_l.wav");
+    std::string fullpath;
+    std::string filename;
     std::ofstream pcmFile;
     bool bOnlyRecord = !config->getConfig("stas.only_record", "false").compare("true");
     int nMinVBuffSize = config->getConfig("stas.min_buff_size", 10000);
-    // int nMaxWaitNo = config->getConfig("stas.max_wait_no", 7);
-    // int nCurrWaitNo = 0;
+
 #ifdef EN_SAVE_PCM
     bool bOnlySil;
-    bool bUseSavePcm;// = !config->getConfig("stas.use_save_pcm", "false").compare("true");
-    std::string pcmFilename;// = fullpath + client->m_sCounselCode + "_" + timebuff + "_" + client->m_sCallId + "_";
+    bool bUseSavePcm;
+    std::string pcmFilename;
 #endif
 
     bool bUseSkipHanum = !config->getConfig("stas.use_skip_hanum", "false").compare("true");
@@ -1288,7 +1153,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
-    // auto search = client->ThreadInfoTable[client->m_sCallId];
     bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
     localtime_r(&client->m_tStart, &timeinfo);
@@ -1376,30 +1240,18 @@ void VRClient::thrdTxProcess(VRClient* client) {
     
     gearClient = gearman_client_create(NULL);
     if (!gearClient) {
-        //printf("\t[DEBUG] VRClient::thrdTxProcess() - ERROR (Failed gearman_client_create - %s)\n", client->m_sCallId.c_str());
         client->m_Logger->error("VRClient::thrdTxProcess() - ERROR (Failed gearman_client_create - %s)", client->m_sCallId.c_str());
 
-        // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-
-        client->TxState =0;// client->m_TxState = 0;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        // client->m_thrdTx.detach();
-        // delete client;
+        client->TxState =0;
         return;
     }
     
     ret= gearman_client_add_server(gearClient, client->m_sGearHost.c_str(), client->m_nGearPort);
     if (gearman_failed(ret))
     {
-        //printf("\t[DEBUG] VRClient::thrdTxProcess() - ERROR (Failed gearman_client_add_server - %s)\n", client->m_sCallId.c_str());
         client->m_Logger->error("VRClient::thrdTxProcess() - ERROR (Failed gearman_client_add_server - %s)", client->m_sCallId.c_str());
 
-        // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-
-        client->TxState =0;//// client->m_TxState = 0;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        // client->m_thrdTx.detach();
-        // delete client;
+        client->TxState =0;
         return;
     }
 
@@ -1414,14 +1266,10 @@ void VRClient::thrdTxProcess(VRClient* client) {
         int aDianum;
 
         vad = fvad_new();
-        if (!vad) {//} || (fvad_set_sample_rate(vad, in_info.samplerate) < 0)) {
+        if (!vad) {
             client->m_Logger->error("VRClient::thrdTxProcess() - ERROR (Failed fvad_new(%s))", client->m_sCallId.c_str());
             if ( !bOnlyRecord ) gearman_client_free(gearClient);
-            // WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
-            client->TxState =0;// client->m_TxState = 0;
-            // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            // client->m_thrdTx.detach();
-            // delete client;
+            client->TxState =0;
             return;
         }
         fvad_set_sample_rate(vad, 8000);
@@ -1433,30 +1281,19 @@ void VRClient::thrdTxProcess(VRClient* client) {
             if ( !bOnlyRecord ) gearman_client_set_timeout(gearClient, client->m_nGearTimeout);
         }
         
-#if 0 // for DEBUG
-		std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_") + std::to_string(client->m_nNumofChannel) + std::string(".pcm");
-		std::ofstream pcmFile;
-        if (client->m_is_save_pcm)
-            pcmFile.open(filename, ios::out | ios::app | ios::binary);
-#endif
-
         // write wav heaer to file(mmap);
         vBuff.clear();
-        // client->tx_sframe = 0;
-        // client->tx_eframe = 0;
         client->tx_hold = 0;
         aDianum = 0;
         totalVoiceDataLen = 0;
         svr_nm = "DEFAULT";
 
         vadres = before_vadres = 0;
-		while (client->TxState)//(client->m_nLiveFlag)
+		while (client->TxState)
 		{
 			while (!client->m_qTXQue.empty()) {
-				// g = new std::lock_guard<std::mutex>(client->m_mxQue);
 				item = client->m_qTXQue.front();
 				client->m_qTXQue.pop();
-				// delete g;
 
                 totalVoiceDataLen += item->lenVoiceData;
 
@@ -1488,8 +1325,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                 
 
                 if (client->m_is_save_pcm) {
-                    // std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_l.wav");
-                    // std::ofstream pcmFile;
 
                     pcmFile.open(filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
@@ -1525,7 +1360,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     vadres = fvad_process(vad, (const int16_t *)vpBuf, client->m_framelen);
 
                     if (vadres < 0) {
-                        //client->m_Logger->error("VRClient::thrdMain(%d, %d, %s)(%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", nHeadLen, item->spkNo, buf, client->m_sCallId.c_str(), vBuff[item->spkNo-1].size(), client->tx_sframe[item->spkNo-1], client->tx_eframe[item->spkNo-1]);
                         continue;
                     }
 
@@ -1547,53 +1381,15 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     
                     if (!vadres && (vBuff.size()<=nHeadLen)) {
                         // start ms
-                        client->tx_sframe = client->tx_eframe - (client->m_framelen/8);//20;
-                    }
-#ifdef DEBUGING
-                    if (vadres && !before_vadres) {
-                        // 음성 시작 점 - Voice Active Detection Poing
-                        std::string filename = client->m_sCallId + std::string("_vadpoint_l.txt");
-                        std::ofstream pcmFile;
-
-                        pcmFile.open(filename, ios::out | ios::app);
-                        if (pcmFile.is_open()) {
-                            pcmFile << client->tx_sframe << " ";
-                            pcmFile.close();
-                        }
+                        client->tx_sframe = client->tx_eframe - (client->m_framelen/8);
                     }
 
-                    if (!vadres && before_vadres) {
-                        // 음성 시작 점 - Voice Active Detection Poing
-                        std::string filename = client->m_sCallId + std::string("_vadpoint_l.txt");
-                        std::ofstream pcmFile;
-
-                        pcmFile.open(filename, ios::out | ios::app);
-                        if (pcmFile.is_open()) {
-                            pcmFile << client->tx_eframe << std::endl;
-                            pcmFile.close();
-                        }
-                    }
-#endif
                     if (
                         client->rx_hold ||
                         (!vadres && (vBuff.size()>nHeadLen))) {
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
-                        // client->m_Logger->debug("VRClient::thrdMain(%s) - SPK(TX), orgSize(%d), checkRealSize(%d)", client->m_sCallId.c_str(), vBuff.size(), chkRealSize);
 
-                        if ( /*vBuff.size()*/chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
-#if 0 // VR로 데이터처리 요청 시 처리할 데이터의 sframe, eframe, buff.size 출력
-                            if (1) {
-                                // 음성 시작 점 - Voice Active Detection Poing
-                                std::string filename = client->m_sCallId + std::string("_vadpoint_l.txt");
-                                std::ofstream pcmFile;
-
-                                pcmFile.open(filename, ios::out | ios::app);
-                                if (pcmFile.is_open()) {
-                                    pcmFile << client->tx_sframe << " " << client->tx_eframe << " " << vBuff.size()-nHeadLen << std::endl;
-                                    pcmFile.close();
-                                }
-                            }
-#endif
+                        if ( chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
 
 #ifdef DIAL_SYNC
                             if (!client->rx_hold) {
@@ -1614,7 +1410,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             for(size_t i=0; i<strlen(buf); i++) {
                                 vBuff[i] = buf[i];
                             }
-                            //client->m_Logger->debug("VRClient::thrdMain(%d, %d, %s)(%s) - send buffer buff_len(%lu), spos(%lu), epos(%lu)", nHeadLen, item->spkNo, buf, client->m_sCallId.c_str(), vBuff[item->spkNo-1].size(), client->tx_sframe[item->spkNo-1], client->tx_eframe[item->spkNo-1]);
+
                             #ifdef EN_SAVE_PCM
                             if (!bOnlySil && bUseSavePcm)
                             {
@@ -1629,7 +1425,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                 }
                             }
                             #endif
-                            value= gearman_client_do(gearClient, fname/*"vr_realtime"*/, NULL, 
+                            value= gearman_client_do(gearClient, fname, NULL, 
                                                             (const void*)&vBuff[0], vBuff.size(),
                                                             &result_size, &rc);
                                                             
@@ -1661,16 +1457,13 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                 // Make use of value
                                 if (value) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
-                                    // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
-                                    //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                                    diaNumber = client->getDiaNumber();//client->getDiaNumber();
+                                    diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
                                         int64_t zCount=0;
                                         std::string sJsonValue;
 
                                         size_t in_size, out_size;
-                                        // iconv_t it;
                                         char *utf_buf = NULL;
                                         char *input_buf_ptr = NULL;
                                         char *output_buf_ptr = NULL;
@@ -1693,7 +1486,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                                 d.SetObject();
                                                 d.AddMember("IDX", diaNumber, alloc);
-                                                // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                                 d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
                                                 d.AddMember("POS_START", client->tx_sframe/10, alloc);
                                                 d.AddMember("POS_END", client->tx_eframe/10, alloc);
@@ -1735,8 +1527,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                             if ( bSendDataRedis )
                                             {
-                                                if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
-                                                    client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                                if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                                    client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
                                                 }
                                             }
                                             vVal.clear();
@@ -1753,10 +1545,9 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                     }
 #endif // DISABLE_ON_REALTIME
 
-                                    //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                                     // to STTDeliver(file)
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
+                                        client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
                                     }
 
                                     free(value);
@@ -1771,7 +1562,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             vBuff.clear();
 
                             for(size_t i=0; i<nHeadLen; i++) {
-                                //vBuff[item->spkNo-1][i] = buf[i];
                                 vBuff.push_back(buf[i]);
 
                             }
@@ -1780,8 +1570,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             if (client->rx_hold) {
                                 client->rx_hold = 0;
                             }
-
-                            // nCurrWaitNo = 0;
 
                         }
                         else
@@ -1790,7 +1578,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             vBuff.clear();
 
                             for(size_t i=0; i<nHeadLen; i++) {
-                                //vBuff[item->spkNo-1][i] = buf[i];
                                 vBuff.push_back(buf[i]);
 
                             }
@@ -1799,7 +1586,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             if (client->rx_hold) {
                                 client->rx_hold = 0;
                             }
-                            // nCurrWaitNo++;
                         }
                     }
                     
@@ -1811,7 +1597,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
                 } // only_record
 
 				if (!item->flag) {	// 호가 종료되었음을 알리는 flag, 채널 갯수와 flag(0)이 들어온 갯수를 비교해야한다.
-					//printf("\t[DEBUG] VRClient::thrdTxProcess(%s) - final item delivered.\n", client->m_sCallId.c_str());
                     client->m_Logger->debug("VRClient::thrdTxProcess(%s, %d) - final item delivered.", client->m_sCallId.c_str(), item->spkNo);
 
                     if ( !bOnlyRecord ) {
@@ -1842,7 +1627,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         }
                     }
                     #endif
-                    value= gearman_client_do(gearClient, fname/*"vr_realtime"*/, NULL, 
+                    value= gearman_client_do(gearClient, fname, NULL, 
                                                     (const void*)&vBuff[0], vBuff.size(),
                                                     &result_size, &rc);
                     if (gearman_success(rc))
@@ -1856,15 +1641,12 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         // Make use of value
                         if (svr_nm.size() && svalue.size()) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
-                            // std::cout << "DEBUG : value(" << (char *)value << ") : size(" << result_size << ")" << std::endl;
-                            //client->m_Logger->debug("VRClient::thrdMain(%s) - sttIdx(%d)\nsrc(%s)\ndst(%s)", client->m_sCallId.c_str(), sttIdx, srcBuff, dstBuff);
-                            diaNumber = client->getDiaNumber();//client->getDiaNumber();
+                            diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
                                 int64_t zCount=0;
                                 std::string sJsonValue;
                                 size_t in_size, out_size;
-                                // iconv_t it;
                                 char *utf_buf = NULL;
                                 char *input_buf_ptr = NULL;
                                 char *output_buf_ptr = NULL;
@@ -1887,7 +1669,6 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
-                                        // d.AddMember("CALL_ID", rapidjson::Value(client->getCallId().c_str(), alloc).Move(), alloc);
                                         d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
                                         d.AddMember("POS_START", client->tx_sframe/10, alloc);
                                         d.AddMember("POS_END", client->tx_eframe/10, alloc);
@@ -1930,8 +1711,8 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                                     if ( bSendDataRedis )
                                     {
-                                        if ( !xRedis.zadd(dbi, redisKey/*client->getCallId()*/, vVal, zCount) ) {
-                                            client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str()/*client->m_sCallId.c_str()*/, dbi.GetErrInfo(), zCount);
+                                        if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                            client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
                                         }
                                     }
                                     vVal.clear();
@@ -1948,10 +1729,9 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             }
 #endif // DISABLE_ON_REALTIME
 
-                            //STTDeliver::instance(client->m_Logger)->insertSTT(client->m_sCallId, std::string((const char*)value), item->spkNo, vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos);
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(fhCallId/*client->m_sCallId*/, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
                             }
                             
                         }
@@ -1965,12 +1745,9 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     // and clear buff, set msg header
                     vBuff.clear();
 
-                    // if ( item->voiceData != NULL ) delete[] item->voiceData;
                     delete item;
 
                     if (client->m_is_save_pcm) {
-                        // std::string filename = client->m_pcm_path + "/" + client->m_sCallId + std::string("_l.wav");
-                        // std::ofstream pcmFile;
 
                         wHdr.Riff.ChunkSize = totalVoiceDataLen + sizeof(WAVE_HEADER) - 8;
                         wHdr.Data.ChunkSize = totalVoiceDataLen;
@@ -1982,31 +1759,23 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             pcmFile.close();
                         }
                     }
-                    client->TxState=0;// client->m_TxState = 0;
+                    client->TxState=0;
                     client->syncBreak = 1;
                     client->m_Logger->debug("VRClient::thrdTxProcess(%s) - FINISH CALL.(%d)", client->m_sCallId.c_str(), client->TxState);
                     break;
 				}
 
-				// delete[] item->voiceData;
 				delete item;
 				// 예외 발생 시 처리 내용 : VDCManager의 removeVDC를 호출할 수 있어야 한다. - 이 후 VRClient는 item->flag(0)에 대해서만 처리한다.
 			}
-            //client->m_Logger->debug("VRClient::thrdMain(%s) - WHILE... [%d : %d], timeout(%d)", client->m_sCallId.c_str(), client->tx_sframe[item->spkNo -1], client->tx_eframe[item->spkNo -1], client->m_nGearTimeout);
-			std::this_thread::sleep_for(std::chrono::microseconds(10));//milliseconds(1));
+
+			std::this_thread::sleep_for(std::chrono::microseconds(10));
 		}
         
-        // client->thrdInfo.setServerName(svr_nm);// client->setServerName(svr_nm);
-        // client->thrdInfo.setTotalVoiceDataLen(totalVoiceDataLen);// client->setTotalVoiceDataLen(totalVoiceDataLen);
         client->m_Logger->debug("VRClient::thrdTxProcess(%s) - ServerName(%s), TotalVoiceDataLen(%d)", client->m_sCallId.c_str(), svr_nm.c_str(), totalVoiceDataLen);
 
         fvad_free(vad);
 
-        // std::vector<uint8_t>().swap(vBuff);
-
-#if 0 // for DEBUG
-		if (client->m_is_save_pcm && pcmFile.is_open()) pcmFile.close();
-#endif
 	}
 
     if ( !bOnlyRecord ) gearman_client_free(gearClient);
@@ -2016,23 +1785,19 @@ void VRClient::thrdTxProcess(VRClient* client) {
         iconv_close(it);
 #endif
 
-    // search->setTxState(0);// client->m_TxState = 0;
     client->m_Logger->debug("VRClient::thrdTxProcess(%s) - TxState(%d)", client->m_sCallId.c_str(), client->TxState);
-    // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	// client->m_thrdTx.detach();
+
 }
 
 void VRClient::insertQueItem(QueItem* item)
 {
 	std::lock_guard<std::mutex> g(m_mxQue);
-	// m_qRTQue.push(item);
 
     if (item->spkNo == 1)
         m_qRXQue.push(item);
     else if (item->spkNo == 2)
         m_qTXQue.push(item);
     else {
-        // delete[] item->voiceData;
         delete item;
     }
 }
@@ -2040,7 +1805,6 @@ void VRClient::insertQueItem(QueItem* item)
 #ifdef USE_REDIS_POOL
 xRedisClient& VRClient::getXRdedisClient()
 {
-    // return m_Mgr->getRedisClient();
     return RedisHandler::instance()->getRedisClient();
 }
 #endif

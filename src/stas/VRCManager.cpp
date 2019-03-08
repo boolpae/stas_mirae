@@ -31,10 +31,9 @@ using namespace std;
 
 VRCManager* VRCManager::ms_instance = NULL;
 
-VRCManager::VRCManager(int geartimeout, FileHandler *deliver, /*log4cpp::Category *logger,*/ DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode)
-	: m_sGearHost("127.0.0.1"), m_nGearPort(4730), m_GearTimeout(geartimeout), m_nSockGearman(0), m_deliver(deliver), /*m_Logger(logger),*/ m_s2d(s2d), m_is_save_pcm(is_save_pcm), m_pcm_path(pcm_path)
+VRCManager::VRCManager(int geartimeout, FileHandler *deliver, DBHandler* s2d, bool is_save_pcm, string pcm_path, size_t framelen, int mode)
+	: m_sGearHost("127.0.0.1"), m_nGearPort(4730), m_GearTimeout(geartimeout), m_nSockGearman(0), m_deliver(deliver), m_s2d(s2d), m_is_save_pcm(is_save_pcm), m_pcm_path(pcm_path)
 {
-	//printf("\t[DEBUG] VRCManager Constructed.\n");
 	m_Logger = config->getLogger();
     m_Logger->debug("VRCManager Constructed.");
     
@@ -54,7 +53,6 @@ VRCManager::~VRCManager()
     disconnectGearman();
 	removeAllVRC();
 
-	//printf("\t[DEBUG] VRCManager Destructed.\n");
     m_Logger->debug("VRCManager Destructed.");
 }
 
@@ -120,7 +118,6 @@ bool VRCManager::getGearmanFnames(std::vector<std::string> &vFnames)
 
 	RECONNECT:
 	if (!m_nSockGearman && !connectGearman()) {
-		//printf("\t[DEBUG] VRCManager::getGearmanFnames() - error connect to GearHost.\n");
         m_Logger->error("VRCManager::getGearmanFnames() - error connect to GearHost.");
 		return false;
 	}
@@ -129,7 +126,6 @@ bool VRCManager::getGearmanFnames(std::vector<std::string> &vFnames)
 		perror("VRCManager::getGearmanFnames() - send :");
         m_Logger->error("VRCManager::getGearmanFnames() - send : %d", errno);
 		if (++rec > 3) {
-			//printf("\t[DEBUG] VRCManager::getGearmanFnames() - error Reconnect count 3 exceeded.\n");
             disconnectGearman();
             m_Logger->warn("VRCManager::getGearmanFnames() - error Reconnect count 3 exceeded.");
 			return false;
@@ -165,7 +161,6 @@ bool VRCManager::getGearmanFnames(std::vector<std::string> &vFnames)
             m_Logger->error("VRCManager::getGearmanFnames() - recv timeout : reconnect(%d)", rec);
             if (++rec > 3) {
                 disconnectGearman();
-                //printf("\t[DEBUG] VRCManager::getGearmanFnames() - error Reconnect count 3 exceeded.\n");
                 m_Logger->warn("VRCManager::getGearmanFnames() - error Reconnect count 3 exceeded.");
                 return false;
             }
@@ -176,13 +171,12 @@ bool VRCManager::getGearmanFnames(std::vector<std::string> &vFnames)
 
 	disconnectGearman();
 	
-#ifndef USE_REALTIME_MF// 1 //USE_REALTIME_MT //def USE_REALTIME_POOL
+#ifndef USE_REALTIME_MF
 	getFnamesFromString4MT(sRes, vFnames);
 #else
 	getFnamesFromString(sRes, vFnames);
 #endif
-	//printf("\t[DEBUG] - Gearman STATUS <<\n%s\n>>\n", sRes.c_str());
-    //m_Logger->debug("\n --- Gearman STATUS --- \n%s ---------------------- \n", sRes.c_str());
+
 	return true;
 }
 
@@ -240,7 +234,6 @@ void VRCManager::getFnamesFromString4MT(std::string & gearResult, std::vector<st
 		sscanf(token.c_str(), "%s\t%d\t%d\t%d", fname, &c, &r, &w);
 
 		if ((strlen(fname)==11) && (!strncmp(fname, "vr_realtime", 11))) {
-			// vFnames.push_back(std::string(fname));
 			totalWorkers += w;
 		}
 
@@ -258,15 +251,14 @@ VRCManager* VRCManager::instance(const std::string gearHostIp, const uint16_t ge
 {
 	if (ms_instance) return ms_instance;
 
-	ms_instance = new VRCManager(geartimeout, deliver, /*logger,*/ s2d, is_save_pcm, pcm_path, framelen, mode);
+	ms_instance = new VRCManager(geartimeout, deliver, s2d, is_save_pcm, pcm_path, framelen, mode);
 
 	// for DEV
-	ms_instance->setGearHost(gearHostIp);//);("192.168.229.135")
+	ms_instance->setGearHost(gearHostIp);
 	ms_instance->setGearPort(gearHostPort);
     
 #ifndef CONN_GEARMAN_PER_CALL   // 항시 연결인 경우 사용
     if (!ms_instance->connectGearman()) {
-        //printf("\t[DEBUG] RCManager::instance() - ERROR (Failed to connect gearhost)\n");
 		log4cpp::Category *logger = config->getLogger();
         logger->error("VRCManager::instance() - ERROR (Failed to connect gearhost)");
         delete ms_instance;
@@ -302,16 +294,11 @@ int16_t VRCManager::requestVRC(string& callid, string& counselcode, time_t &star
 	// 1. vFnames에 실시간STT 처리를 위한 worker의 fname 가져오기 &vFnames
     if (!getGearmanFnames(vFnames))
     {
-		//printf("\t[DEBUG] VRCManager::requestVRC() - error Failed to get gearman status\n");
         m_Logger->error("VRCManager::requestVRC() - error Failed to get gearman status");
 		return int16_t(3);	// Gearman으로부터 Fn Name 가져오기 실패
 	}
     
-	// DEBUG
-	// vFnames.push_back(callid);
-
 	for (iter = vFnames.begin(); iter != vFnames.end(); iter++) {
-		//if (!m_mWorkerTable.count(*iter)) break;
 		if (m_mWorkerTable.count(*iter) == 0) {
 			m_Logger->debug("VRCManager::requestVRC() - The Function name of Worker(%s)", (*iter).c_str());
 			break;
@@ -326,9 +313,9 @@ int16_t VRCManager::requestVRC(string& callid, string& counselcode, time_t &star
 #endif
 
 #ifdef EN_RINGBACK_LEN
-		client = new VRClient(ms_instance, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname/**iter*/, callid, counselcode, jobType, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, startT, ringbackLen);
+		client = new VRClient(ms_instance, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobType, noc, m_deliver, m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, startT, ringbackLen);
 #else
-		client = new VRClient(ms_instance, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname/**iter*/, callid, counselcode, jobType, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, startT); // or VRClient(this);
+		client = new VRClient(ms_instance, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobType, noc, m_deliver, m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, startT);
 #endif
 
 		if (client) {
@@ -348,7 +335,6 @@ int16_t VRCManager::requestVRC(string& callid, string& counselcode, time_t &star
 
 void VRCManager::removeVRC(string callid)
 {
-	//m_vWorkerTable.erase(find(m_vWorkerTable.begin(), m_vWorkerTable.end(), fname));
 	VRClient* client = NULL;
 	map< string, VRClient* >::iterator iter;
 
@@ -382,12 +368,9 @@ void VRCManager::removeAllVRC()
 
 void VRCManager::outputVRCStat()
 {
-	//VRClient* client = NULL;
 	map< string, VRClient* >::iterator iter;
 
 	for (iter = m_mWorkerTable.begin(); iter != m_mWorkerTable.end(); iter++) {
-		//client = (VRClient*)iter->second;
-		//printf("\t[DEBUG] VRCManager::outputVRCStat() - VRClient(%s)\n", iter->first.c_str());
 #ifdef EN_RINGBACK_LEN
         m_Logger->debug("VRCManager::outputVRCStat() - VRClient(%s, %s, %zu, %s)", iter->first.c_str(), iter->second->getCounselCode().c_str(), iter->second->getRingbackLen(), iter->second->getCallId().c_str());
 #else
@@ -402,7 +385,6 @@ void VRCManager::outputVRCStat()
 
 VRClient* VRCManager::getVRClient(string& callid)
 {
-	//m_vWorkerTable.erase(find(m_vWorkerTable.begin(), m_vWorkerTable.end(), fname));
 	VRClient* client = NULL;
 	map< string, VRClient* >::iterator iter;
 
@@ -426,9 +408,9 @@ int VRCManager::addVRC(string callid, string counselcode, string fname, uint8_t 
 	VRClient* client;
 
 #ifdef EN_RINGBACK_LEN
-    client = new VRClient(this, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobtype, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, time(NULL), ringbacklen);
+    client = new VRClient(this, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobtype, noc, m_deliver, m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, time(NULL), ringbacklen);
 #else
-    client = new VRClient(this, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobtype, noc, m_deliver, /*m_Logger,*/ m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, time(NULL)); // or VRClient(this);
+    client = new VRClient(this, this->m_sGearHost, this->m_nGearPort, this->m_GearTimeout, fname, callid, counselcode, jobtype, noc, m_deliver, m_s2d, m_is_save_pcm, m_pcm_path, m_framelen, m_mode, time(NULL));
 #endif
 
     if (client) {
