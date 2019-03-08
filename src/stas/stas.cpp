@@ -111,7 +111,7 @@ int main(int argc, const char** argv)
     log4cpp::Category &tracerLog = log4cpp::Category::getInstance(std::string("WorkTracer"));
     tracerLog.addAppender(appender);
     
-	logger->info("STT Tasks Allocation Server(Service) ver %d.%d BUILD : %s", STAS_VERSION_MAJ, STAS_VERSION_MIN, __DATE__);
+	logger->info("STT Tasks Allocation Server(Service) ver %d.%d.%d BUILD : %s", STAS_VERSION_MAJ, STAS_VERSION_MIN, STAS_VERSION_BLD, __DATE__);
 	logger->info("================================================");
 	logger->info("MPI host IP      :  %s", config->getConfig("stas.mpihost", "127.0.0.1").c_str());
 	logger->info("MPI host Port    :  %d", config->getConfig("stas.mpiport", 4730));
