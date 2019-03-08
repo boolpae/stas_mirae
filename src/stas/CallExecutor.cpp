@@ -40,19 +40,18 @@ QueueItem::QueueItem(uint16_t num, SOCKET sockfd, struct sockaddr_in si, time_t 
 	: m_nNum(num), m_sockfd(sockfd), m_si(si), m_time(tm), m_packetSize(psize)
 {
 	m_packet = packet;
-	printf("\t\t[%d] QueueItem Created!\n", m_nNum);
+	// printf("\t\t[%d] QueueItem Created!\n", m_nNum);
 }
 
 QueueItem::~QueueItem()
 {
 	delete[] m_packet;
-	printf("\t\t[%d] QueueItem Destroyed!\n", m_nNum);
+	// printf("\t\t[%d] QueueItem Destroyed!\n", m_nNum);
 }
 
-CallExecutor::CallExecutor(uint16_t num, VDCManager *vdcm, VRCManager *vrcm, /*log4cpp::Category *logger,*/ DBHandler* st2db, HAManager *ham)
-	: m_nNum(num), m_vdcm(vdcm), m_vrcm(vrcm), /*m_Logger(logger),*/ m_st2db(st2db), m_ham(ham)
+CallExecutor::CallExecutor(uint16_t num, VDCManager *vdcm, VRCManager *vrcm, DBHandler* st2db, HAManager *ham)
+	: m_nNum(num), m_vdcm(vdcm), m_vrcm(vrcm), m_st2db(st2db), m_ham(ham)
 {
-	//printf("\t[%d] CallExecutor Created!\n", m_nNum);
 	m_Logger = config->getLogger();
     m_Logger->debug("[%d] CallExecutor Created!", m_nNum);
 }
@@ -65,7 +64,6 @@ CallExecutor::~CallExecutor()
 		m_Que.pop();
 	}
 
-	//printf("\t[%d] CallExecutor Destroyed!\n", m_nNum);
     m_Logger->debug("[%d] CallExecutor Destroyed!", m_nNum);
 }
 
@@ -73,7 +71,7 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 {
 	uint16_t num = exe->getExecNum();
 	QueueItem* item = NULL;
-	CallSignal *cs = new CallSignal(/*exe->m_Logger*/);
+	CallSignal *cs = new CallSignal();
 	std::vector< uint16_t > vPorts;
 	std::string sCounselorCode;
 	std::string sCallId;
@@ -84,19 +82,17 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 	while (ms_bThrdRun) {
 		while ((item = exe->popPacket())) {
 			exe->m_Logger->debug("CallExecutor::thrdMain() - [%d] Received CallSignal from %s:%d", num, inet_ntoa(item->m_si.sin_addr), ntohs(item->m_si.sin_port));
-			//printf("\t[%d] Received packet size: %d\n", num, item->m_packetSize);
-            //exe->m_Logger->debug("[%d] Received packet size: %d\n", num, item->m_packetSize);
 
 			// 패킷 파싱 후 호 시작/종료 에 대한 처리 및 응답 패킷 생성 후 응답 로직
 			cs->init();
 			if ((resReq = cs->parsePacket(item->m_packet)) == 200) {
 				
-                // cs->printPacketInfo();
                 exe->m_Logger->info("CallExecutor::thrdMain() - [%d] Received CallSignal from %s:%d(%s : %s)", num, inet_ntoa(item->m_si.sin_addr), ntohs(item->m_si.sin_port), cs->getCounselorCode(), cs->getCallId());
 				
 				sCounselorCode = std::string(cs->getCounselorCode());
                 sCallId = std::string(cs->getCallId());
 
+				// 호(Call) 시작 요청
 				if (cs->getPacketFlag() == 'B') {
 					time_t startT;
 					WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_BEGIN_PROC);
@@ -108,7 +104,8 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 #else
                     if ((resReq = exe->m_vrcm->requestVRC(sCallId, sCounselorCode, startT, 'R', cs->getUdpCnt())))
 #endif
-					{
+					{	// VRClient 요청 실패한 경우
+
 						WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_RES_WORKER);
 
 						if (resReq == 1) {
@@ -165,24 +162,16 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 						}
 					}
 				}
+				// 호(Call) 종료 요청
 				else if (cs->getPacketFlag() == 'E') {
-#if 0 // 실시간 Call의 경우 VRClient에서 updateCallInfo()를 호출하기에 이 곳에서 updateCallInfo()는 생략한다.
-                    // to DB
-                    if (exe->m_st2db) {
-                        exe->m_st2db->updateCallInfo(sCounselorCode, sCallId, true);
-                    }
-#endif
+
 					WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_END_PROC);
                     exe->m_vdcm->removeVDC(sCallId);
 					cs->makePacket(item->m_packet, item->m_packetSize, 200);
-#if 0
-                    // HA
-                    if (exe->m_ham)
-                        exe->m_ham->insertSyncItem(false, sCallId, std::string("remove"), 1, 1);
-#endif
+
 				}
 			}
-			else {
+			else {	// 프로토콜 데이터 파싱 실패
                 exe->m_Logger->error("CallExecutor::thrdMain() - [%d] Error parse packet from %s:%d (%d)", num, inet_ntoa(item->m_si.sin_addr), ntohs(item->m_si.sin_port), resReq);
 				switch (resReq) {
 				case 404:	// 패킷 형태 오류 : 잘 못 된 패킷에 대한 응답
@@ -207,14 +196,16 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 	delete cs;
 }
 
+// CallReciever에 의해서 사용되는 함수로서 STT-Parrot으로부터 받은 패킷을 CallExecutor에게 전달할 때 사용됨
 void CallExecutor::pushPacket(SOCKET sockfd, struct sockaddr_in si, uint16_t psize, uint8_t* packet)
 {
 	std::lock_guard<std::mutex> g(m_mxQue);
-	//m_Que.push(packet);
+
 	QueueItem* item = new QueueItem(this->m_nNum, sockfd, si, time(NULL), psize, packet);
 	m_Que.push(item);
 }
 
+// CallExecutor에서 사용되며 CallReciever로부터 전달된 STT-Parrot의 요청을 가져올 때 사용
 QueueItem* CallExecutor::popPacket()
 {
 	QueueItem* item;

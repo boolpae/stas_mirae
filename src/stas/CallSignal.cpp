@@ -19,8 +19,8 @@
 
 #include <string>
 
-Protocol::CallSignal::CallSignal(/*log4cpp::Category *logger*/)
-	: m_nPacketSize(0), m_Packet(NULL)/*, m_Logger(logger)*/
+Protocol::CallSignal::CallSignal()
+	: m_nPacketSize(0), m_Packet(NULL)
 {
 	m_Logger = config->getLogger();
 }
@@ -41,8 +41,6 @@ void Protocol::CallSignal::init()
 		m_Packet = NULL;
 		m_nPacketSize = 0;
 
-		//memset(pacCallId, 0x00, sizeof(pacCallId));
-		//memset(pacFingerPrint, 0x00, sizeof(pacFingerPrint));
 	}
 }
 
@@ -119,7 +117,7 @@ uint16_t Protocol::CallSignal::parsePacket(uint8_t * packet)
 	memcpy(this->pacFingerPrint, pos, sizeof(this->pacFingerPrint) - 1);
 	this->pacFingerPrint[sizeof(this->pacFingerPrint)-1] = 0;
 
-#ifdef EN_RINGBACK_LEN
+#ifdef EN_RINGBACK_LEN	// 통화 시작부터 통화 실제 연결까지 시간 값을 가져옴
 	if (pacFlag == 'B') {
 		pos += 64;//sizeof(uint32_t);
 		memcpy((void*)&valRingbackLen, pos, sizeof(uint32_t));
@@ -195,7 +193,7 @@ int16_t Protocol::CallSignal::makePacket(uint8_t flag)
 
 #ifdef EN_RINGBACK_LEN
 	if (flag == 'B') {
-		pos += 64;//(sizeof(uint32_t));
+		pos += 64;
 		ringbackLen = ::htonl(pacRingbackLen);
 		memcpy(pos, &ringbackLen, sizeof(uint32_t));
 	}
@@ -272,7 +270,6 @@ void Protocol::CallSignal::setPacCounselorCode(uint8_t * counselorcode, uint16_t
 	memset(pacCounselorCode, 0x00, sizeof(pacCounselorCode));
 	if (len > 32) len = 32;
 	memcpy(pacCounselorCode, counselorcode, len);
-	//printf("\t[DEBUG] CallSignal::pacCounselorCode() - Call-ID(%s : %s), Len(%d)\n", counselorcode, pacCounselorCode, len);
     m_Logger->debug("CallSignal::pacCounselorCode() - Call-ID(%s : %s), Len(%d)", counselorcode, pacCounselorCode, len);
 }
 
@@ -281,38 +278,20 @@ void Protocol::CallSignal::setPacCallId(uint8_t * callid, uint16_t len)
 	memset(pacCallId, 0x00, sizeof(pacCallId));
 	if (len > LEN_CALL_ID) len = LEN_CALL_ID;
 	memcpy(pacCallId, callid, len);
-	//printf("\t[DEBUG] CallSignal::setPacCallId() - Call-ID(%s : %s), Len(%d)\n", callid, pacCallId, len);
     m_Logger->debug("CallSignal::setPacCallId() - Call-ID(%s : %s), Len(%d)", callid, pacCallId, len);
 }
-#if 0
-void Protocol::CallSignal::setPlayTime(uint16_t ptime)
-{
-	pacPlayTime = ::htons(ptime);
-}
-#endif
+
 void Protocol::CallSignal::setFingerPrint(uint8_t * fprint, uint16_t len)
 {
 	memset(pacFingerPrint, 0x00, sizeof(pacFingerPrint));
 	pacFingerPrint[sizeof(pacFingerPrint)-1] = 0;
 	if (len > 64) len = 64;
 	memcpy(pacFingerPrint, fprint, len);
-	//printf("\t[DEBUG] CallSignal::setFingerPrint() - FingerPrint(%s : %s), Len(%d)\n", fprint, pacFingerPrint, len);
     m_Logger->debug("CallSignal::setFingerPrint() - FingerPrint(%s : %s), Len(%d)", fprint, pacFingerPrint, len);
 }
 
 void Protocol::CallSignal::printPacketInfo()
 {
-#if 0
-	printf("\n  **---- Packet Info ----**\n");
-	printf("  Packet Size : %d\n", pacSize);
-	printf("  Flag : %c\n", pacFlag);
-	printf("  Call-ID(%lu) : [%s]\n", sizeof(pacCallId), pacCallId);
-	printf("  UDP Count : %d\n", pacUdpCnt);
-	printf("  SampleRate : %d\n", pacSampleRate);
-	printf("  Channel Count : %d\n", pacChnCnt);
-	printf("  Encoding : %d\n", pacEnc);
-	printf("  Fingerprint(%lu) : [%s]\n", sizeof(pacFingerPrint), pacFingerPrint);
-#endif
 	m_Logger->debug("\n  **---- Packet Info ----**\n"
 	"  Packet Size : %d\n"
 	"  Flag : %c\n"

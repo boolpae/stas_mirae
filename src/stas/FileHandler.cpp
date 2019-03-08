@@ -16,8 +16,8 @@
 
 FileHandler* FileHandler::ms_instance = NULL;
 
-FileHandler::FileHandler(std::string path/*, log4cpp::Category *logger*/)
-	: m_bLiveFlag(true), m_sResultPath(path)/*, m_Logger(logger)*/
+FileHandler::FileHandler(std::string path)
+	: m_bLiveFlag(true), m_sResultPath(path)
 {
     m_Logger = config->getLogger();
 	m_Logger->debug("FileHandler Constructed.");
@@ -29,11 +29,10 @@ FileHandler::~FileHandler()
 	m_Logger->debug("FileHandler Destructed.");
 }
 
-// #define ENC_UTF8
 
 void FileHandler::thrdMain(FileHandler * dlv)
 {
-	std::lock_guard<std::mutex> *g;// (m_mxQue);
+	std::lock_guard<std::mutex> *g;
 	STTQueItem* item;
 	std::string sttFilename;
     std::string fullpath;
@@ -106,10 +105,7 @@ void FileHandler::thrdMain(FileHandler * dlv)
 #ifdef FOR_TEST
 				testSttFilename = fullpath + item->getCSCode() + "_" + item->getCallId() + "_test.stt";
 #endif
-                /*
-				sttFilename += "_";
-				sttFilename += std::to_string(item->getSpkNo());
-                 */
+
                 if (item->getSpkNo() == 1) {
                     sttFilename += "_r.stt";
                 }
@@ -122,38 +118,18 @@ void FileHandler::thrdMain(FileHandler * dlv)
 				
 			}
 			else {
-				sttFilename = fullpath + item->getFilename();// dlv->m_sResultPath + "/" + item->getCallId();
+				sttFilename = fullpath + item->getFilename();
 				sttFilename += ".stt";
 			}
 			std::ofstream sttresult(sttFilename, std::ios::out | std::ios::app);
 			if (sttresult.is_open()) {
-#if 0
-                if (item->getJobType() == 'R') {
-                    if (item->getSpkNo() == 1) {
-                        sttresult << "<< Counselor >> : ";
-                    }
-                    else if (item->getSpkNo() == 2) {
-                        sttresult << "<< Customer >> : ";
-                    }
-                    /*
-                    else {
-                        sttresult << "<< BATCH >> : ";
-                    }
-                    */
-                    sttresult << std::to_string(item->getBpos()) << " - " << std::to_string(item->getEpos()) << std::endl;
-                }
-#endif
 
 #ifdef ENC_UTF8
-				sttresult << ((ret == -1) ? item->getSTTValue() : utf_buf);//item->getSTTValue();
+				sttresult << ((ret == -1) ? item->getSTTValue() : utf_buf);
 #else
-                sttresult << item->getSTTValue() ;//item->getSTTValue();
+                sttresult << item->getSTTValue() ;
 #endif
-                /*
-                if (item->getJobType() == 'R') {
-                    sttresult << std::to_string(item->getEpos()) << std::endl;
-                }
-                 */
+
                 sttresult << std::endl;
 				sttresult.close();
 			}
@@ -173,15 +149,9 @@ void FileHandler::thrdMain(FileHandler * dlv)
                         testSttresult << "\n<B>\n";
                     }
 
-                    // testSttresult << std::to_string(item->getBpos()) << " - " << std::to_string(item->getEpos()) << std::endl;
                 }
 
                 testSttresult << item->getSTTValue() ;
-
-                // if (item->getJobType() == 'R') {
-                //     testSttresult << std::to_string(item->getEpos()) << std::endl;
-                // }
-
                 testSttresult << std::endl;
 				testSttresult.close();
 			}
@@ -281,7 +251,7 @@ void FileHandler::insertJsonData(STTQueItem * item)
 
 
 
-FileHandler* FileHandler::instance(std::string path/*, log4cpp::Category *logger*/)
+FileHandler* FileHandler::instance(std::string path)
 {
 	if (ms_instance) return ms_instance;
     
@@ -297,7 +267,7 @@ FileHandler* FileHandler::instance(std::string path/*, log4cpp::Category *logger
         }
     }
 
-	ms_instance = new FileHandler(path/*, logger*/);
+	ms_instance = new FileHandler(path);
 
 	ms_instance->m_thrd = std::thread(FileHandler::thrdMain, ms_instance);
     // for TEST

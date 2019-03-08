@@ -54,7 +54,7 @@ RedisHandler* RedisHandler::instance()
 
         m_instance->m_xRedis.Init(CACHE_TYPE_MAX);
         bool bConn = m_instance->m_xRedis.ConnectRedisCache(redisList, sizeof(redisList) / sizeof(RedisNode), 3, CACHE_TYPE_1);
-        //bConn = true;
+
         if (!bConn) {
             log4cpp::Category *logger = config->getLogger();
             logger->error("RedisHandler::instance() - ERROR (Failed to connect redis server)");

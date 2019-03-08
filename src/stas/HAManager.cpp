@@ -27,8 +27,8 @@ HAManager* HAManager::m_instance= nullptr;
 
 #ifdef LOG4CPP
 #ifdef ENABLE_REALTIME
-HAManager::HAManager(VRCManager *vrm, VDCManager *vdm/*, log4cpp::Category *logger*/)
-: m_vrm(vrm), m_vdm(vdm), /*m_Logger(logger),*/ m_nActiveSock(0), m_nStandbySock(0)
+HAManager::HAManager(VRCManager *vrm, VDCManager *vdm)
+: m_vrm(vrm), m_vdm(vdm), m_nActiveSock(0), m_nStandbySock(0)
 #else
 HAManager::HAManager()
 : m_nActiveSock(0), m_nStandbySock(0)
@@ -65,7 +65,7 @@ HAManager::~HAManager()
 
 #ifdef LOG4CPP
 #ifdef ENABLE_REALTIME
-HAManager* HAManager::instance(VRCManager *vrm, VDCManager *vdm/*, log4cpp::Category *logger*/)
+HAManager* HAManager::instance(VRCManager *vrm, VDCManager *vdm)
 #else
 HAManager* HAManager::instance()
 #endif
@@ -76,7 +76,7 @@ HAManager* HAManager::instance()
     if (m_instance) return m_instance;
 #ifdef LOG4CPP
 #ifdef ENABLE_REALTIME
-    m_instance = new HAManager(vrm, vdm/*, logger*/);
+    m_instance = new HAManager(vrm, vdm);
 #else
     m_instance = new HAManager();
 #endif

@@ -65,21 +65,7 @@ int Notifier::startWork()
 		logger->error("Cannot create directory '%s' with error %s", path->c_str(), std::strerror(errno));
 		return 1;
 	}
-#if 0
-	int inotify = inotify_init();
-	if (inotify < 0) {
-		int rc = errno;
-		logger->error("Cannot initialization iNotify '%s'", std::strerror(rc));
-		return rc;
-	}
 
-	int wd = inotify_add_watch(inotify, path->c_str(), IN_CLOSE_WRITE);
-	if (wd < 0) {
-		int rc = errno;
-		logger->error("Cannot watch '%s' with error %s", path->c_str(), std::strerror(rc));
-		return rc;
-	}
-#endif
     m_thrdNoti = std::thread(Notifier::thrdFunc, this);
     
     return 0;
@@ -97,7 +83,7 @@ void Notifier::thrdFunc(Notifier *noti)
     log4cpp::Category *logger = config->getLogger();
     HAManager *ham = HAManager::getInstance();
 	std::shared_ptr<std::string> path = std::make_shared<std::string>(config->getConfig("notify.input_path"));
-    std::string downpath = "";//config->getConfig("notify.down_path");
+    std::string downpath = "";
 
 	if (!config->isSet("notify.down_path")) {
         downpath = "file://";
@@ -129,7 +115,7 @@ void Notifier::thrdFunc(Notifier *noti)
     }
 
     while(noti->m_LiveFlag) {
-		tv.tv_sec = 0;	// for debug
+		tv.tv_sec = 0;
 		tv.tv_usec = 500000;
 		FD_ZERO(&rfds);
 		FD_SET(inotify, &rfds);
@@ -155,8 +141,6 @@ void Notifier::thrdFunc(Notifier *noti)
                     std::shared_ptr<std::string> filename = std::make_shared<std::string>(event->name, event->len);
                     std::string file_ext = filename->substr(filename->rfind(".") + 1);
 
-                    //logger->debug("Noti file %s (Watch: '%s', ext: '%s')", filename->c_str(), watch_ext.c_str(), file_ext.c_str());
-
                     if (filename->at(0) != '.' && file_ext.find(watch_ext) == 0 &&
                         (file_ext.size() == watch_ext.size() || file_ext.at(watch_ext.size()) == '\0' )) {
 
@@ -176,10 +160,6 @@ void Notifier::thrdFunc(Notifier *noti)
                                 noti->m_DBHandler->insertTaskInfo(downpath, *filename.get(), filename->substr(0, filename->rfind(".")));
                                 #endif
 
-#if 0 // 임시코드
-                                noti->m_vfcm->pushItem(*path.get()+"/"+*filename.get());
-                                logger->debug("Line (%s)", std::string(*path.get()+"/"+*filename.get()).c_str());
-#endif
                             }
                             else {
                                 std::string pathfile = *path.get()+"/"+*filename.get();
@@ -210,10 +190,7 @@ void Notifier::thrdFunc(Notifier *noti)
                                                 noti->m_DBHandler->insertTaskInfo(downpath, v[0], v[0].substr(0, v[0].rfind(".")));
                                             #endif
                                         }
-#if 0 // 임시코드
-                                        noti->m_vfcm->pushItem(line);
-                                        logger->debug("Line (%s)", line.c_str());
-#endif
+
                                     }
                                     index_file.close();
                                 }

@@ -36,13 +36,12 @@
 
 #endif
 
-VDClient::VDClient(VRCManager *vrcm/*, log4cpp::Category *logger*/)
+VDClient::VDClient(VRCManager *vrcm)
 	: m_nLiveFlag(1), m_nWorkStat(0), m_nPort(0), m_nSockfd(0), m_sCallId(""), m_nSpkNo(0), m_vrcm(vrcm), /*m_Logger(logger),*/ m_nPlaytime(3*16000)
 {
 	m_pVrc = NULL;
 	m_tTimeout = time(NULL);
 
-	//printf("\t[DEBUG] VDClinet Constructed.\n");
 	m_Logger = config->getLogger();
     m_Logger->debug("VDClinet Constructed.");
 }
@@ -55,7 +54,6 @@ void VDClient::finish()
 	if (m_nSockfd) {
         close(m_nSockfd);
 		m_thrd.detach();//
-        //m_thrd.join();
 	}
 
 	delete this;
@@ -88,7 +86,6 @@ uint16_t VDClient::init(uint16_t port)
 
 	m_nPort = port;
 
-	//printf("\t[DEBUG] VDClient::init() - port(%d)\n", port);
     m_Logger->info("VDClient::init() - port(%d)", port);
 
 	m_thrd = std::thread(VDClient::thrdMain, this);
@@ -115,11 +112,7 @@ void VDClient::thrdMain(VDClient * client)
 	char silBuf[SIL_BUFLEN];
 	bool bUseSilBuf = false;
 	int nTimeout = 30;
-#if 0 // save pcm file
-    int nRecvCount=0;
-    std::string filename;
-    std::ofstream pcmFile;
-#endif
+
 	memset(silBuf, 0, SIL_BUFLEN);
 	bUseSilBuf = !config->getConfig("stas.send_sil_during_no_voice", "false").compare("true");
 	nTimeout = config->getConfig("stas.call_timeout_sec", 30);
@@ -147,7 +140,6 @@ void VDClient::thrdMain(VDClient * client)
 			pos = buf;
 			// 인입된 UDP패킷이 RT-STT 음성 패킷이 아닌 경우 처리하지 않음
 			if (memcmp(pos, "RT-STT", 6)) {
-				//printf("\t[DEBUG] Invalid Voice Data Packet - VDClient(%d) recv_len(%d), pVrc(0x%p), nWorkStat(%d)\n", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat);
                 client->m_Logger->warn("VDClient::thrdMain() - Invalid Voice Data Packet - VDClient(%d) recv_len(%d), pVrc(0x%p), nWorkStat(%d)", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat);
 				continue;
 			}
@@ -160,14 +152,13 @@ void VDClient::thrdMain(VDClient * client)
 			#endif
 			pos += sizeof(uint16_t);
 
-			// printf("\t[DEBUG] VDClient(%d) recv_len(%d), pVrc(%X), nWorkStat(%d), network_len(%d)\n", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat, nVDSize);
 			// m_nWorkStat 상태가 대기가 아닐 경우에만 recvfrom한 buf 내용으로 작업을 진행한다.
 			// m_nWorkStat 상태가 대기(0)인 경우 recvfrom() 수행하여 수집된 데이터는 버림
 			if (recv_len && client->m_pVrc && client->m_nWorkStat) {
 				client->m_tTimeout = time(NULL);
 				if (!item) {
 					item = new QueItem;
-					// item->voiceData = new uint8_t[VOICE_BUFF_LEN];
+
                     // 시작 패킷 표시
                     if (client->m_nWorkStat == 3) {
                         item->flag = 2;
@@ -180,22 +171,11 @@ void VDClient::thrdMain(VDClient * client)
 					item->lenVoiceData = 0;
 					memset(item->voiceData, 0x00, VOICE_BUFF_LEN);
 				}
-#if 0 // save pcm file
-                nRecvCount++;
-                filename = client->getCallId() + std::string("_") + std::to_string(client->getSpkNo()) + std::string(".pcm");
-                pcmFile.open(filename, ios::out | ios::app | ios::binary);
-				if (pcmFile.is_open()) {
-					pcmFile.write((const char*)pos, recv_len);
-                    pcmFile.close();
-				}
-#endif
+
 				memcpy(item->voiceData + item->lenVoiceData, pos, recv_len);
 				item->lenVoiceData += recv_len;
                 
-                // printf("\t[DEBUG] VDClient::thrdMain() - VoiceDataLen(%d)\n", item->lenVoiceData);
-
 				if (item->lenVoiceData >= client->m_nPlaytime) {
-                    // printf("\t[DEBUG] ItemVoiceSize(%d)\n", item->lenVoiceData);
 					client->m_pVrc->insertQueItem(item);
 					item = NULL;
 				}
@@ -206,7 +186,7 @@ void VDClient::thrdMain(VDClient * client)
 			END_CALL:
                 if (!HAManager::getInstance() || HAManager::getInstance()->getHAStat()) {
                     if (client->m_pVrc) {
-                        //printf("\t[DEBUG] VDClient(%d) work ending...(%d)\n", client->m_nPort, nRecvCount);
+
                         client->m_Logger->debug("VDClient::thrdMain() - VDClient(%d, %s) work ending...", client->m_nPort, client->m_pVrc->getCounselCode().c_str());
                         if (!item) {
                             item = new QueItem;
@@ -218,10 +198,6 @@ void VDClient::thrdMain(VDClient * client)
 
                         item->flag = 0;
                         if (recv_len) {
-                            // if (!item->voiceData) {
-                            //     item->voiceData = new uint8_t[VOICE_BUFF_LEN];
-                            //     memset(item->voiceData, 0x00, VOICE_BUFF_LEN);
-                            // }
                             memcpy(item->voiceData + item->lenVoiceData, pos, recv_len);
                             item->lenVoiceData += recv_len;
                         }
@@ -236,9 +212,7 @@ void VDClient::thrdMain(VDClient * client)
 				client->m_nSpkNo = 0;
 				client->m_nWorkStat = 0;
 				client->m_pVrc = NULL;
-#if 0 // save pcm file
-                nRecvCount=0;
-#endif
+
 			}
 		}
 		else if ((selVal == 0) && ((client->m_nWorkStat == 3) || (client->m_nWorkStat == 1))) {	// 이 로직은 수정해야할 필요가 있다. 현재는 30초동안 데이터가 안들어 올 경우 호를 종료
@@ -282,16 +256,12 @@ void VDClient::thrdMain(VDClient * client)
 
 			}
 
-			//printf("\t[DEBUG] VDClient::thrdMain(%d) - Working... timeout(%llu)\n", client->m_nPort, (time(NULL) - client->m_tTimeout));
-            //client->m_Logger->debug("VDClient::thrdMain(%d) - Working... timeout(%llu)", client->m_nPort, (time(NULL) - client->m_tTimeout));
 		}
 		else if ((selVal == 0) && (client->m_nWorkStat == 2)) {
 			recv_len = 0;
 			goto END_CALL;
 		}
 
-		// timeout에 의한 호 종료 처리 로직 필요
-		//printf("\t[DEBUG] VDClient(%d) thread running...\n", client->m_nPort);
 	}
 }
 
@@ -299,8 +269,6 @@ VDClient::~VDClient()
 {
 	if (m_nSockfd) closesocket(m_nSockfd);
 
-	//printf("\t[DEBUG] VDClinet Destructed.(%d)\n", m_nPort);
-    //m_Logger->debug("VDClinet Destructed.(%d)", m_nPort);
 }
 
 void VDClient::startWork(std::string& callid, uint8_t spkno)

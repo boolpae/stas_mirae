@@ -66,11 +66,10 @@ int main(int argc, const char** argv)
     
     std::signal(SIGINT, term_handle);
     std::signal(SIGTERM, term_handle);
-    //std::signal(SIGABRT, term_handle);
     
     for(int i=1; i<argc; i++) {
         if(!strncmp(argv[i], "-v", 2)) {
-            printf(" %s : Version (%d.%d), Build Date(%s)\n", argv[0], STAS_VERSION_MAJ, STAS_VERSION_MIN, __DATE__);
+            printf(" %s : Version (%d.%d.%d), Build Date(%s)\n", argv[0], STAS_VERSION_MAJ, STAS_VERSION_MIN, STAS_VERSION_BLD, __DATE__);
             return 0;
         }
         else if (!strncmp(argv[1], "encstr", 6)) {
@@ -125,20 +124,18 @@ int main(int argc, const char** argv)
 
     logger->info("Database USE     :  %s", config->getConfig("database.use", "false").c_str());
     if (!config->getConfig("database.use", "false").compare("true")) {
-        logger->info("Database Type    :  %s", config->getConfig("database.type", "mysql").c_str());
-        logger->info("Database Addr    :  %s", config->getConfig("database.addr", "localhost").c_str());
-        logger->info("Database Port    :  %s", config->getConfig("database.port", "3306").c_str());
-        logger->info("Database ID      :  %s", config->getConfig("database.id", "stt").c_str());
-        logger->info("Database Name    :  %s", config->getConfig("database.name", "rt_stt").c_str());
-        logger->info("Database CharSet :  %s", config->getConfig("database.chset", "utf8").c_str());
+        logger->info("Database Use Encrypt    :  %s", config->getConfig("database.encrypt", "false").c_str());
+        logger->info("Database DSN            :  %s", config->getConfig("database.dsn", "mariadb-dev").c_str());
+        logger->info("Database ID             :  %s", config->getConfig("database.id", "stt").c_str());
+        logger->info("Database ConnCount      :  %d", config->getConfig("database.connCount", 5));
         
 #ifdef USE_REDIS_POOL
-    // RedisHandler 활성화 옵션 체크
-    if (!RedisHandler::instance()) {
-        logger->error("MAIN - ERROR (Failed to get RedisHandler instance)");
-        delete config;
-        return -1;
-    }
+        // RedisHandler 활성화 옵션 체크
+        if (!RedisHandler::instance()) {
+            logger->error("MAIN - ERROR (Failed to get RedisHandler instance)");
+            delete config;
+            return -1;
+        }
 #endif
         std::string dbpwd="";
         if ( !config->getConfig("database.encrypt", "false").compare("true") )
@@ -172,14 +169,13 @@ int main(int argc, const char** argv)
     }
 
 	WorkTracer::instance();
-    //WorkTracer::instance()->setLogger(&tracerLog);
     
     if (!config->getConfig("stt_result.use", "false").compare("true")) {
-        deliver = FileHandler::instance(config->getConfig("stt_result.path", "./stt_result")/*, logger*/);
+        deliver = FileHandler::instance(config->getConfig("stt_result.path", "./stt_result"));
     }
 
 #ifdef ENABLE_REALTIME
-	VRCManager* vrcm = VRCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.mpitimeout", 0), deliver, /*logger,*/ st2db, (config->getConfig("stas.savewav", "false").find("true")==0)?true:false, config->getConfig("stas.wavpath", "/home/stt"), config->getConfig("stas.framelen", 20), config->getConfig("stas.mode", 0));
+	VRCManager* vrcm = VRCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.mpitimeout", 0), deliver, st2db, (config->getConfig("stas.savewav", "false").find("true")==0)?true:false, config->getConfig("stas.wavpath", "/home/stt"), config->getConfig("stas.framelen", 20), config->getConfig("stas.mode", 0));
     if (!vrcm) {
         logger->error("MAIN - ERROR (Failed to get VRCManager instance)");
         VDCManager::release();
@@ -189,7 +185,7 @@ int main(int argc, const char** argv)
         return -1;
     }
 
-	VDCManager* vdcm = VDCManager::instance(config->getConfig("stas.channel_count", 200), config->getConfig("stas.udp_bport", 10000), config->getConfig("stas.udp_eport", 11000), config->getConfig("stas.playtime", 3), vrcm/*, logger*/);
+	VDCManager* vdcm = VDCManager::instance(config->getConfig("stas.channel_count", 200), config->getConfig("stas.udp_bport", 10000), config->getConfig("stas.udp_eport", 11000), config->getConfig("stas.playtime", 3), vrcm);
     if (!vdcm) {
         logger->error("MAIN - ERROR (Failed to get VDCManager instance)");
         VDCManager::release();
@@ -200,7 +196,7 @@ int main(int argc, const char** argv)
     }
 #endif  // ENABLE_REALTIME
 
-	VFCManager* vfcm = VFCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.mpitimeout", 0)/*, logger*/);
+	VFCManager* vfcm = VFCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.mpitimeout", 0));
     Notifier *noti = nullptr;
     if(vfcm) {
         noti = Notifier::instance(vfcm, st2db);
@@ -214,7 +210,7 @@ int main(int argc, const char** argv)
 
     if (!config->getConfig("ha.use", "false").compare("true")) {
 #ifdef ENABLE_REALTIME
-        ham = HAManager::instance(vrcm, vdcm/*, logger*/);
+        ham = HAManager::instance(vrcm, vdcm);
 #else
         ham = HAManager::instance();
 #endif
@@ -232,7 +228,7 @@ int main(int argc, const char** argv)
     }
     
 #ifdef ENABLE_REALTIME
-	rcv = CallReceiver::instance(vdcm, vrcm, /*logger,*/ st2db, ham);
+	rcv = CallReceiver::instance(vdcm, vrcm, st2db, ham);
     rcv->setNumOfExecutor(config->getConfig("stas.callexe_count", 5));
 
 	if (!rcv->init(config->getConfig("stas.callport", 7000))) {
@@ -240,13 +236,6 @@ int main(int argc, const char** argv)
 	}
 #endif // ENABLE_REALTIME
 
-#if 0
-    logger->debug("input waiting... quit");
-	while (1) {
-		std::cin >> input;
-		if (!input.compare("quit")) break;
-	}
-#else
     while (gRunning)
     {
 #ifdef ENABLE_REALTIME
@@ -260,7 +249,6 @@ int main(int argc, const char** argv)
         std::this_thread::sleep_for(std::chrono::seconds(1));
         //std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-#endif
 
 #ifdef ENABLE_REALTIME
 	vrcm->outputVRCStat();
@@ -269,7 +257,7 @@ int main(int argc, const char** argv)
 
 FINISH:
 
-	logger->debug("MAIN FINISH!");
+	logger->debug("STAS FINISH!");
 
     if (!config->getConfig("ha.use", "false").compare("true")) {
         HAManager::release();

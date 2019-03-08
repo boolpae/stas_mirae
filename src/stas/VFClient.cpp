@@ -74,10 +74,6 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 #if 1
     gearClient = gearman_client_create(NULL);
     if (!gearClient) {
-        //printf("\t[DEBUG] VRClient::thrdMain() - ERROR (Failed gearman_client_create - %s)\n", client->m_sCallId.c_str());
-        //client->m_Logger->error("VRClient::thrdMain() - ERROR (Failed gearman_client_create - %s)", client->m_sCallId.c_str());
-
-        //WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
 
         client->m_thrd.detach();
         delete client;
@@ -87,10 +83,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
     ret= gearman_client_add_server(gearClient, client->m_sGearHost.c_str(), client->m_nGearPort);
     if (gearman_failed(ret))
     {
-        //printf("\t[DEBUG] VRClient::thrdMain() - ERROR (Failed gearman_client_add_server - %s)\n", client->m_sCallId.c_str());
-        //client->m_Logger->error("VRClient::thrdMain() - ERROR (Failed gearman_client_add_server - %s)", client->m_sCallId.c_str());
 
-        //WorkTracer::instance()->insertWork(client->m_sCallId, client->m_cJobType, WorkQueItem::PROCTYPE::R_FREE_WORKER);
         gearman_client_free(gearClient);
         client->m_thrd.detach();
         delete client;
@@ -104,13 +97,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
 
     while(client->m_LiveFlag) {
         if( (item = mgr->popItem()) ) {
-//             struct tm tm;
-// #if defined(USE_ORACLE) || defined(USE_TIBERO)
-//             strptime(item->getRegdate().c_str(), "%Y/%m/%d %H:%M:%S", &tm);
-// #else
-//             strptime(item->getRegdate().c_str(), "%Y-%m-%d %H:%M:%S", &tm);
-// #endif
-//             time_t startT = mktime(&tm);
+
 #ifdef USE_RAPIDJSON
             {
                 rapidjson::Document d;
@@ -158,19 +145,17 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
             if (gearman_success(rc)) {
                 // Make use of value
                 if (value) {
-                    //std::string sValue((const char*)value);
                     sValue = (const char*)value;
                     // std::cout << "STT RESULT <<\n" << (const char*)value << "\n>>" << std::endl;
                     // value의 값이 '{spk_flag'로 시작될 경우 화자 분리 로직으로 처리
                     // 화자 분리 또는 일반의 경우 동일하게 unsegment까지 우선 진행되어야 한다.
                     // parse a result's header {} or filesize
-#if 0
-                    1. parse header - '{spk_flag' 문구가 있으면 화자 분리, 없으면 일반
-                    2. cond.(화자분리), 필요한 인자값 수집 - spk_node 에 설정된 gearman function이름 값을 가져온다.
-                    3. unsegment - 화자분리가 아닐 경우 이 단계에서 종료 - 화자 분리 여부에 관계없이 수행된다.
-                    4. cond.(화자분리), 화자분리 시 2.에서 수집한 인자값을 이용하여 화자분리 수행
-                    5. 화자 분리 결과 처리
-#endif
+
+                    // 1. parse header - '{spk_flag' 문구가 있으면 화자 분리, 없으면 일반
+                    // 2. cond.(화자분리), 필요한 인자값 수집 - spk_node 에 설정된 gearman function이름 값을 가져온다.
+                    // 3. unsegment - 화자분리가 아닐 경우 이 단계에서 종료 - 화자 분리 여부에 관계없이 수행된다.
+                    // 4. cond.(화자분리), 화자분리 시 2.에서 수집한 인자값을 이용하여 화자분리 수행
+                    // 5. 화자 분리 결과 처리
 
                     free(value);
 
@@ -194,7 +179,6 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                 // 2ch waves
                                 // mono wave
 
-                                // if ( res["CHANNEL-COUNT"].GetInt() == 2 ) {}
                                 for (rapidjson::SizeType i = 0; i < resStts.Size(); i++) {// Uses SizeType instead of size_t
                                     rapidjson::Document d;
                                     rapidjson::Document::AllocatorType& alloc = d.GetAllocator();

@@ -7,10 +7,9 @@
 
 VDCManager* VDCManager::ms_instance = NULL;
 
-VDCManager::VDCManager(uint32_t pt, VRCManager *vrcm/*, log4cpp::Category *logger*/)
-: m_nPlaytime(pt), m_vrcm(vrcm)/*, m_Logger(logger)*/
+VDCManager::VDCManager(uint32_t pt, VRCManager *vrcm)
+: m_nPlaytime(pt), m_vrcm(vrcm)
 {
-	//printf("\t[DEBUG] VDCManager Constructed.\n");
 	m_Logger = config->getLogger();
     m_Logger->debug("VDCManager Constructed.");
 }
@@ -24,11 +23,10 @@ VDCManager::~VDCManager()
 	}
 	m_vClients.clear();
 
-	//printf("\t[DEBUG] VDCManager Destructed.\n");
     m_Logger->debug("VDCManager Destructed.");
 }
 
-VDCManager* VDCManager::instance(uint16_t tcount, uint16_t bport, uint16_t eport, uint32_t pt, VRCManager *vrcm/*, log4cpp::Category *logger*/)
+VDCManager* VDCManager::instance(uint16_t tcount, uint16_t bport, uint16_t eport, uint32_t pt, VRCManager *vrcm)
 {
 	VDClient* client;
 	int i = 0;
@@ -36,17 +34,16 @@ VDCManager* VDCManager::instance(uint16_t tcount, uint16_t bport, uint16_t eport
 
 	if (ms_instance) return ms_instance;
 
-	ms_instance = new VDCManager(pt, vrcm/*, logger*/);
+	ms_instance = new VDCManager(pt, vrcm);
 
 	// TOTAL_CHANNEL_COUNT : 생성할 채널의 총 갯수
 	// BEGIN_PORT, END_PORT : 음성 데이터를 받기 위한 UDP포트의 범위
 	// 총 채널의 갯수만큼 VDClient를 만들지 못 한 경우 VDCManager instance 생성 실패
 	while (i++ < tcount) {
-		client = new VDClient(vrcm/*, logger*/);
+		client = new VDClient(vrcm);
         client->setPlaytime(pt);
 
 		while (client->init(bport)) {
-			//printf("\t[DEBUG] VDCManager::instance() - init(%d) error\n", bport);
 			log4cpp::Category *logger = config->getLogger();
             logger->error("VDCManager::instance() - init(%d) error", bport);
 			bport++;
@@ -88,7 +85,6 @@ int16_t VDCManager::requestVDC(std::string & callid, uint8_t noc, std::vector< u
 
 	for (iter = m_vClients.begin(); iter != m_vClients.end(); iter++) {
 		if (!((VDClient*)(*iter))->getWorkStat()) {	// 현재 대기중인 VDClient를 찾음
-			//((VDClient*)(*iter))->setWorkStat(1);
 			if (coc < noc) {
 				clients.push_back((*iter));
 				coc++;
@@ -135,9 +131,7 @@ void VDCManager::outputVDCStat()
 	std::vector< VDClient* >::iterator iter;
 
 	for (iter = m_vClients.begin(); iter != m_vClients.end(); iter++) {
-		//printf("\t[DEBUG] VDCManager::outputVDCStat() - VDCLlient(%d) Stat(%d)\n", ((VDClient*)(*iter))->getPort(), ((VDClient*)(*iter))->getWorkStat());
         if (((VDClient*)(*iter))->getWorkStat()) {
-            // m_Logger->debug("VDCManager::outputVDCStat() - VDCLlient(%d) Stat(%d)", ((VDClient*)(*iter))->getPort(), ((VDClient*)(*iter))->getWorkStat());
             vdccount++;
         }
 	}

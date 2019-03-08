@@ -37,24 +37,24 @@ namespace Protocol {
 		uint8_t* m_Packet;
 
 		// 요청 패킷의 크기 : 264 bits
-		uint16_t pacSize;		// 패킷 전체 길이 값
-		uint8_t pacFlag;		// 호 시작('B'), 호 종료('E')
+		uint16_t pacSize;					// 패킷 전체 길이 값
+		uint8_t pacFlag;					// 호 시작('B'), 호 종료('E')
 		uint8_t pacCounselorCode[33];
 		uint8_t pacCallId[LEN_CALL_ID+1];	// unique한 값, 키로 사용되는 값이며 문자열
-		uint8_t pacUdpCnt;		// 실시간 음성 전달을 위해 요청한 채널 갯수
-        int32_t pacSampleRate;
-        uint8_t pacChnCnt;
+		uint8_t pacUdpCnt;					// 실시간 음성 전달을 위해 요청한 채널 갯수
+        int32_t pacSampleRate;				// 전달받을 음성데이터의 샘플레이트 값
+        uint8_t pacChnCnt;					// STT-Parrot으로부터 음성데이터를 받아 처리할 VDClient갯수
         uint8_t pacEnc;
-		uint8_t pacFingerPrint[65];	// 패킷의 조작 여부를 판별하기 위한 문자열 값(요청하는 노드에서 설정되는 값)
+		uint8_t pacFingerPrint[65];			// 패킷의 조작 여부를 판별하기 위한 문자열 값(요청하는 노드에서 설정되는 값)
 #ifdef EN_RINGBACK_LEN
-		uint32_t pacRingbackLen;	// 통화연결음 길이
+		uint32_t pacRingbackLen;			// 통화연결음 길이
 #endif
-		uint8_t pacRes[3];		// 응답 값 - HTTP 프로토콜의 응답 코드와 동일한 값 사용
+		uint8_t pacRes[3];					// 응답 값 - HTTP 프로토콜의 응답 코드와 동일한 값 사용
         
         log4cpp::Category *m_Logger;
 
 	public:
-		CallSignal(/*log4cpp::Category *logger*/);
+		CallSignal();
 		virtual ~CallSignal();
 
 		void init();

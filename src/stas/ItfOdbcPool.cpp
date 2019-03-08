@@ -12,7 +12,6 @@
 
 ItfOdbcPool::ItfOdbcPool(const char* dsn, const char* id, const char* pw)
 {
-    //sprintf(m_sDsn, "DSN=%s;", dsn);
     sprintf(m_sDsn, "%s", dsn);
     sprintf(m_sId, "%s", id);
     sprintf(m_sPw, "%s", pw);
@@ -56,15 +55,8 @@ int ItfOdbcPool::createConnections(int setCount)
             SQLFreeHandle(SQL_HANDLE_ENV, env);
             continue;
         }
+
         /* Connect to the DSN mydsn */
-//         ret = SQLDriverConnect(dbc, NULL, (unsigned char *)m_sDsn, SQL_NTS,
-//                                 NULL, 0, NULL,
-//                                 SQL_DRIVER_COMPLETE);
-#if 0
-        ret = SQLSetConnectAttr(dbc, SQL_ATTR_AUTOCOMMIT,
-                                        (SQLPOINTER)1, 0);
-#endif
-        // SQLSetConnectAttr(dbc, SQL_ATTR_CONNECTION_TIMEOUT, reinterpret_cast<SQLPOINTER>(0), SQL_IS_UINTEGER);
         ret = SQLConnect(dbc, (SQLCHAR*)m_sDsn, SQL_NTS,
                          (SQLCHAR*) m_sId, strlen(m_sId), (SQLCHAR*) m_sPw, strlen(m_sPw));
         if (SQL_SUCCEEDED(ret)) {
@@ -89,7 +81,6 @@ int ItfOdbcPool::createConnections(int setCount)
             connSet->lastTime = time(NULL);
 
             m_mConnSets.insert(std::make_pair(i, connSet));
-            // m_nConnSetCount++;
             logger->debug("ItfOdbcPool::createConnectinos - id(%d), m_nConnSetCount(%d)", i, m_nConnSetCount);
         }
         else {
@@ -157,26 +148,16 @@ void        ItfOdbcPool::restoreConnectionNoSetTime(ConnSet *conn)  // 사용 �
 
 PConnSet    ItfOdbcPool::reconnectConnection(ConnSet *conn)    // 사용 중 문제가 생긴 커넥션에 대해 재연결
 {
-    //std::lock_guard<std::mutex> *g = nullptr;
     SQLRETURN fsts;
     SQLHENV env;
     SQLHDBC dbc;
     SQLHSTMT stmt;
     SQLRETURN ret;
-    //int id = conn->id;
-    //PConnSet connSet = m_mConnSets.find(id)->second;
 
-    //g = new std::lock_guard<std::mutex>(m_mxDb);
     SQLFreeHandle(SQL_HANDLE_STMT, conn->stmt);
     SQLDisconnect(conn->dbc);
     SQLFreeHandle(SQL_HANDLE_DBC, conn->dbc);
     SQLFreeHandle(SQL_HANDLE_ENV, conn->env);
-    //delete connSet;
-    //m_mConnSets.erase(id);
-    //m_nConnSetCount--;
-    //delete g; g = nullptr;
-
-    //connSet = nullptr;
 
     /* Allocate an environment handle */
     fsts = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
@@ -189,10 +170,6 @@ PConnSet    ItfOdbcPool::reconnectConnection(ConnSet *conn)    // 사용 중 문
         if (SQL_SUCCEEDED(fsts))
         {
             /* Connect to the DSN mydsn */
-
-//             ret = SQLDriverConnect(dbc, NULL, (unsigned char *)m_sDsn, SQL_NTS,
-//                                     NULL, 0, NULL,
-//                                     SQL_DRIVER_COMPLETE);
 
             ret = SQLConnect(dbc, (SQLCHAR*)m_sDsn, SQL_NTS,
                             (SQLCHAR*) m_sId, strlen(m_sId), (SQLCHAR*) m_sPw, strlen(m_sPw));
@@ -214,18 +191,6 @@ PConnSet    ItfOdbcPool::reconnectConnection(ConnSet *conn)    // 사용 중 문
                 SQLFreeHandle(SQL_HANDLE_DBC, dbc);
                 SQLFreeHandle(SQL_HANDLE_ENV, env);
 
-                //connSet = new ConnSet();
-                //connSet->id = id;
-                // conn->env = env;
-                // conn->dbc = dbc;
-                // conn->stmt = stmt;
-                // conn->useStat = true;
-                // conn->currStat = false;
-
-                // g = new std::lock_guard<std::mutex>(m_mxDb);
-                // m_mConnSets.insert(std::make_pair(id, connSet));
-                // m_nConnSetCount++;
-                // delete g; g = nullptr;
             }
             else {
                 SQLFreeHandle(SQL_HANDLE_DBC, dbc);
@@ -290,11 +255,11 @@ void ItfOdbcPool::updateConnection(ItfOdbcPool *pool)
                     pool->restoreConnectionNoSetTime(connSet);
                     continue;
                 }
-        #if defined(USE_ORACLE) || defined(USE_TIBERO)
+#if defined(USE_ORACLE) || defined(USE_TIBERO)
                 sprintf(sqlbuff, "SELECT 1 FROM DUAL");
-        #else
+#else
                 sprintf(sqlbuff, "SELECT 1");
-        #endif
+#endif
 
                 retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 

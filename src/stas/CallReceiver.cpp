@@ -32,10 +32,9 @@
 
 CallReceiver* CallReceiver::m_instance = NULL;
 
-CallReceiver::CallReceiver(VDCManager *vdcm, VRCManager *vrcm, /*log4cpp::Category *logger,*/ DBHandler* st2db, HAManager *ham)
-	: m_nSockfd(0), m_nNumofExecutor(3), m_vdcm(vdcm), m_vrcm(vrcm), /*m_Logger(logger),*/ m_st2db(st2db), m_ham(ham)
+CallReceiver::CallReceiver(VDCManager *vdcm, VRCManager *vrcm, DBHandler* st2db, HAManager *ham)
+	: m_nSockfd(0), m_nNumofExecutor(3), m_vdcm(vdcm), m_vrcm(vrcm), m_st2db(st2db), m_ham(ham)
 {
-	//printf("\t[DEBUG] CallReceiver Constructed.\n");
 	m_Logger = config->getLogger();
     m_Logger->debug("CallReceiver Constructed.");
 }
@@ -45,15 +44,14 @@ CallReceiver::~CallReceiver()
 {
 	if (m_nSockfd) closesocket(m_nSockfd);
 
-	//printf("\t[DEBUG] CallReceiver Destructed.\n");
     m_Logger->debug("CallReceiver Destructed.");
 }
 
-CallReceiver* CallReceiver::instance(VDCManager *vdcm, VRCManager *vrcm, /*log4cpp::Category *logger,*/ DBHandler* st2db, HAManager *ham)
+CallReceiver* CallReceiver::instance(VDCManager *vdcm, VRCManager *vrcm, DBHandler* st2db, HAManager *ham)
 {
 	if (m_instance) return m_instance;
 
-	m_instance = new CallReceiver(vdcm, vrcm, /*logger,*/ st2db, ham);
+	m_instance = new CallReceiver(vdcm, vrcm, st2db, ham);
 	return m_instance;
 }
 
@@ -83,18 +81,16 @@ void CallReceiver::thrdMain(CallReceiver* rcv)
 
 	if (!rcv->m_nSockfd)
 	{
-		//printf("CallReceiver::thrdMain() - not exist socket\n");
         rcv->m_Logger->error("CallReceiver::thrdMain() - not exist socket");
 		return;
 	}
 
 	for (int i = 0; i < noe; i++) {
-		vExes.push_back(new CallExecutor(i+1, rcv->m_vdcm, rcv->m_vrcm, /*rcv->m_Logger,*/ rcv->m_st2db, rcv->m_ham));
+		vExes.push_back(new CallExecutor(i+1, rcv->m_vdcm, rcv->m_vrcm, rcv->m_st2db, rcv->m_ham));
 	}
 
 	for (int i = 0; i < noe; i++) {
 		std::thread *thrd = new std::thread(CallExecutor::thrdMain, vExes[i]);
-		//thrd->detach();
 		vThrds.push_back(thrd);
 	}
 
@@ -118,15 +114,13 @@ void CallReceiver::thrdMain(CallReceiver* rcv)
 
 		if (noe == coe) coe = 0;
 
-		//print details of the client/peer and the data received
-#if 0
-		printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-		printf("Received packet size: %d\n", recv_len);
-#endif
         rcv->m_Logger->debug("CallReceiver::thrdMain() - Received packet from %s:%d, size: %d", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), recv_len);
 	}
 
+	// 중계 서버(STAS)가 종료되면 생성된 모든 CallExecutor인스턴스가 종료되도록 Flag설정
 	CallExecutor::thrdFinish();
+
+	// CallExecutor의 쓰레드가 모두 종료되면 쓰레드 벡터를 정리
 	while (!vThrds.empty()) {
 		vThrds.back()->join();
 		delete vThrds.back();
@@ -141,6 +135,7 @@ void CallReceiver::thrdMain(CallReceiver* rcv)
 bool CallReceiver::init(uint16_t port)
 {
 	struct sockaddr_in addr;
+
 	if ((m_nSockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("CallReceiver::init() :");
         m_Logger->error("CallReceiver::init() - failed get socket : %d", errno);
@@ -159,6 +154,7 @@ bool CallReceiver::init(uint16_t port)
 		return false;
 	}
 
+	// STT-Parrot과의 통신을 담당할 쓰레드 생성
 	std::thread callRcvThrd(CallReceiver::thrdMain, this);
 	callRcvThrd.detach();
 

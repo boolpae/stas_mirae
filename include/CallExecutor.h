@@ -24,6 +24,10 @@ using namespace std;
 
 class DBHandler;
 
+
+/*
+ * CallReciever로부터 받은 프로토콜 데이터를 CallExecutor로 보내기 위해 사용하는 데이터 타입
+ */
 class QueueItem {
 	uint16_t m_nNum;
 public:

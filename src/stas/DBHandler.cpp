@@ -36,7 +36,7 @@ static int extract_error(const char *fn, SQLHANDLE handle, SQLSMALLINT type)
     {
         ret = SQLGetDiagRec(type, handle, ++i, SQLState, &NativeError,
                             MessageText, sizeof(MessageText), &TextLength);
-    fprintf(stderr, "\nDEBUG - The driver reported the following error %s, ret(%d)\n", fn, ret);
+        // fprintf(stderr, "\nDEBUG - The driver reported the following error %s, ret(%d)\n", fn, ret);
         if (SQL_SUCCEEDED(ret)) {
             logger->error("%s:%ld:%ld:%s",
                         SQLState, (long) i, (long) NativeError, MessageText);
@@ -50,6 +50,7 @@ static int extract_error(const char *fn, SQLHANDLE handle, SQLSMALLINT type)
     return NativeError;
 }
 
+// DBPool 내 connection을 유지하기 위한 기능
 static void UpdateConnection(PConnSet connSet)
 {
     char sqlbuff[512];
@@ -66,7 +67,7 @@ static void UpdateConnection(PConnSet connSet)
     retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
     if SQL_SUCCEEDED(retcode) {
-        while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
+        while (1)
         {
             rc = SQLFetch( connSet->stmt );
             break;
@@ -110,8 +111,6 @@ enum {
  CACHE_TYPE_MAX,
 };
 
-// xRedisClient &DBHandler::s_xRedis = RedisHandler::instance()->getRedisClient();
-// RedisDBIdx DBHandler::s_dbi(&s_xRedis);
 #endif
 
 DBHandler::DBHandler(std::string dsn,int connCount)
@@ -168,7 +167,7 @@ DBHandler::~DBHandler()
 	m_Logger->debug("DBHandler Destructed.\n");
 }
 
-#define MAX_STT_SIZE (1024*2048)    // 1MiB
+#define MAX_STT_SIZE (1024*2048)    // 2MiB
 void DBHandler::thrdMain(DBHandler * s2d)
 {
 	std::lock_guard<std::mutex> *g;
@@ -181,53 +180,28 @@ void DBHandler::thrdMain(DBHandler * s2d)
     iconv_t it;
     char *input_buf_ptr = NULL;
     char *output_buf_ptr = NULL;
-    // char cSpk='N';
     char sRxTx[8];
     char sqlbuff[MAX_STT_SIZE + 128];
-    // int nIdx;
 
-    SQLLEN lenStt, lenCallid;//, lenIdx, /*lenSpk,*/ lenStart, lenEnd;
+    SQLLEN lenStt, lenCallid;
     char sttValue[MAX_STT_SIZE];
     char callId[256];
-    // int nStart, nEnd;
 
     SQLRETURN retcode;
 
     std::string sUtfResult;
 
-    PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();//ConnectionPool_getConnection(s2d->m_pool);
+    PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();
 
     logger = config->getLogger();
     it = iconv_open("UTF-8", "EUC-KR");
 
-    // sprintf(sqlbuff, "INSERT INTO JOB_DATA (idx,call_id,pos_start,pos_end,value,spk) VALUES (?,?,?,?,?)");
-    // printf("QUERY<%s>\n", sqlbuff);
-
-    // retcode = SQLPrepare(connSet->stmt, (SQLCHAR*)sqlbuff, SQL_NTS);
-    // printf("SQLPrepare RET(%d)\n", retcode);
-
-    // retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
-    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
-    //                     (SQLPOINTER)&nIdx, sizeof(SQLINTEGER), (SQLLEN*)&lenIdx);
     retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
                         SQL_C_CHAR, SQL_VARCHAR, sizeof(callId), 0,
                         (SQLPOINTER)callId, sizeof(callId), (SQLLEN*)&lenCallid);
-    // retcode = SQLBindParameter(connSet->stmt, 3, SQL_PARAM_INPUT,
-    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
-    //                     (SQLPOINTER)&nStart, sizeof(SQLINTEGER), (SQLLEN*)&lenStart);
-    // retcode = SQLBindParameter(connSet->stmt, 4, SQL_PARAM_INPUT,
-    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
-    //                     (SQLPOINTER)&nEnd, sizeof(SQLINTEGER), (SQLLEN*)&lenEnd);
     retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
                         SQL_C_CHAR, SQL_VARCHAR, sizeof(sttValue), 0,
                         (SQLPOINTER)sttValue, sizeof(sttValue), (SQLLEN*)&lenStt);
-    // retcode = SQLBindParameter(connSet->stmt, 6, SQL_PARAM_INPUT,
-    //                     SQL_C_CHAR, SQL_CHAR, 1, 0,
-    //                     (SQLPOINTER)sSpk, sizeof(sSpk), (SQLLEN*)&lenSpk);
-    // printf("SQLBindParameter RET(%d)\n", retcode);
-
-    // retcode = SQLNumParams(connSet->stmt, &NumParams);
-    // printf("SQLNumParams RET(%d) NumParams(%d)\n", retcode, NumParams);
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -248,11 +222,8 @@ void DBHandler::thrdMain(DBHandler * s2d)
                 input_buf_ptr = (char *)item->getSTTValue().c_str();
                 output_buf_ptr = utf_buf;
 
-                // it = iconv_open("UTF-8", "EUC-KR");
-
                 ret = iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
                  
-                // iconv_close(it);
                 sUtfResult = utf_buf;
 
                 free(utf_buf); utf_buf = nullptr;
@@ -277,44 +248,28 @@ void DBHandler::thrdMain(DBHandler * s2d)
             // insert rtstt to db
             switch(item->getSpkNo()) {
                 case 1:
-                    // cSpk = 'R';
                     sprintf(sRxTx, "%s", "RX");
                     break;
                 case 2:
-                    // cSpk = 'L';
                     sprintf(sRxTx, "%s", "TX");
                     break;
                 default:
-                    // cSpk = 'N';
                     sprintf(sRxTx, "%s", "MN");
             }
 
-            // sprintf(sqlbuff, "INSERT INTO STT_TBL_JOB_DATA (IDX,SPK,CALL_ID,POS_START,POS_END,VALUE,RCD_TP) VALUES (?,'%c',?,?,?,?,'%s')", cSpk, sRxTx);
             sprintf(sqlbuff, "INSERT INTO STT_TBL_JOB_DATA (CALL_ID,RCD_TP,TEXT) VALUES (?,'%s',?)", sRxTx);
-            //printf("QUERY<%s>\n", sqlbuff);
 
             retcode = SQLPrepare(connSet->stmt, (SQLCHAR*)sqlbuff, SQL_NTS);
-            //printf("SQLPrepare RET(%d)\n", retcode);
             if (retcode < 0) {
                 extract_error("SQLPrepare()", connSet->stmt, SQL_HANDLE_STMT);
             }
 
-            // nIdx = item->getDiaIdx();
-            // nStart = item->getBpos();
-            // nEnd = item->getEpos();
-            // sprintf(sSpk, "%c", cSpk);
             sprintf(callId, "%s", item->getCallId().c_str());
-            sprintf(sttValue, "%s", sUtfResult.c_str());//item->getSTTValue().c_str());
-            // lenSpk = strlen(sSpk);
+            sprintf(sttValue, "%s", sUtfResult.c_str());
             lenCallid = strlen(callId);
             lenStt = strlen(sttValue);
             
-            // printf("nIdx(%d, %d), nStart(%d), nEnd(%d) callId(%s) sttValue (%s), len(%d,%d) inout_size(%d,%d)\n", 
-            //      nIdx, lenIdx, nStart, nEnd, callId, utf_buf, lenCallid, lenStt, in_size, out_size);
-
-            retcode = SQLExecute(connSet->stmt);//SQLExecDirect (connSet->stmt, (SQLCHAR*)sqlbuff, SQL_NTS);//
-            //printf("SQLExecute RET(%d)\n", retcode);
-            //retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
+            retcode = SQLExecute(connSet->stmt);
 
             if SQL_SUCCEEDED(retcode) {
                 logger->debug("DBHandler::thrdMain() succeeded to excute SQL!\n");
@@ -322,10 +277,7 @@ void DBHandler::thrdMain(DBHandler * s2d)
             else
             {
                 int odbcret = extract_error("SQLExecute()", connSet->stmt, SQL_HANDLE_STMT);
-                //s2d->m_Logger->error("DBHandler::insertCallInfo - SQLException -- %s", Exception_frame.message);
-                // connSet = s2d->m_pSolDBConnPool->reconnectConnection(connSet);
 
-                // if ((odbcret == 2006) && s2d->m_pSolDBConnPool->reconnectConnection(connSet)) {
                 if (odbcret == 1062) {
                     odbcret = s2d->deleteJobData(item->getCallId());
 
@@ -333,12 +285,6 @@ void DBHandler::thrdMain(DBHandler * s2d)
                 
                 if (!odbcret) {
                     logger->debug("DBHandler::thrdMain() succeeded to DELETE JOB_DATA(%s) SQL!\n", callId);
-                    // retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
-                    //                     SQL_C_CHAR, SQL_VARCHAR, sizeof(callId), 0,
-                    //                     (SQLPOINTER)callId, sizeof(callId), (SQLLEN*)&lenCallid);
-                    // retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
-                    //                     SQL_C_CHAR, SQL_VARCHAR, sizeof(sttValue), 0,
-                    //                     (SQLPOINTER)sttValue, sizeof(sttValue), (SQLLEN*)&lenStt);
                     retcode = SQLExecute(connSet->stmt);
                 }
                 
@@ -347,18 +293,9 @@ void DBHandler::thrdMain(DBHandler * s2d)
                 }
                 else if ( s2d->m_pSolDBConnPool->reconnectConnection(connSet) )
                 {
-                    // retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
-                    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                    //                     (SQLPOINTER)&nIdx, sizeof(SQLINTEGER), (SQLLEN*)&lenIdx);
                     retcode = SQLBindParameter(connSet->stmt, 1, SQL_PARAM_INPUT,
                                         SQL_C_CHAR, SQL_VARCHAR, sizeof(callId), 0,
                                         (SQLPOINTER)callId, sizeof(callId), (SQLLEN*)&lenCallid);
-                    // retcode = SQLBindParameter(connSet->stmt, 3, SQL_PARAM_INPUT,
-                    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                    //                     (SQLPOINTER)&nStart, sizeof(SQLINTEGER), (SQLLEN*)&lenStart);
-                    // retcode = SQLBindParameter(connSet->stmt, 4, SQL_PARAM_INPUT,
-                    //                     SQL_C_SLONG, SQL_INTEGER, 0, 0,
-                    //                     (SQLPOINTER)&nEnd, sizeof(SQLINTEGER), (SQLLEN*)&lenEnd);
                     retcode = SQLBindParameter(connSet->stmt, 2, SQL_PARAM_INPUT,
                                         SQL_C_CHAR, SQL_VARCHAR, sizeof(sttValue), 0,
                                         (SQLPOINTER)sttValue, sizeof(sttValue), (SQLLEN*)&lenStt);
@@ -371,20 +308,9 @@ void DBHandler::thrdMain(DBHandler * s2d)
                     logger->debug("DBHandler::thrdMain() finish!\n");
                     return;
                 }
-#if 0
-                else {
-                    if (DBHandler::getInstance() && connSet)
-                        s2d->m_pSolDBConnPool->restoreConnection(connSet);
-
-                    s2d->m_bLiveFlag = true;
-                    logger->error("DBHandler::thrdMain() finish! - for SQLExecute ERROR\n");
-                    return;
-                }
-#endif
             }
             retcode = SQLCloseCursor(connSet->stmt);
 
-            // if (utf_buf) free(utf_buf);
 			delete item;
 
             t1 = std::chrono::high_resolution_clock::now();
@@ -396,7 +322,7 @@ void DBHandler::thrdMain(DBHandler * s2d)
             t1 = std::chrono::high_resolution_clock::now();
         }
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        //printf("DBHandler::thrdMain()\n");
+
 	}
 
     iconv_close(it);
@@ -415,14 +341,12 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
 	UpdateInfoItem* item;
     log4cpp::Category *logger;
 
-    // time_t rawtime;
-    // struct tm * timeinfo;
     char timebuff [32];
     char sqlbuff[512];
     SQLRETURN retcode;
 
     logger = config->getLogger();
-    PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();//ConnectionPool_getConnection(s2d->m_pool);
+    PConnSet connSet = s2d->m_pSolDBConnPool->getConnection();
     auto t1 = std::chrono::high_resolution_clock::now();
     auto t2 = std::chrono::high_resolution_clock::now();
 
@@ -433,13 +357,8 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
 			s2d->m_qUpdateInfoQue.pop();
 			delete g;
 
-            // time (&rawtime);
-            // timeinfo = localtime (&item->m_startT);
-
-            // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
             sprintf(timebuff, "%s", item->m_regdate.c_str());
-            //sprintf(sqlbuff, "UPDATE STT_TBL_JOB_INFO SET STATE='%c' WHERE CALL_ID='%s' AND CS_CODE='%s'",
-            //    state, callid.c_str(), counselorcode.c_str());
+
             if (item->getErrCode().size()) {
                 if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_INFO", item->getTableName().size()) )
                 {
@@ -473,8 +392,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
 #endif
                 }
 #endif
-                // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',ERR_CD='%s' WHERE CALL_ID='%s' AND RCD_TP='%s'",
-                //     tbName, state, errcode, callid.c_str(), rxtx.c_str());
+
             }
             else {
                 if ( !strncmp(item->getTableName().c_str(), "STT_TBL_JOB_INFO", item->getTableName().size()) )
@@ -509,8 +427,7 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
 #endif
                 }
 #endif
-                // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',FILE_SIZE=%d,REC_LENGTH=%d,WORKING_TIME=%d WHERE CALL_ID='%s' AND RCD_TP='%s'",
-                //     tbName, state, fsize, plen, wtime, callid.c_str(), rxtx.c_str());
+
             }
 
             retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
@@ -544,11 +461,10 @@ void DBHandler::thrdUpdate(DBHandler *s2d)
             t1 = std::chrono::high_resolution_clock::now();
         }
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        //printf("DBHandler::thrdMain()\n");
+
 	}
 
     if (DBHandler::getInstance() && connSet) {
-        // retcode = SQLCloseCursor(connSet->stmt);
         s2d->m_pSolDBConnPool->restoreConnection(connSet);
     }
 
@@ -571,47 +487,7 @@ void DBHandler::thrdUpdateKeywords(DBHandler *s2d)
     m_lKeywords.clear();
 
 	while (s2d->m_bLiveFlag) {
-#if 0
-		while (!s2d->m_qUpdateInfoQue.empty()) {
-			g = new std::lock_guard<std::mutex>(s2d->m_mxUpdateQue);
-			item = s2d->m_qUpdateInfoQue.front();
-			s2d->m_qUpdateInfoQue.pop();
-			delete g;
 
-            time (&rawtime);
-            timeinfo = localtime (&rawtime);
-
-            strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
-            //sprintf(sqlbuff, "UPDATE STT_TBL_JOB_INFO SET STATE='%c' WHERE CALL_ID='%s' AND CS_CODE='%s'",
-            //    state, callid.c_str(), counselorcode.c_str());
-            if (item->getErrCode().size()) {
-                // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',ERR_CD='%s' WHERE CALL_ID='%s' AND RCD_TP='%s'",
-                //     tbName, state, errcode, callid.c_str(), rxtx.c_str());
-                sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY('%s','%s','%s','%d','%d','%d','%c','%s','%s')",
-                    item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), item->getErrCode().c_str(), timebuff);
-            }
-            else {
-                // sprintf(sqlbuff, "UPDATE %s SET STATE='%c',FILE_SIZE=%d,REC_LENGTH=%d,WORKING_TIME=%d WHERE CALL_ID='%s' AND RCD_TP='%s'",
-                //     tbName, state, fsize, plen, wtime, callid.c_str(), rxtx.c_str());
-                sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY('%s','%s','%s','%d','%d','%d','%c','','%s')",
-                    item->getCallId().c_str(), item->getRxTx().c_str(), item->getServerName().c_str(), item->getPlayLength(), item->getFileSize(), item->getWorkingTime(), item->getState(), timebuff);
-            }
-
-            retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
-
-            if SQL_SUCCEEDED(retcode) {
-                logger->debug("DBHandler::thrdUpdateKeywords() - Query<%s>", sqlbuff);
-            }
-            else {
-                int odbcret = extract_error("DBHandler::thrdUpdateKeywords() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-                if (odbcret == 2006) {
-                    s2d->m_pSolDBConnPool->reconnectConnection(connSet);
-                }
-                ret = 1;
-            }
-			delete item;
-		}
-#endif
         if ( nSleepedTime == 0 )
         {
             m_bUpdateKeywordFlag = 1;
@@ -660,7 +536,7 @@ std::list< std::string > DBHandler::getKeywords()
 
     return m_lKeywords;
 }
-#endif
+#endif  // USE_FIND_KEYWORD
 
 DBHandler* DBHandler::instance(std::string dsn, std::string id, std::string pw, int connCount=10)
 {
@@ -736,32 +612,23 @@ int DBHandler::searchCallInfo(std::string counselorcode)
 
     if (connSet)
     {
-        //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM STT_TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
+
         sprintf(sqlbuff, "SELECT CS_CD FROM STT_TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
-#if 0
-        if (retcode == SQL_NO_DATA) {
-            ret = 0;
-	    }
-	    else if (retcode == SQL_SUCCESS){
-            ret = 1;
-        }
-#endif
+
         if SQL_SUCCEEDED(retcode) {
-        while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
-        {
-            rc = SQLFetch( connSet->stmt );
-            if (rc == SQL_NO_DATA_FOUND)
+            while (1)
             {
-                printf("End of data.\n" );
+                rc = SQLFetch( connSet->stmt );
+                if (rc == SQL_NO_DATA_FOUND)
+                {
+                    printf("End of data.\n" );
+                    break;
+                }
+                ret++;
+
                 break;
             }
-            ret++;
-
-            // SQLGetData(connSet->stmt, 1, SQL_C_SLONG, &ret, 0, (SQLLEN *)&siCnt);
-
-            break;
-        }
         }
         else {
                 extract_error("DBHandler::searchCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
@@ -774,11 +641,11 @@ int DBHandler::searchCallInfo(std::string counselorcode)
 
                     return ret;
                 }
-            // }
+
             ret = 1;
 
         }
-        printf("DEBUG(searchCallInfo) - SQL(%s), ret(%d)\n", sqlbuff, ret);
+        // printf("DEBUG(searchCallInfo) - SQL(%s), ret(%d)\n", sqlbuff, ret);
         retcode = SQLCloseCursor(connSet->stmt);
         retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
         m_pSolDBConnPool->restoreConnection(connSet);
@@ -791,9 +658,9 @@ int DBHandler::searchCallInfo(std::string counselorcode)
     }
 
     return ret;
-#else
+#else   // USE_CS_TABLE
     return 0;
-#endif
+#endif  // USE_CS_TABLE
 }
 
 int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
@@ -835,23 +702,17 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
         }
         else {
             extract_error("DBHandler::insertCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-            #if 0
-            if (odbcret == 2006) {
-                m_pSolDBConnPool->reconnectConnection(connSet);
-            }
-            ret = 1;
-            #endif
-            // if (odbcret == 2006) {
-                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
-                {
-                    m_pSolDBConnPool->eraseConnection(connSet);
-                    m_Logger->error("DBHandler::insertCallInfo - failed to re-connect to DB, erase connection from pool");
-                    ret = -1;
-                    retcode = SQLCloseCursor(connSet->stmt);
 
-                    return ret;
-                }
-            // }
+            if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+            {
+                m_pSolDBConnPool->eraseConnection(connSet);
+                m_Logger->error("DBHandler::insertCallInfo - failed to re-connect to DB, erase connection from pool");
+                ret = -1;
+                retcode = SQLCloseCursor(connSet->stmt);
+
+                return ret;
+            }
+
             ret = 1;
 
         }
@@ -866,9 +727,9 @@ int DBHandler::insertCallInfo(std::string counselorcode, std::string callid)
     }
 
     return ret;
-#else
+#else   // USE_CS_TABLE
     return 0;
-#endif
+#endif  // USE_CS_TABLE
 }
 
 int DBHandler::updateCallInfo(std::string callid, bool end)
@@ -912,29 +773,23 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
         }
         else {
             extract_error("DBHandler::updateCallInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-            #if 0
-            if (odbcret == 2006) {
-                m_pSolDBConnPool->reconnectConnection(connSet);
-            }
-            ret = 1;
-            #endif
+
             retcode = SQLCloseCursor(connSet->stmt);
             retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
-            // if (odbcret == 2006) {
-                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
-                {
-                    m_pSolDBConnPool->eraseConnection(connSet);
-                    m_Logger->error("DBHandler::updateCallInfo - failed to re-connect to DB, erase connection from pool");
-                    ret = -1;
-                    retcode = SQLCloseCursor(connSet->stmt);
 
-                    return ret;
-                }
-            // }
+            if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+            {
+                m_pSolDBConnPool->eraseConnection(connSet);
+                m_Logger->error("DBHandler::updateCallInfo - failed to re-connect to DB, erase connection from pool");
+                ret = -1;
+                retcode = SQLCloseCursor(connSet->stmt);
+
+                return ret;
+            }
+
             ret = 1;
         }
-        // retcode = SQLCloseCursor(connSet->stmt);
-        // retcode = SQLFreeStmt(connSet->stmt, SQL_CLOSE);
+
         m_pSolDBConnPool->restoreConnection(connSet);
     }
     else
@@ -944,15 +799,14 @@ int DBHandler::updateCallInfo(std::string callid, bool end)
     }
 
     return ret;
-#else
+#else // USE_CS_TABLE
     return 0;
-#endif
+#endif // USE_CS_TABLE
 }
 
 int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, bool end)
 {
 #ifdef USE_CS_TABLE
-    // Connection_T con;
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     int ret=0;
     char sqlbuff[512];
@@ -974,12 +828,10 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
         if (!end) {
             sprintf(sqlbuff, "UPDATE STT_TBL_CS_LIST SET STAT='I', CALL_ID='%s' WHERE CS_CD='%s'",
             callid.c_str(), counselorcode.c_str());
-            //m_Logger->debug("DBHandler::updateCallInfo - SQL[UPDATE CS_LIST SET status='I', call_id='%s' WHERE counselor_code='%s']",callid.c_str(), counselorcode.c_str());
         }
         else {
             sprintf(sqlbuff, "UPDATE STT_TBL_CS_LIST SET STAT='E', CALL_ID='%s' WHERE CS_CD='%s'",
             callid.c_str(), counselorcode.c_str());
-             //m_Logger->debug("DBHandler::updateCallInfo - SQL[UPDATE CS_LIST SET status='E', call_id='%s' WHERE counselor_code='%s']",callid.c_str(), counselorcode.c_str());
         }
 
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
@@ -988,24 +840,16 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
             m_Logger->debug("DBHandler::updateCallInfo - SQL[UPDATE STT_TBL_CS_LIST SET STAT='%c', CALL_ID='%s' WHERE CS_CD='%s']", (end)?'E':'I', callid.c_str(), counselorcode.c_str());
         }
         else {
-            #if 0
-            int odbcret = extract_error("DBHandler::updateCallInfo(2) - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-            if (odbcret == 2006) {
-                m_pSolDBConnPool->reconnectConnection(connSet);
-            }
-            ret = 1;
-            #endif
-            // if (odbcret == 2006) {
-                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
-                {
-                    m_pSolDBConnPool->eraseConnection(connSet);
-                    m_Logger->error("DBHandler::updateCallInfo(2) - failed to re-connect to DB, erase connection from pool");
-                    ret = -1;
-                    retcode = SQLCloseCursor(connSet->stmt);
+            if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+            {
+                m_pSolDBConnPool->eraseConnection(connSet);
+                m_Logger->error("DBHandler::updateCallInfo(2) - failed to re-connect to DB, erase connection from pool");
+                ret = -1;
+                retcode = SQLCloseCursor(connSet->stmt);
 
-                    return ret;
-                }
-            // }
+                return ret;
+            }
+
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
@@ -1019,9 +863,9 @@ int DBHandler::updateCallInfo(std::string counselorcode, std::string callid, boo
     }
 
     return ret;
-#else
+#else // USE_CS_TABLE
     return 0;
-#endif
+#endif  // USE_CS_TABLE
 }
 
 void DBHandler::insertSTTData(uint32_t idx, std::string callid, uint8_t spkno, uint64_t spos, uint64_t epos, std::string &stt)
@@ -1154,23 +998,17 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
         }
         else {
             extract_error("DBHandler::insertTaskInfo() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-            #if 0
-            if (odbcret == 2006) {
-                m_pSolDBConnPool->reconnectConnection(connSet);
-            }
-            ret = 1;
-            #endif
-            // if (odbcret == 2006) {
-                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
-                {
-                    m_pSolDBConnPool->eraseConnection(connSet);
-                    m_Logger->error("DBHandler::insertTaskInfo() - failed to re-connect to DB, erase connection from pool");
-                    ret = -1;
-                    retcode = SQLCloseCursor(connSet->stmt);
 
-                    return ret;
-                }
-            // }
+            if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+            {
+                m_pSolDBConnPool->eraseConnection(connSet);
+                m_Logger->error("DBHandler::insertTaskInfo() - failed to re-connect to DB, erase connection from pool");
+                ret = -1;
+                retcode = SQLCloseCursor(connSet->stmt);
+
+                return ret;
+            }
+
             ret = 1;
         }
         retcode = SQLCloseCursor(connSet->stmt);
@@ -1233,23 +1071,17 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
         }
         else {
             extract_error("DBHandler::insertTaskInfoRT() - SQLExecDirect()", connSet->stmt, SQL_HANDLE_STMT);
-            #if 0
-            if (odbcret == 2006) {
-                m_pSolDBConnPool->reconnectConnection(connSet);
-            }
-            ret = 1;
-            #endif
-            // if (odbcret == 2006) {
-                if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
-                {
-                    m_pSolDBConnPool->eraseConnection(connSet);
-                    m_Logger->error("DBHandler::insertTaskInfoRT() - failed to re-connect to DB, erase connection from pool");
-                    ret = -1;
-                    retcode = SQLCloseCursor(connSet->stmt);
 
-                    return ret;
-                }
-            // }
+            if ( !m_pSolDBConnPool->reconnectConnection(connSet) )
+            {
+                m_pSolDBConnPool->eraseConnection(connSet);
+                m_Logger->error("DBHandler::insertTaskInfoRT() - failed to re-connect to DB, erase connection from pool");
+                ret = -1;
+                retcode = SQLCloseCursor(connSet->stmt);
+
+                return ret;
+            }
+
             ret = 1;
 
         }
@@ -1424,8 +1256,6 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
     char rxtx[8];
     int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate;
 
-    //m_Logger->debug("BEFORE DBHandler::getIncompleteTask - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
-    
     if (!connSet)
     {
         for(ret=0; ret<100; ret++)
@@ -1441,7 +1271,6 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
     {
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM STT_TBL_JOB_INFO WHERE STATE='U'");
 
-        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
         if (retcode == SQL_SUCCESS) {
@@ -1515,8 +1344,6 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
     int procno;
     int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate, siProcno;
 
-    //m_Logger->debug("BEFORE DBHandler::getIncompleteTaskFromSelf - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
-    
     if (!connSet)
     {
         for(ret=0; ret<100; ret++)
@@ -1532,7 +1359,6 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
     {
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM STT_TBL_JOB_SELF_INFO WHERE STATE='U'");
 
-        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
         if (retcode == SQL_SUCCESS) {
@@ -1607,8 +1433,6 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
     int procno;
     int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate, siProcno;
 
-    //m_Logger->debug("BEFORE DBHandler::getIncompleteTaskFromRetry - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
-    
     if (!connSet)
     {
         for(ret=0; ret<100; ret++)
@@ -1624,7 +1448,6 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
     {
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM STT_TBL_JOB_RETRY_INFO WHERE STATE='U'");
 
-        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
         if (retcode == SQL_SUCCESS) {
@@ -1704,8 +1527,6 @@ int DBHandler::updateTaskInfo(std::string callid, std::string rxtx, std::string 
 
     if (connSet)
     {
-        // sprintf(sqlbuff, "UPDATE STT_TBL_JOB_INFO SET STATE='%c' WHERE CALL_ID='%s' AND CS_CODE='%s' AND REG_DTM='%s'",
-        //     state, callid.c_str(), counselorcode.c_str(), regdate.c_str());
         if (errcode && strlen(errcode)) {
             sprintf(sqlbuff, "UPDATE %s SET STATE='%c',ERR_CD='%s',SV_NM='%s' WHERE CALL_ID='%s' AND RCD_TP='%s' AND REG_DTM='%s'",
                 tbName, state, errcode, svr_nm, callid.c_str(), rxtx.c_str(), regdate.c_str());
@@ -1780,22 +1601,11 @@ int DBHandler::searchTaskInfo(std::string downloadPath, std::string filename, st
 
     if (connSet)
     {
-        //sprintf(sqlbuff, "SELECT CALL_ID,CS_CODE,PATHNAME,FILE_NAME FROM STT_TBL_JOB_INFO WHERE CALL_ID='%s' AND FILE_NAME='%s'",
         sprintf(sqlbuff, "SELECT CALL_ID FROM STT_TBL_JOB_INFO WHERE CALL_ID='%s' AND FILE_NM='%s'",
             callId.c_str(), filename.c_str());
 
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
-#if 0
-        if (retcode == SQL_NO_DATA) {
-            m_Logger->error("DBHandler::searchTaskInfo - retcode(SQL_NO_DATA, %d)", retcode);
-            ret = 0;
-	    }
-	    else if (retcode == SQL_SUCCESS){
-            m_Logger->error("DBHandler::searchTaskInfo - retcode(SQL_SUCCESS, %d)", retcode);
-            ret = 1;
-        }
-#endif
         if SQL_SUCCEEDED(retcode) {
             while (1)//(SQLFetch(connSet->stmt) == SQL_SUCCESS) 
             {
@@ -1912,7 +1722,6 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
     char sqlbuff[512];
     SQLRETURN retcode;
     int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate;
-    //m_Logger->debug("BEFORE DBHandler::getTaskInfo - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
     
     if (!connSet)
     {
@@ -1932,7 +1741,7 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
 #else
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM %s WHERE STATE='I' ORDER BY REG_DTM ASC LIMIT %d", tableName, availableCount);
 #endif
-        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
+
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
         if (retcode == SQL_SUCCESS) {
@@ -2010,8 +1819,6 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
     char rxtx[8];
     int siCallId, siPNo, siCCode, siPath, siFilename, siRxtx, siRegdate;
 
-    //m_Logger->debug("BEFORE DBHandler::getTaskInfo - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
-    
     if (!connSet)
     {
         for(ret=0; ret<100; ret++)
@@ -2030,7 +1837,7 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
 #else
         sprintf(sqlbuff, "SELECT CALL_ID,PROC_NO,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM %s WHERE STATE='I' ORDER BY REG_DTM ASC LIMIT %d", tableName, availableCount);
 #endif
-        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
+
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
         if (retcode == SQL_SUCCESS) {
@@ -2104,8 +1911,6 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
     char rxtx[8];
     int siCallId, siCCode, siPath, siFilename, siRxtx, siRegdate;
 
-    //m_Logger->debug("BEFORE DBHandler::getTimeoutTaskInfo - ConnectionPool_size(%d), ConnectionPool_active(%d), availableCount(%d)", ConnectionPool_size(m_pool), ConnectionPool_active(m_pool), availableCount);
-    
     if (!connSet)
     {
         for(ret=0; ret<100; ret++)
@@ -2124,7 +1929,7 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
 #else
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM STT_TBL_JOB_INFO WHERE REG_DTM >= concat(date(now()), ' 00:00:00') and REG_DTM <= concat(date(now()), ' 23:59:59') and STATE='U' and DATE_SUB(now(), INTERVAL 3 HOUR) > REG_DTM");
 #endif
-        //m_Logger->debug("BEFORE DBHandler::getTaskInfo - SQL(%s)", sqlbuff);
+
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
         if (retcode == SQL_SUCCESS) {
@@ -2194,9 +1999,6 @@ void DBHandler::updateAllTask2Fail2()
         PConnSet connSet = m_pSolDBConnPool->getConnection();
         char sqlbuff[512];
         SQLRETURN retcode;
-        // time_t rawtime;
-        // struct tm * timeinfo;
-        // char timebuff [32];
         int ret=0;
 
         if (!connSet)
@@ -2212,9 +2014,6 @@ void DBHandler::updateAllTask2Fail2()
 
         if (connSet)
         {
-            // time (&rawtime);
-            // timeinfo = localtime (&rawtime);
-            // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
 
             for(iter= vItems.begin(); iter != vItems.end(); iter++) {
                 jobInfo = (*iter);
@@ -2339,13 +2138,6 @@ void DBHandler::updateAllIncompleteTask2Fail()
     getIncompleteTask(vItems);
 
     if(connSet && vItems.size()) {
-        // time_t rawtime;
-        // struct tm * timeinfo;
-        // char timebuff [32];
-
-        // time (&rawtime);
-        // timeinfo = localtime (&rawtime);
-        // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
 
         for(iter= vItems.begin(); iter != vItems.end(); iter++) {
             jobInfo = (*iter);
@@ -2390,13 +2182,6 @@ void DBHandler::updateAllIncompleteTask2Fail()
     getIncompleteTaskFromRetry(vItems);
 
     if(connSet && vItems.size()) {
-        // time_t rawtime;
-        // struct tm * timeinfo;
-        // char timebuff [32];
-
-        // time (&rawtime);
-        // timeinfo = localtime (&rawtime);
-        // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
 
         for(iter= vItems.begin(); iter != vItems.end(); iter++) {
             jobInfo = (*iter);
@@ -2441,13 +2226,6 @@ void DBHandler::updateAllIncompleteTask2Fail()
     getIncompleteTaskFromSelf(vItems);
 
     if(connSet && vItems.size()) {
-        // time_t rawtime;
-        // struct tm * timeinfo;
-        // char timebuff [32];
-
-        // time (&rawtime);
-        // timeinfo = localtime (&rawtime);
-        // strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
 
         for(iter= vItems.begin(); iter != vItems.end(); iter++) {
             jobInfo = (*iter);
@@ -2487,8 +2265,6 @@ void DBHandler::updateAllIncompleteTask2Fail()
         vItems.clear();
     } 
 
-    // retcode = SQLCloseCursor(connSet->stmt);
-    // retcode = SQLExecDirectSQLExecDirect(connSet->stmt, SQL_CLOSE);
     m_pSolDBConnPool->restoreConnection(connSet);
 }
 
@@ -2541,17 +2317,9 @@ int DBHandler::deleteJobData(std::string callid)
 
     if (connSet)
     {
-        //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM STT_TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
         sprintf(sqlbuff, "DELETE FROM STT_TBL_JOB_DATA WHERE CALL_ID='%s'", callid.c_str());
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
-#if 0
-        if (retcode == SQL_NO_DATA) {
-            ret = 0;
-	    }
-	    else if (retcode == SQL_SUCCESS){
-            ret = 1;
-        }
-#endif
+
         if SQL_SUCCEEDED(retcode) {
             m_Logger->debug("DBHandler::deleteJobData - succeeded to delete job data(%s)", callid.c_str());
         }
@@ -2605,7 +2373,7 @@ int DBHandler::deleteJobInfo(std::string callid)
 
     if (connSet)
     {
-        //sprintf(sqlbuff, "SELECT CS_CD,CT_CD,STAT FROM STT_TBL_CS_LIST WHERE CS_CD='%s'", counselorcode.c_str());
+
         sprintf(sqlbuff, "DELETE FROM STT_TBL_JOB_INFO WHERE CALL_ID='%s'", callid.c_str());
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 

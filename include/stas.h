@@ -18,9 +18,9 @@
 #include "configuration.h"
 
 
-#define STAS_VERSION_MAJ 0
-#define STAS_VERSION_MIN 8
-//#define STAS_VERSION_BLD 180307
+#define STAS_VERSION_MAJ 1
+#define STAS_VERSION_MIN 0
+#define STAS_VERSION_BLD 1
 
 using namespace itfact::common;
 
