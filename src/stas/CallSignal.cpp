@@ -15,14 +15,14 @@
 #endif
 
 #include "CallSignal.h"
-#include "stas.h"
+// #include "stas.h"
 
 #include <string>
 
 Protocol::CallSignal::CallSignal()
 	: m_nPacketSize(0), m_Packet(NULL)
 {
-	m_Logger = config->getLogger();
+	// m_Logger = config->getLogger();
 }
 
 
@@ -270,7 +270,7 @@ void Protocol::CallSignal::setPacCounselorCode(uint8_t * counselorcode, uint16_t
 	memset(pacCounselorCode, 0x00, sizeof(pacCounselorCode));
 	if (len > 32) len = 32;
 	memcpy(pacCounselorCode, counselorcode, len);
-    m_Logger->debug("CallSignal::pacCounselorCode() - Call-ID(%s : %s), Len(%d)", counselorcode, pacCounselorCode, len);
+    // m_Logger->debug("CallSignal::pacCounselorCode() - Call-ID(%s : %s), Len(%d)", counselorcode, pacCounselorCode, len);
 }
 
 void Protocol::CallSignal::setPacCallId(uint8_t * callid, uint16_t len)
@@ -278,7 +278,7 @@ void Protocol::CallSignal::setPacCallId(uint8_t * callid, uint16_t len)
 	memset(pacCallId, 0x00, sizeof(pacCallId));
 	if (len > LEN_CALL_ID) len = LEN_CALL_ID;
 	memcpy(pacCallId, callid, len);
-    m_Logger->debug("CallSignal::setPacCallId() - Call-ID(%s : %s), Len(%d)", callid, pacCallId, len);
+    // m_Logger->debug("CallSignal::setPacCallId() - Call-ID(%s : %s), Len(%d)", callid, pacCallId, len);
 }
 
 void Protocol::CallSignal::setFingerPrint(uint8_t * fprint, uint16_t len)
@@ -287,12 +287,13 @@ void Protocol::CallSignal::setFingerPrint(uint8_t * fprint, uint16_t len)
 	pacFingerPrint[sizeof(pacFingerPrint)-1] = 0;
 	if (len > 64) len = 64;
 	memcpy(pacFingerPrint, fprint, len);
-    m_Logger->debug("CallSignal::setFingerPrint() - FingerPrint(%s : %s), Len(%d)", fprint, pacFingerPrint, len);
+    // m_Logger->debug("CallSignal::setFingerPrint() - FingerPrint(%s : %s), Len(%d)", fprint, pacFingerPrint, len);
 }
 
 void Protocol::CallSignal::printPacketInfo()
 {
-	m_Logger->debug("\n  **---- Packet Info ----**\n"
+	// m_Logger->debug("\n  **---- Packet Info ----**\n"
+	printf("\n  **---- Packet Info ----**\n"
 	"  Packet Size : %d\n"
 	"  Flag : %c\n"
 	"  Counselor-Code(%lu) : [%s]\n"
