@@ -75,7 +75,7 @@ static void thrdMain(std::string callid, std::string ipaddr, unsigned int port, 
 		memcpy(pcmbuf, "RT-STT", 6);
 		while (!pcmfile.eof()) {
 			pcmfile.read(pcmbuf+8, blockSize);
-			pSize = ::htons(pcmfile.gcount());
+			pSize = htons(pcmfile.gcount());
 			memcpy(pcmbuf + 6, &pSize, sizeof(uint16_t));
 
 			//send the message
@@ -216,9 +216,9 @@ static void thrdCall(int idx, std::string sSvrIp, int nPort, int nSleeptime, cha
     if ((cFlag == 'B') && !strncmp(rescode, "200", 3)) {
         for (int i = 0; i < nUdpCount; i++) {
             memcpy(&port, buf + CALL_BEG_PACKET_LEN + 3 + (i * 2), 2);
-            printf("\t[%s] - Port : %d\n", sCallId.c_str(), ::ntohs(port));
+            printf("\t[%s] - Port : %d\n", sCallId.c_str(), ntohs(port));
 
-            vThrds.push_back(std::thread(thrdMain, sCallId, sSvrIp, ::ntohs(port), vPcmFiles[i], nSendBlockSize, nSleeptime, nSendPacketCount));
+            vThrds.push_back(std::thread(thrdMain, sCallId, sSvrIp, ntohs(port), vPcmFiles[i], nSendBlockSize, nSleeptime, nSendPacketCount));
         }
 
         for (int i = 0; i < nUdpCount; i++) {
