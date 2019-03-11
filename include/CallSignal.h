@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include <log4cpp/Category.hh>
+// #include <log4cpp/Category.hh>
 
 #define PROTO_AUTH_TOKEN "RT-STT"
 #define PROTO_AUTH_TOKEN_LEN 6
@@ -51,7 +51,7 @@ namespace Protocol {
 #endif
 		uint8_t pacRes[3];					// 응답 값 - HTTP 프로토콜의 응답 코드와 동일한 값 사용
         
-        log4cpp::Category *m_Logger;
+        // log4cpp::Category *m_Logger;
 
 	public:
 		CallSignal();

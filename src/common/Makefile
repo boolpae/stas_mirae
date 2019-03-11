@@ -7,10 +7,23 @@ endif
 
 ###############################################################################
 VERSION			:= 0.1.0
-SOURCE			:= configuration.cpp
+SOURCE			:= configuration.cpp CallSignal.cpp
 INCLUDE_PATH	:= include
 LIBRARIES		:= 
 FLAGS			:= 
+ifeq ($(ENABLE_REALTIME), "TRUE")
+FLAGS			+= -DENABLE_REALTIME # 실시간 기능 활성화 Flag
+ifeq ($(EN_RINGBACK_LEN), "TRUE")
+FLAGS			+= -DEN_RINGBACK_LEN # 통화연결음 길이를 이용할 경우 - 추후 Define을 이요하지 않고 기본으로 빌드할 예정
+endif
+ifeq ($(FOR_TEST), "TRUE")
+FLAGS			+= -DFOR_TEST # 상담원, 고객 간의 STT결과를 하나의 파일에 저장하기 위한 테스트 코드(실시간 전용)
+endif
+ifeq ($(FOR_ITFACT), "TRUE")
+FLAGS			+= -DFOR_ITFACT
+endif
+endif
+
 SHARED_LIBS		:= -lboost_program_options -lboost_filesystem -lboost_system -llog4cpp
 ###############################################################################
 

@@ -10,6 +10,7 @@ STT/
 WAVS/
 stt/
 *.stt
+*.o
 core
 nohup.out
 itf_stas.pid
