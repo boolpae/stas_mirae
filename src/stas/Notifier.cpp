@@ -59,7 +59,7 @@ int Notifier::startWork()
 		return 1;
 	}
 
-	std::shared_ptr<std::string> path = std::make_shared<std::string>(config->getConfig("notify.input_path"));
+	std::shared_ptr<std::string> path = std::make_shared<std::string>(config->getConfig("notify.input_path","/home/stt/Smart-VR/NOTI"));
 	logger->info("Initialize monitoring module to watch %s", path->c_str());
 	if (!itfact::common::checkPath(*path.get(), true)) {
 		logger->error("Cannot create directory '%s' with error %s", path->c_str(), std::strerror(errno));
@@ -82,7 +82,7 @@ void Notifier::thrdFunc(Notifier *noti)
 	char buf[BUF_LEN] __attribute__ ((aligned(8)));
     log4cpp::Category *logger = config->getLogger();
     HAManager *ham = HAManager::getInstance();
-	std::shared_ptr<std::string> path = std::make_shared<std::string>(config->getConfig("notify.input_path"));
+	std::shared_ptr<std::string> path = std::make_shared<std::string>(config->getConfig("notify.input_path", "/home/stt/Smart-VR/NOTI"));
     std::string downpath = "";
 
 	if (!config->isSet("notify.down_path")) {
@@ -90,7 +90,7 @@ void Notifier::thrdFunc(Notifier *noti)
         downpath += *path.get();
     }
     else {
-        downpath = config->getConfig("notify.down_path");
+        downpath = config->getConfig("notify.down_path", "file:///home/stt/Smart-VR/input");
     }
     
 	int inotify = inotify_init();
@@ -149,7 +149,7 @@ void Notifier::thrdFunc(Notifier *noti)
                         try {
                             // option값에 따라 동작이 바뀌어야 한다.
                             // pushItem() 시 protocol 추가해야한다. - FILE, MOUNT, HTTP, HTTPS, FTP, FTPS, SFTP, SCP, SSH
-                            if (config->getConfig("notify.index_type").compare("filename") == 0) {
+                            if (config->getConfig("notify.index_type", "list").compare("filename") == 0) {
 
                                 // download path, uri, filename, call_id에 대한 좀 더 명확한 정의가 필요하다.
                                 #ifdef EXCEPT_EXT
@@ -196,7 +196,7 @@ void Notifier::thrdFunc(Notifier *noti)
                                 }
                             }
 
-                            bool delete_on_list = const_cast<itfact::common::Configuration *>(config)->getConfig<bool>("notify.delete_on_list");
+                            bool delete_on_list = !config->getConfig("notify.delete_on_list", "false").compare("true");
                             if (delete_on_list)
                                 std::remove(filename->c_str());
 
