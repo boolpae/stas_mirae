@@ -278,7 +278,7 @@ void DBHandler::thrdMain(DBHandler * s2d)
             {
                 int odbcret = extract_error("SQLExecute()", connSet->stmt, SQL_HANDLE_STMT);
 
-                if (odbcret == 1062) {
+                if (1) {
                     odbcret = s2d->deleteJobData(item->getCallId());
 
                 }
