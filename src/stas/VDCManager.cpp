@@ -140,11 +140,10 @@ void VDCManager::outputVDCStat()
         m_Logger->info("VDCManager::outputVDCStat() - Current working VDClient count(%d)", vdccount);
 }
 
-int VDCManager::setActiveVDC(std::string callid, uint8_t spkno, uint16_t port)
+int VDCManager::setActiveVDC(std::string callid, std::string counselcode, uint8_t spkno, uint16_t port)
 {
 	int16_t res = 0;
 	std::vector< VDClient* >::iterator iter;
-	std::string counselcode="";
 
 	std::lock_guard<std::mutex> g(m_mxVec);
 

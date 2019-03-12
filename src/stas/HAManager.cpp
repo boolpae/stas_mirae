@@ -255,8 +255,8 @@ void HAManager::thrdStandby(HAManager *mgr, int standbysock)
                                 else {
                                     if (mgr->m_vdm) {
                                         // set vdc channel info
-                                        if (mgr->m_vdm->setActiveVDC(std::string(sCallId), 1, port1)
-                                            || mgr->m_vdm->setActiveVDC(std::string(sCallId), 2, port2)) {
+                                        if (mgr->m_vdm->setActiveVDC(std::string(sCallId), std::string(sCounselCode), 1, port1)
+                                            || mgr->m_vdm->setActiveVDC(std::string(sCallId), std::string(sCounselCode), 2, port2)) {
                                             mgr->m_vdm->removeVDC(std::string(sCallId));
                                             mgr->m_vrm->removeVRC(std::string(sCallId));
                                             if (mgr->m_Logger) mgr->m_Logger->error("HAManager::thrdStandby() - Failed Set VDC : %s", sCallId);

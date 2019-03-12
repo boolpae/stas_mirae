@@ -34,7 +34,7 @@ public:
 
 	void outputVDCStat();
     
-    int setActiveVDC(std::string callid, uint8_t spkno, uint16_t port);
+    int setActiveVDC(std::string callid, std::string counselcode, uint8_t spkno, uint16_t port);
 
 private:
 	VDCManager(uint32_t pt, VRCManager *vrcm/*, log4cpp::Category *logger*/);
