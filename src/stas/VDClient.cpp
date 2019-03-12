@@ -37,7 +37,7 @@
 #endif
 
 VDClient::VDClient(VRCManager *vrcm)
-	: m_nLiveFlag(1), m_nWorkStat(0), m_nPort(0), m_nSockfd(0), m_sCallId(""), m_nSpkNo(0), m_vrcm(vrcm), /*m_Logger(logger),*/ m_nPlaytime(3*16000)
+	: m_nLiveFlag(1), m_nWorkStat(0), m_nPort(0), m_nSockfd(0), m_sCallId(""), m_sCounselCode(""), m_nSpkNo(0), m_vrcm(vrcm), /*m_Logger(logger),*/ m_nPlaytime(3*16000)
 {
 	m_pVrc = NULL;
 	m_tTimeout = time(NULL);
@@ -139,11 +139,17 @@ void VDClient::thrdMain(VDClient * client)
 
 			pos = buf;
 			// 인입된 UDP패킷이 RT-STT 음성 패킷이 아닌 경우 처리하지 않음
+#ifdef USE_DIFF_CSCODE
+			if (memcmp(pos, client->m_sCounselCode.c_str(), client->m_sCounselCode.size())) {
+                client->m_Logger->warn("VDClient::thrdMain() - Invalid Voice Data Packet - VDClient(%d) recv_len(%d), pVrc(0x%p), nWorkStat(%d)", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat);
+				continue;
+			}
+#else
 			if (memcmp(pos, "RT-STT", 6)) {
                 client->m_Logger->warn("VDClient::thrdMain() - Invalid Voice Data Packet - VDClient(%d) recv_len(%d), pVrc(0x%p), nWorkStat(%d)", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat);
 				continue;
 			}
-
+#endif
 			pos += 6;
 			memcpy(&nVDSize, pos, sizeof(uint16_t));
 			#ifdef FOR_ITFACT
@@ -152,14 +158,6 @@ void VDClient::thrdMain(VDClient * client)
 			recv_len = ::ntohs(nVDSize);
 			#endif
 			pos += sizeof(uint16_t);
-
-#ifdef USE_IGNORE_SILDATA
-			// 음성데이터가 간헐적으로 깨지는 문제에 대한 예외 처리...  실제 묵음으로 silence가 들어올 경우가 있을 수 있기에 
-			// 이 코드를 쓸지 말지 확실하게 확인 후 적용 여부를 결정해야 함
-			if ( !memcmp(pos, silBuf, recv_len) ) {
-				continue;
-			}
-#endif
 
 			// m_nWorkStat 상태가 대기가 아닐 경우에만 recvfrom한 buf 내용으로 작업을 진행한다.
 			// m_nWorkStat 상태가 대기(0)인 경우 recvfrom() 수행하여 수집된 데이터는 버림
@@ -218,6 +216,7 @@ void VDClient::thrdMain(VDClient * client)
                 }
 				// 작업 종료 요청 후 마지막 데이터 처리 후 상태를 대기 상태로 전환
 				client->m_sCallId = "";
+				client->m_sCounselCode = "";
 				client->m_nSpkNo = 0;
 				client->m_nWorkStat = 0;
 				client->m_pVrc = NULL;
@@ -280,9 +279,10 @@ VDClient::~VDClient()
 
 }
 
-void VDClient::startWork(std::string& callid, uint8_t spkno)
+void VDClient::startWork(std::string& callid, std::string& counselcode, uint8_t spkno)
 {
 	m_sCallId = callid;
+	m_sCounselCode = counselcode;
 	m_nSpkNo = spkno;
 	m_tTimeout = time(NULL);
 	m_nWorkStat = uint8_t(3);

@@ -74,7 +74,7 @@ void VDCManager::release()
 }
 
 // return : 성공(0), 실패(0이 아닌 값)
-int16_t VDCManager::requestVDC(std::string & callid, uint8_t noc, std::vector< uint16_t > &vPorts)
+int16_t VDCManager::requestVDC(std::string & callid, std::string & counselcode, uint8_t noc, std::vector< uint16_t > &vPorts)
 {
 	int16_t res = 0;
 	uint8_t coc = 0;
@@ -100,7 +100,7 @@ int16_t VDCManager::requestVDC(std::string & callid, uint8_t noc, std::vector< u
 		coc = 1;
 		for (iter = clients.begin(); iter != clients.end(); iter++) {
 			vPorts.push_back( (*iter)->getPort() );	// 할당 성공한 채널의 포트를 CallExecutor로 전달
-			(*iter)->startWork(callid, coc++);
+			(*iter)->startWork(callid, counselcode, coc++);
 		}
 	}
 	else {
@@ -144,12 +144,13 @@ int VDCManager::setActiveVDC(std::string callid, uint8_t spkno, uint16_t port)
 {
 	int16_t res = 0;
 	std::vector< VDClient* >::iterator iter;
+	std::string counselcode="";
 
 	std::lock_guard<std::mutex> g(m_mxVec);
 
 	for (iter = m_vClients.begin(); iter != m_vClients.end(); iter++) {
 		if (((VDClient*)(*iter))->getPort() == port) {	// 현재 대기중인 VDClient를 찾음
-            (*iter)->startWork(callid, spkno);
+            (*iter)->startWork(callid, counselcode, spkno);
             break;
 		}
 	}

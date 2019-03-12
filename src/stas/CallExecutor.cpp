@@ -126,7 +126,7 @@ void CallExecutor::thrdMain(CallExecutor* exe)
 					else {
 						WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_RES_WORKER, 1);
 						WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_REQ_CHANNEL);
-						if ((resReq = exe->m_vdcm->requestVDC(sCallId, cs->getUdpCnt(), vPorts))) {
+						if ((resReq = exe->m_vdcm->requestVDC(sCallId, sCounselorCode, cs->getUdpCnt(), vPorts))) {
 							// ERRCODE: 507 - 용량부족
 							WorkTracer::instance()->insertWork(sCallId, 'R', WorkQueItem::PROCTYPE::R_RES_CHANNEL, 0);
                             exe->m_vrcm->removeVRC(sCallId);

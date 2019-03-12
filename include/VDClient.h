@@ -30,6 +30,7 @@ class VDClient
 	uint16_t m_nPort;				// UDP Port
 	SOCKET m_nSockfd;
 	std::string m_sCallId;
+	std::string m_sCounselCode;
 	volatile uint8_t m_nSpkNo;
 
 
@@ -61,7 +62,7 @@ public:
 	uint16_t getPort() { return m_nPort; }
 	uint8_t getWorkStat() { return m_nWorkStat; }
 
-	void startWork( std::string& callid, uint8_t spkno );
+	void startWork( std::string& callid, std::string& counselcode, uint8_t spkno );
 	void stopWork() { m_nWorkStat = uint8_t(2); }
 
 	void setVRClient(VRClient* vrc) { m_pVrc = vrc; }

@@ -74,8 +74,8 @@ endif
 ifeq ($(FOR_ITFACT), "TRUE")
 FLAGS			+= -DFOR_ITFACT
 endif
-ifeq ($(USE_IGNORE_SILDATA), "TRUE")
-FLAGS			+= -DUSE_IGNORE_SILDATA
+ifeq ($(USE_DIFF_CSCODE), "TRUE")
+FLAGS			+= -DUSE_DIFF_CSCODE
 endif
 endif
 
