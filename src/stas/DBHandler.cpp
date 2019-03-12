@@ -1357,7 +1357,7 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
 
     if (connSet)
     {
-        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM STT_TBL_JOB_SELF_INFO WHERE STATE='U'");
+        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,PROC_NO,RCD_TP FROM STT_TBL_JOB_SELF_INFO WHERE STATE='U'");
 
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
@@ -1373,8 +1373,8 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
-                SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
-                SQLGetData(connSet->stmt, 7, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
+                SQLGetData(connSet->stmt, 6, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
+                SQLGetData(connSet->stmt, 7, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
                 JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("STT_TBL_JOB_SELF_INFO"), procno);
                 v.push_back(item);
@@ -1446,7 +1446,7 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
 
     if (connSet)
     {
-        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP,PROC_NO FROM STT_TBL_JOB_RETRY_INFO WHERE STATE='U'");
+        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,PROC_NO,RCD_TP FROM STT_TBL_JOB_RETRY_INFO WHERE STATE='U'");
 
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
 
@@ -1462,8 +1462,8 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
-                SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
-                SQLGetData(connSet->stmt, 7, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
+                SQLGetData(connSet->stmt, 6, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
+                SQLGetData(connSet->stmt, 7, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
                 JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("STT_TBL_JOB_RETRY_INFO"), procno);
                 v.push_back(item);
