@@ -13,7 +13,7 @@
 #include <sqlext.h>
 
 #include <regex>
-
+#include <algorithm>
 
 #ifdef USE_REDIS_POOL
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
@@ -1692,6 +1692,10 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
         if ( zCount ) {
             while (zCount) {
                 s_xRedis.rpop( s_dbi, m_sNotiChannel.c_str(), jsonValue );
+
+                // JSON문자열 내 Escape문자 '\' 존재할 경우 삭제
+                jsonValue.erase(remove(jsonValue.begin(), jsonValue.end(), '\\'), jsonValue.end());
+
                 ok = d.Parse(jsonValue.c_str());
 
                 if ( ok ) {
