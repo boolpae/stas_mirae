@@ -92,6 +92,7 @@ USE_FIND_KEYWORD="TRUE"
 FOR_ITFACT="TRUE"
 USE_RETRY_TABLE="TRUE"
 USE_CS_TABLE="TRUE"
+USE_IGNORE_SILDATA="TRUE"
 ###############################################################################
 
 all: $(SUB_LIBRARIES) $(SUB_PROJECTS)

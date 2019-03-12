@@ -74,6 +74,9 @@ endif
 ifeq ($(FOR_ITFACT), "TRUE")
 FLAGS			+= -DFOR_ITFACT
 endif
+ifeq ($(USE_IGNORE_SILDATA), "TRUE")
+FLAGS			+= -DUSE_IGNORE_SILDATA
+endif
 endif
 
 ifeq ($(USE_RETRY_TABLE), "TRUE")

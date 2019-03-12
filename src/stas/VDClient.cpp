@@ -143,6 +143,7 @@ void VDClient::thrdMain(VDClient * client)
                 client->m_Logger->warn("VDClient::thrdMain() - Invalid Voice Data Packet - VDClient(%d) recv_len(%d), pVrc(0x%p), nWorkStat(%d)", client->m_nPort, recv_len, client->m_pVrc, client->m_nWorkStat);
 				continue;
 			}
+
 			pos += 6;
 			memcpy(&nVDSize, pos, sizeof(uint16_t));
 			#ifdef FOR_ITFACT
@@ -151,6 +152,14 @@ void VDClient::thrdMain(VDClient * client)
 			recv_len = ::ntohs(nVDSize);
 			#endif
 			pos += sizeof(uint16_t);
+
+#ifdef USE_IGNORE_SILDATA
+			// 음성데이터가 간헐적으로 깨지는 문제에 대한 예외 처리...  실제 묵음으로 silence가 들어올 경우가 있을 수 있기에 
+			// 이 코드를 쓸지 말지 확실하게 확인 후 적용 여부를 결정해야 함
+			if ( !memcmp(pos, silBuf, recv_len) ) {
+				continue;
+			}
+#endif
 
 			// m_nWorkStat 상태가 대기가 아닐 경우에만 recvfrom한 buf 내용으로 작업을 진행한다.
 			// m_nWorkStat 상태가 대기(0)인 경우 recvfrom() 수행하여 수집된 데이터는 버림
