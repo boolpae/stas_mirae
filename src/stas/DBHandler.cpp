@@ -2031,10 +2031,10 @@ void DBHandler::updateAllTask2Fail2()
             for(iter= vItems.begin(); iter != vItems.end(); iter++) {
                 jobInfo = (*iter);
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-                sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_STAT_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','TM_OUT','%s')",
+                sprintf(sqlbuff, "CALL PKG_STT.PROC_JOB_STAT_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','E20100','%s')",
                     jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
 #else
-                sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','TM_OUT','%s')",
+                sprintf(sqlbuff, "CALL PROC_JOB_STATISTIC_DAILY_MOD('%s','%s','DEFAULT','0','0','0','X','E20100','%s')",
                     jobInfo->getCallId().c_str(), jobInfo->getRxTxType().c_str(), jobInfo->m_regdate.c_str());
 #endif
                 retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
