@@ -1249,7 +1249,7 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
     SQLRETURN retcode;
     
     char callid[256];
-    int counselorcode;
+    char counselorcode[32];
     char path[500];
     char filename[256];
     char regdate[24];
@@ -1281,13 +1281,13 @@ int DBHandler::getIncompleteTask(std::vector< JobInfoItem* > &v)
                 memset(filename, 0, sizeof(filename));
 
                 SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
-                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 2, SQL_C_CHAR, counselorcode, sizeof(counselorcode)-1, (SQLLEN *)&siCCode);
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx));
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx));
                 v.push_back(item);
             }
         }
@@ -1336,7 +1336,7 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
     SQLRETURN retcode;
     
     char callid[256];
-    int counselorcode;
+    char counselorcode[32];
     char path[500];
     char filename[256];
     char regdate[24];
@@ -1369,14 +1369,14 @@ int DBHandler::getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v)
                 memset(filename, 0, sizeof(filename));
 
                 SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
-                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 2, SQL_C_CHAR, counselorcode, sizeof(counselorcode)-1, (SQLLEN *)&siCCode);
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 6, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
                 SQLGetData(connSet->stmt, 7, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("STT_TBL_JOB_SELF_INFO"), procno);
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("STT_TBL_JOB_SELF_INFO"), procno);
                 v.push_back(item);
             }
         }
@@ -1425,7 +1425,7 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
     SQLRETURN retcode;
     
     char callid[256];
-    int counselorcode;
+    char counselorcode[32];
     char path[500];
     char filename[256];
     char regdate[24];
@@ -1458,14 +1458,14 @@ int DBHandler::getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v)
                 memset(filename, 0, sizeof(filename));
 
                 SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
-                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 2, SQL_C_CHAR, counselorcode, sizeof(counselorcode)-1, (SQLLEN *)&siCCode);
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 6, SQL_C_SLONG, &procno, 0, (SQLLEN *)&siProcno);
                 SQLGetData(connSet->stmt, 7, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("STT_TBL_JOB_RETRY_INFO"), procno);
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string("STT_TBL_JOB_RETRY_INFO"), procno);
                 v.push_back(item);
             }
         }
@@ -1664,7 +1664,7 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
     int ret=0;
     
     char callid[256];
-    int counselorcode;
+    char counselorcode[32];
     char path[500];
     char filename[256];
     char regdate[24];
@@ -1700,14 +1700,15 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
 
                 if ( ok ) {
                     sprintf(callid, "%s", d["CALL_ID"].GetString());
-                    counselorcode = 0;
+                    // counselorcode = 0;
+                    sprintf(counselorcode, "%s", d["CS_CD"].GetString());
                     sprintf(path, "%s", d["PATH_NM"].GetString());
                     sprintf(filename, "%s", d["FILE_NM"].GetString());
                     sprintf(regdate, "%s", d["REG_DTM"].GetString());
                     sprintf(rxtx, "%s", d["RCD_TP"].GetString());
                     sTableName = d["TABLE_NM"].GetString();
                     nProcNo = d["PROC_NO"].GetInt();
-                    JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), sTableName, nProcNo);
+                    JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), sTableName, nProcNo);
                     v.push_back(item);
                     m_Logger->debug("DBHandler::getTaskInfo() - from RedisPool CallId(%s), FileName(%s) zCount(%d)", callid, filename, zCount);
                 }
@@ -1756,13 +1757,13 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
                 memset(filename, 0, sizeof(filename));
 
                 SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
-                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 2, SQL_C_CHAR, counselorcode, sizeof(counselorcode)-1, (SQLLEN *)&siCCode);
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string(tableName));
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string(tableName));
                 v.push_back(item);
             }
         }
@@ -1816,7 +1817,7 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
     
     char callid[256];
     int procNo;
-    int counselorcode;
+    char counselorcode[32];
     char path[500];
     char filename[256];
     char regdate[24];
@@ -1853,13 +1854,13 @@ int DBHandler::getTaskInfo2(std::vector< JobInfoItem* > &v, int availableCount, 
 
                 SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
                 SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &procNo, 0, (SQLLEN *)&siPNo);
-                SQLGetData(connSet->stmt, 3, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 3, SQL_C_CHAR, counselorcode, sizeof(counselorcode)-1, (SQLLEN *)&siCCode);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 6, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 7, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string(tableName), procNo);
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string(tableName), procNo);
                 v.push_back(item);
             }
         }
@@ -1908,7 +1909,7 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
     SQLRETURN retcode;
     
     char callid[256];
-    int counselorcode;
+    char counselorcode[32];
     char path[500];
     char filename[256];
     char regdate[24];
@@ -1944,13 +1945,13 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
                 memset(filename, 0, sizeof(filename));
 
                 SQLGetData(connSet->stmt, 1, SQL_C_CHAR, callid, sizeof(callid)-1, (SQLLEN *)&siCallId);
-                SQLGetData(connSet->stmt, 2, SQL_C_SLONG, &counselorcode, 0, (SQLLEN *)&siCCode);
+                SQLGetData(connSet->stmt, 2, SQL_C_CHAR, counselorcode, sizeof(counselorcode)-1, (SQLLEN *)&siCCode);
                 SQLGetData(connSet->stmt, 3, SQL_C_CHAR, path, sizeof(path)-1, (SQLLEN *)&siPath);
                 SQLGetData(connSet->stmt, 4, SQL_C_CHAR, filename, sizeof(filename)-1, (SQLLEN *)&siFilename);
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::to_string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx));
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx));
                 v.push_back(item);
             }
         }
