@@ -19,6 +19,8 @@
 #include "rapidjson/document.h"     // rapidjson's DOM-style API
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "rapidjson/error/error.h"
+#include "rapidjson/error/en.h"
 #endif // USE_REDIS_POOL
 
 
@@ -1696,6 +1698,9 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
                 // JSON문자열 내 Escape문자 '\' 존재할 경우 삭제
                 jsonValue.erase(remove(jsonValue.begin(), jsonValue.end(), '\\'), jsonValue.end());
 
+                if ( jsonValue[0] == '\"' ) jsonValue.erase(0, 1);
+                if ( jsonValue[jsonValue.size()-1] == '\"' ) jsonValue.erase(jsonValue.size()-1, 1);
+
                 ok = d.Parse(jsonValue.c_str());
 
                 if ( ok ) {
@@ -1711,6 +1716,9 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
                     JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), sTableName, nProcNo);
                     v.push_back(item);
                     m_Logger->debug("DBHandler::getTaskInfo() - from RedisPool CallId(%s), FileName(%s) zCount(%d)", callid, filename, zCount);
+                }
+                else {
+                    m_Logger->error("DBHandler::getTaskInfo() - JSON parse error: %s (%u) Value(%s)", GetParseError_En(ok.Code()), ok.Offset(), jsonValue.c_str());
                 }
                 zCount--;
             }
