@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LOGFILE="/home/stt/Smart-VR/logs/rem_old_result.log"
-LOGFILE="rem_old_result.log"
+
 # 2달 - 60일
 OFFSET=60
 WAVPATH="/home/stt/Smart-VR/WAVS/"
