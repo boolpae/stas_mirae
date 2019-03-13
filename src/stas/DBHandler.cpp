@@ -1693,34 +1693,42 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
 
         if ( zCount ) {
             while (zCount) {
-                s_xRedis.rpop( s_dbi, m_sNotiChannel.c_str(), jsonValue );
+                if ( s_xRedis.rpop( s_dbi, m_sNotiChannel.c_str(), jsonValue ) && (jsonValue.size() > 0) ) {
 
-                // JSON문자열 내 Escape문자 '\' 존재할 경우 삭제
-                jsonValue.erase(remove(jsonValue.begin(), jsonValue.end(), '\\'), jsonValue.end());
+                    // JSON문자열 내 Escape문자 '\' 존재할 경우 삭제
+                    jsonValue.erase(remove(jsonValue.begin(), jsonValue.end(), '\\'), jsonValue.end());
 
-                if ( jsonValue[0] == '\"' ) jsonValue.erase(0, 1);
-                if ( jsonValue[jsonValue.size()-1] == '\"' ) jsonValue.erase(jsonValue.size()-1, 1);
+                    if ( jsonValue[0] == '\"' ) jsonValue.erase(0, 1);
+                    if ( jsonValue[jsonValue.size()-1] == '\"' ) jsonValue.erase(jsonValue.size()-1, 1);
 
-                ok = d.Parse(jsonValue.c_str());
+                    ok = d.Parse(jsonValue.c_str());
 
-                if ( ok ) {
-                    sprintf(callid, "%s", d["CALL_ID"].GetString());
-                    // counselorcode = 0;
-                    sprintf(counselorcode, "%s", d["CS_CD"].GetString());
-                    sprintf(path, "%s", d["PATH_NM"].GetString());
-                    sprintf(filename, "%s", d["FILE_NM"].GetString());
-                    sprintf(regdate, "%s", d["REG_DTM"].GetString());
-                    sprintf(rxtx, "%s", d["RCD_TP"].GetString());
-                    sTableName = d["TABLE_NM"].GetString();
-                    nProcNo = d["PROC_NO"].GetInt();
-                    JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), sTableName, nProcNo);
-                    v.push_back(item);
-                    m_Logger->debug("DBHandler::getTaskInfo() - from RedisPool CallId(%s), FileName(%s) zCount(%d)", callid, filename, zCount);
+                    if ( ok ) {
+                        sprintf(callid, "%s", d["CALL_ID"].GetString());
+                        // counselorcode = 0;
+                        sprintf(counselorcode, "%s", d["CS_CD"].GetString());
+                        sprintf(path, "%s", d["PATH_NM"].GetString());
+                        sprintf(filename, "%s", d["FILE_NM"].GetString());
+                        sprintf(regdate, "%s", d["REG_DTM"].GetString());
+                        sprintf(rxtx, "%s", d["RCD_TP"].GetString());
+                        sTableName = d["TABLE_NM"].GetString();
+                        nProcNo = d["PROC_NO"].GetInt();
+                        JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), sTableName, nProcNo);
+                        v.push_back(item);
+                        m_Logger->debug("DBHandler::getTaskInfo() - from RedisPool CallId(%s), FileName(%s) zCount(%d)", callid, filename, zCount);
+                    }
+                    else {
+                        m_Logger->error("DBHandler::getTaskInfo() - JSON parse error: %s (%u) Value(%s)", GetParseError_En(ok.Code()), ok.Offset(), jsonValue.c_str());
+                    }
+    
+                    zCount--;
                 }
-                else {
-                    m_Logger->error("DBHandler::getTaskInfo() - JSON parse error: %s (%u) Value(%s)", GetParseError_En(ok.Code()), ok.Offset(), jsonValue.c_str());
+                else
+                {
+                    /* code */
+                    s_xRedis.llen( s_dbi, m_sNotiChannel.c_str(), zCount );
                 }
-                zCount--;
+                
             }
 
             ret = v.size();
