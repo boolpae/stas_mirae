@@ -1938,7 +1938,7 @@ int DBHandler::getTimeoutTaskInfo(std::vector< JobInfoItem* > &v)
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM STT_TBL_JOB_INFO WHERE REG_DTM >= concat(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), ' 00:00:00') and REG_DTM <= concat(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), ' 23:59:59') and STATE='U' and TO_CHAR(SYSDATE - 3/24) > REG_DTM");
+        sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM STT_TBL_JOB_INFO WHERE REG_DTM >= concat(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), ' 00:00:00') and REG_DTM <= concat(TO_CHAR(SYSDATE, 'YYYY-MM-DD'), ' 23:59:59') and STATE='U' and TO_CHAR(SYSDATE - 3/24, 'YYYY-MM-DD HH24:MI:SS') > REG_DTM");
 #else
         sprintf(sqlbuff, "SELECT CALL_ID,CS_CD,PATH_NM,FILE_NM,REG_DTM,RCD_TP FROM STT_TBL_JOB_INFO WHERE REG_DTM >= concat(date(now()), ' 00:00:00') and REG_DTM <= concat(date(now()), ' 23:59:59') and STATE='U' and DATE_SUB(now(), INTERVAL 3 HOUR) > REG_DTM");
 #endif
