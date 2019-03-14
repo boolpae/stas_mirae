@@ -280,10 +280,11 @@ void VRClient::thrdMain(VRClient* client) {
 #ifdef USE_REDIS_POOL
     if ( useRedis ) {
         time_t t;
-        struct tm *tmp;
+        struct tm tmp;
 
         t = time(NULL);
-        tmp = localtime(&t);
+        // tmp = localtime(&t);
+        localtime_r(&t, &tmp);
 
         if ( bSendDataRedis )
         {
@@ -294,7 +295,7 @@ void VRClient::thrdMain(VRClient* client) {
         redisKey = "G_CS:";
         redisKey.append(client->getCounselCode());
 
-        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
+        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&tmp);
         sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
         strRedisValue = redisValue;
         

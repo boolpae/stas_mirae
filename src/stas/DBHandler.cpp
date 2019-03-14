@@ -916,7 +916,7 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
     char sqlbuff[512];
     SQLRETURN retcode;
     time_t startT;
-    struct tm * timeinfo;
+    struct tm timeinfo;
     char timebuff [32];
 
     if (!connSet)
@@ -933,8 +933,9 @@ int DBHandler::insertTaskInfo(std::string downloadPath, std::string filename, st
     if (connSet)
     {
         startT = time(NULL);
-        timeinfo = localtime(&startT);
-        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
+        // timeinfo = localtime(&startT);
+        localtime_r(&startT, &timeinfo);
+        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&timeinfo);
 
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
         sprintf(sqlbuff, "INSERT INTO STT_TBL_JOB_INFO (CALL_ID,SV_NM,PATH_NM,FILE_NM,REG_DTM,STATE) VALUES ('%s','DEFAULT','%s','%s','%s','I')",
@@ -1033,7 +1034,7 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
     int ret=0;
     char sqlbuff[512];
     SQLRETURN retcode;
-    struct tm * timeinfo;
+    struct tm timeinfo;
     char timebuff [32];
 
     if (!connSet)
@@ -1049,8 +1050,9 @@ int DBHandler::insertTaskInfoRT(std::string downloadPath, std::string filename, 
 
     if (connSet)
     {
-        timeinfo = localtime(&startT);
-        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",timeinfo);
+        // timeinfo = localtime(&startT);
+        localtime_r(&startT, &timeinfo);
+        strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&timeinfo);
 
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
         sprintf(sqlbuff, "INSERT INTO STT_TBL_JOB_INFO (CALL_ID,SV_NM,CS_CD,PATH_NM,FILE_NM,REG_DTM,STATE) VALUES ('%s','DEFAULT','%s','%s','%s','%s','U')",
@@ -1111,7 +1113,7 @@ int DBHandler::updateTaskInfo(std::string callid, std::string regdate, std::stri
 #else
     // for strftime
     time_t rawtime;
-    struct tm * timeinfo;
+    struct tm timeinfo;
     char timebuff [32];
     // Connection_T con;
     PConnSet connSet = m_pSolDBConnPool->getConnection();
@@ -1132,9 +1134,10 @@ int DBHandler::updateTaskInfo(std::string callid, std::string regdate, std::stri
     if (connSet)
     {
         time (&rawtime);
-        timeinfo = localtime (&rawtime);
+        // timeinfo = localtime (&rawtime);
+        localtime_r(&rawtime, &timeinfo);
 
-        strftime (timebuff,sizeof(timebuff),"%F %T",timeinfo);
+        strftime (timebuff,sizeof(timebuff),"%F %T",&timeinfo);
         //sprintf(sqlbuff, "UPDATE STT_TBL_JOB_INFO SET STATE='%c' WHERE CALL_ID='%s' AND CS_CODE='%s'",
         //    state, callid.c_str(), counselorcode.c_str());
         if (errcode && strlen(errcode)) {

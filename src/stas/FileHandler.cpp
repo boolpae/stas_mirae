@@ -42,7 +42,7 @@ void FileHandler::thrdMain(FileHandler * dlv)
 #endif
 
     char datebuff[32];
-    struct tm * timeinfo;
+    struct tm timeinfo;
     time_t currTm;
 
 #ifdef ENC_UTF8
@@ -83,8 +83,9 @@ void FileHandler::thrdMain(FileHandler * dlv)
             }
 #endif
             currTm = time(NULL);
-            timeinfo = localtime(&currTm);
-            strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
+            // timeinfo = localtime(&currTm);
+            localtime_r(&currTm, &timeinfo);
+            strftime (datebuff,sizeof(datebuff),"%Y%m%d",&timeinfo);
 			if (item->getJobType() == 'R') {
                 fullpath = dlv->m_sResultPath + "/REALTIME/" + datebuff + "/" + item->getCSCode() + "/";
                 if ( access(fullpath.c_str(), F_OK) ) {
@@ -172,7 +173,7 @@ void FileHandler::thrdSaveJsonData(FileHandler * dlv)
     std::string fullpath;
 
     char datebuff[32];
-    struct tm * timeinfo;
+    struct tm timeinfo;
     time_t currTm;
 
 
@@ -184,8 +185,9 @@ void FileHandler::thrdSaveJsonData(FileHandler * dlv)
 			delete g;
 
             currTm = time(NULL);
-            timeinfo = localtime(&currTm);
-            strftime (datebuff,sizeof(datebuff),"%Y%m%d",timeinfo);
+            // timeinfo = localtime(&currTm);
+            localtime_r(&currTm, &timeinfo);
+            strftime (datebuff,sizeof(datebuff),"%Y%m%d",&timeinfo);
 			if (item->getJobType() == 'R') {
                 fullpath = dlv->m_sResultPath + "/REALTIME/" + datebuff + "/" + item->getCSCode() + "/";
                 if ( access(fullpath.c_str(), F_OK) ) {

@@ -974,10 +974,11 @@ void VRClient::thrdMain(VRClient* client) {
                         if ( useRedis ) {
                             int64_t zCount=0;
                             time_t t;
-                            struct tm *tmp;
+                            struct tm tmp;
 
                             t = time(NULL);
-                            tmp = localtime(&t);
+                            // tmp = localtime(&t);
+                            localtime_r(&t, &tmp);
 
                             if ( bSendDataRedis )
                             {
@@ -990,7 +991,7 @@ void VRClient::thrdMain(VRClient* client) {
                             redisKey.append(client->getCounselCode());
 
                             //  {"REG_DTM":"10:15", "STATE":"E", "CALL_ID":"CALL011"}
-                            strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",tmp);
+                            strftime (timebuff,sizeof(timebuff),"%Y-%m-%d %H:%M:%S",&tmp);
                             sprintf(redisValue, "{\"REG_DTM\":\"%s\", \"STATE\":\"E\", \"CALL_ID\":\"%s\"}", timebuff, client->getCallId().c_str());
                             strRedisValue = redisValue;
                             
