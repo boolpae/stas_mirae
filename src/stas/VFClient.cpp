@@ -254,8 +254,12 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                         DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'Y', nFilesize, nFilesize/16000, std::chrono::duration_cast<std::chrono::seconds>(t2-t1).count(), item->m_procNo, item->getTableName().c_str());
                                     }
                                     else if (gearman_failed(rc)) {
+                                        if (value) free(value);
                                         logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text). [%s : %s], timeout(%d)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout);
                                         DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), "E20400"/*gearman_client_error(gearClient)*/);
+                                    }
+                                    else {
+                                        if (value) free(value);
                                     }
 
                                 }
@@ -462,6 +466,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                                 }
                                 else {
                                     // FAIL
+                                    if (value) free(value);
                                     logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text_tx). [%s : %s], timeout(%d)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout);
                                     DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), "E20400"/*gearman_client_error(gearClient)*/);
                                 }
@@ -469,6 +474,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                         }
                         else {
                             // FAIL
+                            if (value) free(value);
                             logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text_rx). [%s : %s], timeout(%d)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout);
                             DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), "E20400"/*gearman_client_error(gearClient)*/);
                         }
@@ -636,8 +642,12 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                             }
                         }
                         else if (gearman_failed(rc)) {
+                            if (value) free(value);
                             logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_text). [%s : %s], timeout(%d)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout);
                             DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), "E20400"/*gearman_client_error(gearClient)*/);
+                        }
+                        else {
+                            if (value) free(value);
                         }
                     }
 #endif  // USE_RAPIDJSON
@@ -648,6 +658,7 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
                 }
             }
             else {
+                if (value) free(value);
                 logger->error("VFClient::thrdFunc(%ld) - failed gearman_client_do(vr_stt). [%s : %s], timeout(%d), gearman_error_msg(%s)", client->m_nNumId, item->getCallId().c_str(), item->getFilename().c_str(), client->m_nGearTimeout, gearman_client_error(gearClient));
                 DBHandler->updateTaskInfo(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getCounselorCode(), 'X', 0, 0, 0, item->m_procNo, item->getTableName().c_str(), "E20400"/*gearman_client_error(gearClient)*/);
             }
@@ -684,6 +695,7 @@ bool VFClient::requestGearman(gearman_client_st *gearClient, const char* funcnam
     }
     else {
         resStr = gearman_client_error(gearClient);
+        if (value) free(value);
     }
 
     return ret;

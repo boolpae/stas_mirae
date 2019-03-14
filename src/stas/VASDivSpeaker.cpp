@@ -123,6 +123,7 @@ int VASDivSpeaker::startWork(gearman_client_st *gearClient, std::string &funcnam
         res2.clear();
     }
     else if (gearman_failed(rc)) {
+        if (value) free(value);
         logger->error("VASDivSpeaker::startWork() - failed gearman_client_do(%s). [%s : %s]", funcname.c_str(), m_jobItem->getCallId().c_str(), m_jobItem->getFilename().c_str());
     }
 
