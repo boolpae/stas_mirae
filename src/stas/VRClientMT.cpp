@@ -867,6 +867,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                 }
                             }
                             else if (gearman_failed(rc)){
+                                if ( value ) free(value);
                                 client->m_Logger->error("VRClient::thrdRxProcess(%s) - failed gearman_client_do(). [%lu : %lu], timeout(%d)", client->m_sCallId.c_str(), client->rx_sframe, client->rx_eframe, client->m_nGearTimeout);
                             }
 
@@ -1049,6 +1050,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         }
                     }
                     else if (gearman_failed(rc)){
+                        if ( value ) free(value);
                         client->m_Logger->error("VRClient::thrdRxProcess(%s) - failed gearman_client_do(). [%d : %d], timeout(%d)", client->m_sCallId.c_str(), client->rx_sframe, client->rx_eframe, client->m_nGearTimeout);
                     }
 
@@ -1555,6 +1557,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                 }
                             }
                             else if (gearman_failed(rc)){
+                                if ( value ) free(value);
                                 client->m_Logger->error("VRClient::thrdTxProcess(%s) - failed gearman_client_do(). [%lu : %lu], timeout(%d)", client->m_sCallId.c_str(), client->tx_sframe, client->tx_eframe, client->m_nGearTimeout);
                             }
 
@@ -1737,6 +1740,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         }
                     }
                     else if (gearman_failed(rc)){
+                        if ( value ) free(value);
                         client->m_Logger->error("VRClient::thrdTxProcess(%s) - failed gearman_client_do(). [%d : %d], timeout(%d)", client->m_sCallId.c_str(), client->tx_sframe, client->tx_eframe, client->m_nGearTimeout);
                     }
 

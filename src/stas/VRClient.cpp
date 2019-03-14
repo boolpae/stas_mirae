@@ -705,6 +705,7 @@ void VRClient::thrdMain(VRClient* client) {
                                 }
                             }
                             else if (gearman_failed(rc)){
+                                if ( value ) free(value);
                                 client->m_Logger->error("VRClient::thrdMain(%s) - failed gearman_client_do(). [%lu : %lu], timeout(%d)", client->m_sCallId.c_str(), sframe[item->spkNo -1], eframe[item->spkNo -1], client->m_nGearTimeout);
                             }
 
@@ -799,6 +800,7 @@ void VRClient::thrdMain(VRClient* client) {
                     }
                 }
                 else if (gearman_failed(rc)){
+                    if ( value ) free(value);
                     client->m_Logger->error("VRClient::thrdMain(%s) - failed gearman_client_do(). [%lu : %lu], timeout(%d)", client->m_sCallId.c_str(), vPos[item->spkNo -1].bpos, vPos[item->spkNo -1].epos, client->m_nGearTimeout);
                 }
                 
@@ -950,6 +952,7 @@ void VRClient::thrdMain(VRClient* client) {
                         }
                     }
                     else if (gearman_failed(rc)){
+                        if ( value ) free(value);
                         client->m_Logger->error("VRClient::thrdMain(%s) - failed gearman_client_do(). [%d : %d], timeout(%d)", client->m_sCallId.c_str(), sframe[item->spkNo -1], eframe[item->spkNo -1], client->m_nGearTimeout);
                     }
 
