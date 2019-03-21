@@ -78,7 +78,7 @@ void Scheduler::thrdFuncScheduler(Scheduler *schd, VFCManager *vfcm)
                 logger->debug("thrdFuncScheduler (%s, %s)", item->getPath().c_str(), item->getFilename().c_str());
                 // put item to VFCMgr's Queue
                 if (schd->m_vfcmgr->pushItem(item/*item->getPath()+"/"+item->getFilename()*/) > 0) {
-                    schd->m_sttdb->updateTaskInfo4Schd(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getTableName());
+                    schd->m_sttdb->updateTaskInfo4Schd(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getTableName(), item->m_procNo);
                 }
             }
 
@@ -93,7 +93,7 @@ void Scheduler::thrdFuncScheduler(Scheduler *schd, VFCManager *vfcm)
                 logger->debug("thrdFuncScheduler (%s, %s)", item->getPath().c_str(), item->getFilename().c_str());
                 // put item to VFCMgr's Queue
                 if (schd->m_vfcmgr->pushItem(item/*item->getPath()+"/"+item->getFilename()*/) > 0) {
-                    schd->m_sttdb->updateTaskInfo4Schd(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getTableName());
+                    schd->m_sttdb->updateTaskInfo4Schd(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getTableName(), item->m_procNo);
                 }
             }
 
@@ -111,7 +111,7 @@ void Scheduler::thrdFuncScheduler(Scheduler *schd, VFCManager *vfcm)
                 logger->debug("thrdFuncScheduler (%s, %s)", item->getPath().c_str(), item->getFilename().c_str());
                 // put item to VFCMgr's Queue
                 if (schd->m_vfcmgr->pushItem(item/*item->getPath()+"/"+item->getFilename()*/) > 0) {
-                    schd->m_sttdb->updateTaskInfo4Schd(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getTableName());
+                    schd->m_sttdb->updateTaskInfo4Schd(item->getCallId(), item->m_regdate, item->getRxTxType(), item->getTableName(), item->m_procNo);
                 }
             }
 

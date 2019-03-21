@@ -148,7 +148,7 @@ public:
     int getTaskInfo2(std::vector< JobInfoItem* > &v, int count, const char *tableName="STT_TBL_JOB_SELF_INFO");
     int getTimeoutTaskInfo(std::vector< JobInfoItem* > &v);
     int insertTaskInfoRT(std::string downloadPath, std::string filename, std::string callId, std::string counselcode, time_t startT);
-    int updateTaskInfo4Schd(std::string callid, std::string regdate, std::string rxtx, std::string tbName);
+    int updateTaskInfo4Schd(std::string callid, std::string regdate, std::string rxtx, std::string tbName, int procNo);
     int getIncompleteTask(std::vector< JobInfoItem* > &v);
     int getIncompleteTaskFromSelf(std::vector< JobInfoItem* > &v);
     int getIncompleteTaskFromRetry(std::vector< JobInfoItem* > &v);

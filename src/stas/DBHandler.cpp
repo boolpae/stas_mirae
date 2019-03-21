@@ -1178,7 +1178,7 @@ int DBHandler::updateTaskInfo(std::string callid, std::string regdate, std::stri
     return ret;
 }
 
-int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std::string rxtx, std::string tbName)
+int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std::string rxtx, std::string tbName, int procNo)
 {
     PConnSet connSet = m_pSolDBConnPool->getConnection();
     int ret=0;
@@ -1199,11 +1199,24 @@ int DBHandler::updateTaskInfo4Schd(std::string callid, std::string regdate, std:
     if (connSet)
     {
 #if defined(USE_ORACLE) || defined(USE_TIBERO)
-        sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND SUBSTR(REG_DTM, 1, 13)=SUBSTR('%s', 1, 13)",
-            tbName.c_str(), callid.c_str(), rxtx.c_str(), regdate.c_str());
+        if ( !tbName.compare("STT_TBL_JOB_INFO") ) {
+            sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND SUBSTR(REG_DTM, 1, 13)=SUBSTR('%s', 1, 13)",
+                tbName.c_str(), callid.c_str(), rxtx.c_str(), regdate.c_str());
+        }
+        else {
+            sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND PROC_NO=%d AND RCD_TP='%s' AND SUBSTR(REG_DTM, 1, 13)=SUBSTR('%s', 1, 13)",
+                tbName.c_str(), callid.c_str(), procNo, rxtx.c_str(), regdate.c_str());
+        }
 #else
-        sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND DATE_FORMAT(REG_DTM, '%%Y-%%m-%%d %%H')=DATE_FORMAT('%s', '%%Y-%%m-%%d %%H')",
-            tbName.c_str(), callid.c_str(), rxtx.c_str(), regdate.c_str());
+        if ( !tbName.compare("STT_TBL_JOB_INFO") ) {
+            sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' AND RCD_TP='%s' AND DATE_FORMAT(REG_DTM, '%%Y-%%m-%%d %%H')=DATE_FORMAT('%s', '%%Y-%%m-%%d %%H')",
+                tbName.c_str(), callid.c_str(), rxtx.c_str(), regdate.c_str());
+        }
+        else {
+            sprintf(sqlbuff, "UPDATE %s SET STATE='U' WHERE CALL_ID='%s' PROC_NO=%d AND RCD_TP='%s' AND DATE_FORMAT(REG_DTM, '%%Y-%%m-%%d %%H')=DATE_FORMAT('%s', '%%Y-%%m-%%d %%H')",
+                tbName.c_str(), callid.c_str(), procNo, rxtx.c_str(), regdate.c_str());
+        }
+        
 #endif
 
         retcode = SQLExecDirect(connSet->stmt, (SQLCHAR *)sqlbuff, SQL_NTS);
