@@ -1724,10 +1724,16 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
                         // counselorcode = 0;
                         sprintf(counselorcode, "%s", d["CS_CD"].GetString());
                         sprintf(path, "%s", d["PATH_NM"].GetString());
-                        sprintf(filename, "%s", d["FILE_NM"].GetString());
                         sprintf(regdate, "%s", d["REG_DTM"].GetString());
                         sprintf(rxtx, "%s", d["RCD_TP"].GetString());
                         sTableName = d["TABLE_NM"].GetString();
+                        if ( sTableName.compare("STT_TBL_JOB_INFO") ) {
+                            // 단건 처리를 위해 업로드한 녹취 파일에 한글이 있을 경우... 처리가 정상적으로 되지 않으므로 CALL_ID값을 파일명으로 처리
+                            sprintf(filename, "%s", d["CALL_ID"].GetString());
+                        }
+                        else {
+                            sprintf(filename, "%s", d["FILE_NM"].GetString());
+                        }
                         nProcNo = d["PROC_NO"].GetInt();
                         JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), sTableName, nProcNo);
                         v.push_back(item);
@@ -1795,7 +1801,8 @@ int DBHandler::getTaskInfo(std::vector< JobInfoItem* > &v, int availableCount, c
                 SQLGetData(connSet->stmt, 5, SQL_C_CHAR, regdate, sizeof(regdate)-1, (SQLLEN *)&siRegdate);
                 SQLGetData(connSet->stmt, 6, SQL_C_CHAR, rxtx, sizeof(rxtx)-1, (SQLLEN *)&siRxtx);
 
-                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(filename), std::string(regdate), std::string(rxtx), std::string(tableName));
+                // 단건 처리 시 녹취 파일명에 한글이 있을 경우 정상적으로 처리되지 않는 이유로 Call_id값을 파일명으로 사용
+                JobInfoItem *item = new JobInfoItem(std::string(callid), std::string(counselorcode), std::string(path), std::string(callid), std::string(regdate), std::string(rxtx), std::string(tableName));
                 v.push_back(item);
             }
         }
