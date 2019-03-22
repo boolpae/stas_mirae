@@ -542,7 +542,7 @@ void VRClient::thrdMain(VRClient* client) {
                     
                     if (!vadres && (vBuff[item->spkNo-1].size()<=nHeadLen)) {
                         // start ms
-                        sframe[item->spkNo-1] = eframe[item->spkNo-1] - 20;
+                        sframe[item->spkNo-1] = eframe[item->spkNo-1] - (client->m_framelen/8);
                     }
 
                     if (!vadres && (vBuff[item->spkNo-1].size()>nHeadLen)) {

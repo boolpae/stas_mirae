@@ -156,6 +156,7 @@ void VDClient::thrdMain(VDClient * client)
 			recv_len = ::ntohs(nVDSize)/2;
 			#else
 			recv_len = ::ntohs(nVDSize);
+			if (recv_len>640) recv_len = 640;
 			#endif
 			pos += sizeof(uint16_t);
 
