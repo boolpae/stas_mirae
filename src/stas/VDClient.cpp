@@ -156,6 +156,9 @@ void VDClient::thrdMain(VDClient * client)
 			recv_len = ::ntohs(nVDSize)/2;
 			#else
 			recv_len = ::ntohs(nVDSize);
+			if ( client->m_nWorkStat == 3 ) {
+				client->m_Logger->info("VDClient::thrdMain() - VDClient(%d) First Data size(%d)", client->m_nPort, recv_len);
+			}
 			if (recv_len>640) recv_len = 640;
 			#endif
 			pos += sizeof(uint16_t);
