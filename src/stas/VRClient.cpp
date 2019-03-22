@@ -232,7 +232,7 @@ void VRClient::thrdMain(VRClient* client) {
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
-
+    bool bUseMask = !config->getConfig("stas.use_mask", "false").compare("true");
     bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
 #ifdef FAD_FUNC
@@ -499,9 +499,15 @@ void VRClient::thrdMain(VRClient* client) {
                     std::string spker = (item->spkNo == 1)?std::string("_r.wav"):std::string("_l.wav");
                     std::string l_filename = filename + spker;
 
+                    wHdr[item->spkNo-1].Riff.ChunkSize = totalVoiceDataLen[item->spkNo-1] + sizeof(WAVE_HEADER) - 8;
+                    wHdr[item->spkNo-1].Data.ChunkSize = totalVoiceDataLen[item->spkNo-1];
+
                     pcmFile.open(l_filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
                         pcmFile.write((const char*)item->voiceData, item->lenVoiceData);
+
+                        pcmFile.seekp(0);
+                        pcmFile.write((const char*)&wHdr[item->spkNo-1], sizeof(WAVE_HEADER));
                         pcmFile.close();
                     }
                 }
@@ -648,6 +654,11 @@ void VRClient::thrdMain(VRClient* client) {
                                                 if ( bUseRemSpaceInNumwords )
                                                 {
                                                     remSpaceInSentence( sJsonValue );
+                                                }
+
+                                                if ( bUseMask )
+                                                {
+                                                    maskKeyword( sJsonValue );
                                                 }
 
                                                 #ifdef USE_FIND_KEYWORD
@@ -897,6 +908,11 @@ void VRClient::thrdMain(VRClient* client) {
                                         if ( bUseRemSpaceInNumwords )
                                         {
                                             remSpaceInSentence( sJsonValue );
+                                        }
+
+                                        if ( bUseMask )
+                                        {
+                                            maskKeyword( sJsonValue );
                                         }
 
                                         #ifdef USE_FIND_KEYWORD

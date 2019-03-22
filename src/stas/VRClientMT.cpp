@@ -461,7 +461,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
-
+    bool bUseMask = !config->getConfig("stas.use_mask", "false").compare("true");
     bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
     localtime_r(&client->m_tStart, &timeinfo);
@@ -638,9 +638,15 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                 if (client->m_is_save_pcm) {
 
+                    wHdr.Riff.ChunkSize = totalVoiceDataLen + sizeof(WAVE_HEADER) - 8;
+                    wHdr.Data.ChunkSize = totalVoiceDataLen;
+
                     pcmFile.open(filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
                         pcmFile.write((const char*)item->voiceData, item->lenVoiceData);
+
+                        pcmFile.seekp(0);
+                        pcmFile.write((const char*)&wHdr, sizeof(WAVE_HEADER));
                         pcmFile.close();
                     }
                 }
@@ -812,6 +818,11 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                                 if ( bUseRemSpaceInNumwords )
                                                 {
                                                     remSpaceInSentence( sJsonValue );
+                                                }
+
+                                                if ( bUseMask )
+                                                {
+                                                    maskKeyword( sJsonValue );
                                                 }
 
                                                 #ifdef USE_FIND_KEYWORD
@@ -1000,6 +1011,11 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                             remSpaceInSentence( sJsonValue );
                                         }
 
+                                        if ( bUseMask )
+                                        {
+                                            maskKeyword( sJsonValue );
+                                        }
+
                                         #ifdef USE_FIND_KEYWORD
                                         if ( bUseFindKeyword ) 
                                         {
@@ -1156,6 +1172,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
     bool bUseFindKeyword = !config->getConfig("stas.use_find_keyword", "fasle").compare("true");
     bool bUseRemSpaceInNumwords = !config->getConfig("stas.use_rem_space_numwords", "false").compare("true");
+    bool bUseMask = !config->getConfig("stas.use_mask", "false").compare("true");
     bool bSaveJsonData = !config->getConfig("stas.save_json_data", "false").compare("true");
 
     localtime_r(&client->m_tStart, &timeinfo);
@@ -1329,9 +1346,15 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                 if (client->m_is_save_pcm) {
 
+                    wHdr.Riff.ChunkSize = totalVoiceDataLen + sizeof(WAVE_HEADER) - 8;
+                    wHdr.Data.ChunkSize = totalVoiceDataLen;
+
                     pcmFile.open(filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
                         pcmFile.write((const char*)item->voiceData, item->lenVoiceData);
+
+                        pcmFile.seekp(0);
+                        pcmFile.write((const char*)&wHdr, sizeof(WAVE_HEADER));
                         pcmFile.close();
                     }
                 }
@@ -1503,6 +1526,11 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                                 if ( bUseRemSpaceInNumwords )
                                                 {
                                                     remSpaceInSentence( sJsonValue );
+                                                }
+
+                                                if ( bUseMask )
+                                                {
+                                                    maskKeyword( sJsonValue );
                                                 }
 
                                                 #ifdef USE_FIND_KEYWORD
@@ -1687,6 +1715,11 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                         if ( bUseRemSpaceInNumwords )
                                         {
                                             remSpaceInSentence( sJsonValue );
+                                        }
+
+                                        if ( bUseMask )
+                                        {
+                                            maskKeyword( sJsonValue );
                                         }
 
                                         #ifdef USE_FIND_KEYWORD
