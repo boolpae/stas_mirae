@@ -207,15 +207,11 @@ void FileHandler::thrdSaveJsonData(FileHandler * dlv)
 			std::ofstream sttresult(sttFilename, std::ios::out | std::ios::app);
 			if (sttresult.is_open()) {
                 if (item->getSpkNo() == 0) sttresult << "[";
-                else if (item->getSpkNo() == 1) {
-                    sttresult.seekp(-1, std::ios::end);
-                    sttresult << ",";
-                }
+                else if (item->getSpkNo() == 1) sttresult << ",";
 
                 sttresult << item->getSTTValue() ;
-                sttresult << "]";
 
-                // if (item->getSpkNo() == 2) sttresult << "]";
+                if (item->getSpkNo() == 2) sttresult << "]";
 				sttresult.close();
 			}
 

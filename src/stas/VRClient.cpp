@@ -499,15 +499,9 @@ void VRClient::thrdMain(VRClient* client) {
                     std::string spker = (item->spkNo == 1)?std::string("_r.wav"):std::string("_l.wav");
                     std::string l_filename = filename + spker;
 
-                    wHdr[item->spkNo-1].Riff.ChunkSize = totalVoiceDataLen[item->spkNo-1] + sizeof(WAVE_HEADER) - 8;
-                    wHdr[item->spkNo-1].Data.ChunkSize = totalVoiceDataLen[item->spkNo-1];
-
                     pcmFile.open(l_filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
                         pcmFile.write((const char*)item->voiceData, item->lenVoiceData);
-
-                        pcmFile.seekp(0);
-                        pcmFile.write((const char*)&wHdr[item->spkNo-1], sizeof(WAVE_HEADER));
                         pcmFile.close();
                     }
                 }

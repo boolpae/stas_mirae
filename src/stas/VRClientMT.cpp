@@ -638,15 +638,9 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
                 if (client->m_is_save_pcm) {
 
-                    wHdr.Riff.ChunkSize = totalVoiceDataLen + sizeof(WAVE_HEADER) - 8;
-                    wHdr.Data.ChunkSize = totalVoiceDataLen;
-
                     pcmFile.open(filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
                         pcmFile.write((const char*)item->voiceData, item->lenVoiceData);
-
-                        pcmFile.seekp(0);
-                        pcmFile.write((const char*)&wHdr, sizeof(WAVE_HEADER));
                         pcmFile.close();
                     }
                 }
@@ -1346,15 +1340,9 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
                 if (client->m_is_save_pcm) {
 
-                    wHdr.Riff.ChunkSize = totalVoiceDataLen + sizeof(WAVE_HEADER) - 8;
-                    wHdr.Data.ChunkSize = totalVoiceDataLen;
-
                     pcmFile.open(filename, ios::out | ios::app | ios::binary);
                     if (pcmFile.is_open()) {
                         pcmFile.write((const char*)item->voiceData, item->lenVoiceData);
-
-                        pcmFile.seekp(0);
-                        pcmFile.write((const char*)&wHdr, sizeof(WAVE_HEADER));
                         pcmFile.close();
                     }
                 }
