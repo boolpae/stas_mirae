@@ -218,7 +218,7 @@ void remSpaceInSentence(string& org)
 
 void maskKeyword(string& org)
 {
-    wstring pattern = L"[공영일이삼사오육칠팔구\\s]{5,}";
+    wstring pattern = L"[공영일이삼사오육륙칠팔구\\s]{5,}";
     wregex we(pattern);
     wsmatch wm;
     wstring convWStr;
