@@ -115,7 +115,8 @@ int main(int argc, const char** argv)
 	logger->info("================================================");
 	logger->info("MPI host IP      :  %s", config->getConfig("stas.mpihost", "127.0.0.1").c_str());
 	logger->info("MPI host Port    :  %d", config->getConfig("stas.mpiport", 4730));
-	logger->info("MPI host Timeout :  %d", config->getConfig("stas.mpitimeout", 0));
+	logger->info("MPI host Realtime Timeout :  %d", config->getConfig("stas.real_mpitimeout", 0));
+    logger->info("MPI host Filetime Timeout :  %d", config->getConfig("stas.file_mpitimeout", 0));
 	logger->info("Call Signal Port :  %d", config->getConfig("stas.callport", 7000));
 	logger->info("Call Channel Cnt :  %d", config->getConfig("stas.channel_count", 200));
 	logger->info("Voice Playtime   :  %d", config->getConfig("stas.playtime", 3));
@@ -175,7 +176,7 @@ int main(int argc, const char** argv)
     }
 
 #ifdef ENABLE_REALTIME
-	VRCManager* vrcm = VRCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.mpitimeout", 0), deliver, st2db, (config->getConfig("stas.savewav", "false").find("true")==0)?true:false, config->getConfig("stas.wavpath", "/home/stt"), config->getConfig("stas.framelen", 20), config->getConfig("stas.mode", 0));
+	VRCManager* vrcm = VRCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.real_mpitimeout", 0), deliver, st2db, (config->getConfig("stas.savewav", "false").find("true")==0)?true:false, config->getConfig("stas.wavpath", "/home/stt"), config->getConfig("stas.framelen", 20), config->getConfig("stas.mode", 0));
     if (!vrcm) {
         logger->error("MAIN - ERROR (Failed to get VRCManager instance)");
         VDCManager::release();
@@ -196,7 +197,7 @@ int main(int argc, const char** argv)
     }
 #endif  // ENABLE_REALTIME
 
-	VFCManager* vfcm = VFCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.mpitimeout", 0));
+	VFCManager* vfcm = VFCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.file_mpitimeout", 0));
     Notifier *noti = nullptr;
     if(vfcm) {
         noti = Notifier::instance(vfcm, st2db);

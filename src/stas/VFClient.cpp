@@ -89,9 +89,9 @@ void VFClient::thrdFunc(VFCManager* mgr, VFClient* client)
         return;
     }
 
-    // if (client->m_nGearTimeout) {
-    //     gearman_client_set_timeout(gearClient, client->m_nGearTimeout);
-    // }
+    if (client->m_nGearTimeout) {
+        gearman_client_set_timeout(gearClient, client->m_nGearTimeout);
+    }
 
     while(client->m_LiveFlag) {
         if( (item = mgr->popItem()) ) {
