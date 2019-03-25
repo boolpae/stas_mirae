@@ -204,6 +204,9 @@ int main(int argc, const char** argv)
 
     logger = config->getLogger();
 
+    mode = config->getConfig("mode.type", "default");
+    logger->info("CALLDBPROC - START MODE(%s)", mode.c_str());
+
     dsn = config->getConfig("database.dsn", "itfodbc");
     id = config->getConfig("database.id", "stt");
     if ( !config->getConfig("database.encrypt", "false").compare("true") )
@@ -226,7 +229,6 @@ int main(int argc, const char** argv)
         return -1;
     }
 
-    mode = config->getConfig("mode.type", "default");
     if ( !mode.compare("min") ) {
         if ( !DBExcuteSQL_MIN() )
             logger->error("CALLDBPROC - Failed to execute SQL_MIN");
