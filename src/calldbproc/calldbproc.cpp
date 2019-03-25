@@ -1,5 +1,7 @@
 
 #include "configuration.h"
+
+#include <unistd.h>
 #include <string.h>
 #include <sql.h> 
 #include <sqlext.h>
@@ -150,6 +152,7 @@ int main(int argc, const char** argv)
     string id;
     string pw;
     string mode;
+    int opt;
 
     if ( argc < 2 ) {
         fprintf(stderr, "CALLDBPROC - Usage calldbproc [min|day|encstr] [string]\n");
@@ -166,7 +169,24 @@ int main(int argc, const char** argv)
             return 0;
     }
 
-    mode = argv[1];
+    while( (opt = getopt(argc, (char *const *)argv, "1234")) != -1) {
+        switch (opt) {
+            case '1':
+                mode = "min";
+                break;
+            case '2':
+                mode = "sync";
+                break;
+            case '3':
+                mode = "stat_job";
+                break;
+            case '4':
+                mode = "stat_res";
+                break;
+            default:
+                mode = "unknown";
+        }
+    }
 
     try {
         config = new Configuration(argc, argv);
