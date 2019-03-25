@@ -1,7 +1,6 @@
 
 #include "configuration.h"
 
-#include <unistd.h>
 #include <string.h>
 #include <sql.h> 
 #include <sqlext.h>
@@ -146,13 +145,40 @@ int Decrypt(string &data)
     return data.size();
 }
 
+static int extract_error(const char *fn, SQLHANDLE handle, SQLSMALLINT type)
+{
+    SQLINTEGER i = 0;
+    SQLINTEGER NativeError;
+    SQLCHAR SQLState[ 7 ];
+    SQLCHAR MessageText[256];
+    SQLSMALLINT TextLength;
+    SQLRETURN ret;
+
+    do
+    {
+        ret = SQLGetDiagRec(type, handle, ++i, SQLState, &NativeError,
+                            MessageText, sizeof(MessageText), &TextLength);
+        // fprintf(stderr, "\nDEBUG - The driver reported the following error %s, ret(%d)\n", fn, ret);
+        if (SQL_SUCCEEDED(ret)) {
+            logger->error("%s:%ld:%ld:%s",
+                        SQLState, (long) i, (long) NativeError, MessageText);
+        }
+        else if (ret < 0) {
+            NativeError = 2006;
+        }
+    }
+    while( ret == SQL_SUCCESS );
+
+    return NativeError;
+}
+
+
 int main(int argc, const char** argv)
 {
     string dsn;
     string id;
     string pw;
     string mode;
-    int opt;
 
     if ( argc < 2 ) {
         fprintf(stderr, "CALLDBPROC - Usage calldbproc [min|day|encstr] [string]\n");
@@ -167,25 +193,6 @@ int main(int argc, const char** argv)
                 }
             }
             return 0;
-    }
-
-    while( (opt = getopt(argc, (char *const *)argv, "1234")) != -1) {
-        switch (opt) {
-            case '1':
-                mode = "min";
-                break;
-            case '2':
-                mode = "sync";
-                break;
-            case '3':
-                mode = "stat_job";
-                break;
-            case '4':
-                mode = "stat_res";
-                break;
-            default:
-                mode = "unknown";
-        }
     }
 
     try {
@@ -219,6 +226,7 @@ int main(int argc, const char** argv)
         return -1;
     }
 
+    mode = config->getConfig("mode.type", "default");
     if ( !mode.compare("min") ) {
         if ( !DBExcuteSQL_MIN() )
             logger->error("CALLDBPROC - Failed to execute SQL_MIN");
@@ -264,9 +272,10 @@ BOOL DBExcuteSQL_SYNC()
 {	
 	char squery[100];
 	
-	snprintf (squery, sizeof(squery), "PKG_STT.PROC_DLS_CHANNEL()");	
+	snprintf (squery, sizeof(squery), "CALL PKG_STT.PROC_DLS_CHANNEL()");	
 	if(SQLExecDirect(hStmt, (SQLCHAR *)squery, SQL_NTS) != SQL_SUCCESS)
 	{
+        extract_error("DBExcuteSQL_SYNC()", hStmt, SQL_HANDLE_STMT);
         return FALSE;
 	}	
 	return TRUE;	
@@ -276,9 +285,10 @@ BOOL DBExcuteSQL_STAT_JOB()
 {	
 	char squery[100];
 	
-	snprintf (squery, sizeof(squery), "PKG_STT.PROC_JOB_STAT_REG()");	
+	snprintf (squery, sizeof(squery), "CALL PKG_STT.PROC_JOB_STAT_REG()");	
 	if(SQLExecDirect(hStmt, (SQLCHAR *)squery, SQL_NTS) != SQL_SUCCESS)
 	{
+        extract_error("DBExcuteSQL_STAT_JOB()", hStmt, SQL_HANDLE_STMT);
         return FALSE;
 	}	
 	return TRUE;	
@@ -288,9 +298,10 @@ BOOL DBExcuteSQL_STAT_RES()
 {	
 	char squery[100];
 	
-	snprintf (squery, sizeof(squery), "PKG_STT.PROC_RES_STAT_REG()");	
+	snprintf (squery, sizeof(squery), "CALL PKG_STT.PROC_RES_STAT_REG()");	
 	if(SQLExecDirect(hStmt, (SQLCHAR *)squery, SQL_NTS) != SQL_SUCCESS)
 	{
+        extract_error("DBExcuteSQL_STAT_RES()", hStmt, SQL_HANDLE_STMT);
         return FALSE;
 	}	
 	return TRUE;	
@@ -300,9 +311,10 @@ BOOL DBExcuteSQL_MIN()
 {	
 	char squery[100];
 	
-	snprintf (squery, sizeof(squery), "PROC_CALL_MATCH()");	
+	snprintf (squery, sizeof(squery), "CALL PROC_CALL_MATCH()");	
 	if(SQLExecDirect(hStmt, (SQLCHAR *)squery, SQL_NTS) != SQL_SUCCESS)
 	{
+        extract_error("DBExcuteSQL_MIN()", hStmt, SQL_HANDLE_STMT);
 		return FALSE;
 	}	
 	return TRUE;	
