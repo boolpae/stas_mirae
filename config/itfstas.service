@@ -4,7 +4,7 @@ Wants=syslog.target network.target
 After=syslog.target network.target
 
 [Service]
-Type=forking
+Type=simple
 User=stt
 Group=stt
 Environment=ITFSTAS=/home/stt/Dev/STAS
@@ -13,14 +13,14 @@ Environment=STASLOG=/home/stt/Dev/STAS/logs/itfstas.log
 Environment=NLS_LANG=KOREAN_KOREA.UTF8
 Environment=TNS_ADMIN=/etc/oracle
 Environment=ORACLE_BASE=/usr/lib/oracle
-Environment=ORACLE_HOME=$ORACLE_BASE/12.2/client64
+Environment=ORACLE_HOME=/usr/lib/oracle/12.2/client64
 Environment=ORACLE_SID=orcl
 Environment=ORACLE_TERM=xterm
-Environment=PATH=$ORACLE_HOME/bin:$PATH
-Environment=LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/tibero6/client/lib:$ORACLE_HOME/lib
-PIDFile=$ITFSTAS/config/itfstas.pid
+Environment=PATH=/usr/lib/oracle/12.2/client64/bin:$PATH
+Environment=LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/tibero6/client/lib:/usr/lib/oracle/12.2/client64/lib
+PIDFile=/home/stt/Dev/STAS/config/itfstas.pid
 WorkingDirectory=/home/stt/Dev/STAS
-ExecStart=/home/stt/Dev/STAS/bin/Debug/Linux_x86_64/itf_stas_odbc -i /home/stt/Dev/STAS/config/stas.conf -d -P $STASPID --verbose DEBUG
+ExecStart=/home/stt/Dev/STAS/bin/Debug/Linux_x86_64/itf_stas -i /home/stt/Dev/STAS/config/stas.conf -d -P $STASPID --verbose DEBUG
 
 Restart=always
 
