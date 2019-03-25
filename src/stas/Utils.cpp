@@ -182,7 +182,7 @@ void MakeDirectory(const char *full_path)
 
 void remSpaceInSentence(string& org)
 {
-    wstring pattern = L"[일이삼사오육칠팔구십백만천억\\s]{5,}";
+    wstring pattern = L"[일이삼사오육륙칠팔구십백만천억\\s]{5,}";
     wregex we(pattern);
     wsmatch wm;
     wstring convWStr;
@@ -193,22 +193,29 @@ void remSpaceInSentence(string& org)
     convWStr = s2ws( org );
     tempWStr = convWStr;
 
-    epos = 0;
+    spos = slen = epos = 0;
     while( regex_search( tempWStr, wm, we) )
     {
         mResult = wm.str(0);
-        spos = tempWStr.find( mResult ) + epos;
-        slen = mResult.size();
+        spos = tempWStr.find( mResult );
 
-        mResult.erase(remove(mResult.begin(), mResult.end(), L' '), mResult.end());
-        mResult.insert(0, L" ");
+        if ( !spos || ( tempWStr[spos] == L' ' ) ) {
 
-        convWStr.replace(spos, slen, mResult);
+            slen = mResult.size();
 
-        epos = spos + mResult.size();
+            mResult.erase(remove(mResult.begin(), mResult.end(), L' '), mResult.end());
+            mResult.insert(0, L" ");
 
-        tempWStr = convWStr.substr(epos);
+            convWStr.replace(spos + epos, slen, mResult);
 
+            epos = epos + spos + mResult.size();
+
+            tempWStr = convWStr.substr(epos);
+}
+        else {
+            tempWStr = tempWStr.substr(spos + 1);
+            epos = epos + spos + 1;
+        }
     }
 
     org = ws2s( convWStr ) ;
@@ -230,18 +237,27 @@ void maskKeyword(string& org)
     convWStr = s2ws( org );
     tempWStr = convWStr;
 
-    epos = 0;
+    spos = slen = epos = 0;
     while( regex_search( tempWStr, wm, we) )
     {
         mResult = wm.str(0);
-        spos = tempWStr.find( mResult ) + epos;
-        slen = mResult.size();
+        spos = tempWStr.find( mResult );
 
-        convWStr.replace(spos, slen, maskValue);
+        if ( !spos || ( tempWStr[spos] == L' ' ) ) {
 
-        epos = spos + maskValue.size();
+            slen = mResult.size();
 
-        tempWStr = convWStr.substr(epos);
+            convWStr.replace(spos + epos, slen, maskValue);
+
+            epos = epos + spos + maskValue.size();
+
+            tempWStr = convWStr.substr(epos);
+        }
+        else
+        {
+            tempWStr = tempWStr.substr(spos + 1);
+            epos = epos + spos + 1;
+        }
     }
 
     org = ws2s( convWStr ) ;
