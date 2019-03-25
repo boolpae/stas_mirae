@@ -1,7 +1,7 @@
 ###############################################################################
 PROJECT_NAME	:= itf
 PROJECT_ROOT	:= $(shell pwd | sed 's/\ /\\ /g')
-SUB_PROJECTS	:= stas calltester
+SUB_PROJECTS	:= stas calltester calldbproc
 SUB_LIBRARIES	:= common
 TEST_PROJECTS	:= 
 
