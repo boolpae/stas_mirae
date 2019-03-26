@@ -176,7 +176,7 @@ int main(int argc, const char** argv)
     }
 
 #ifdef ENABLE_REALTIME
-	VRCManager* vrcm = VRCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.real_mpitimeout", 0), deliver, st2db, (config->getConfig("stas.savewav", "false").find("true")==0)?true:false, config->getConfig("stas.wavpath", "/home/stt"), config->getConfig("stas.framelen", 20), config->getConfig("stas.mode", 0));
+	VRCManager* vrcm = VRCManager::instance(config->getConfig("stas.mpihost", "127.0.0.1"), config->getConfig("stas.mpiport", 4730), config->getConfig("stas.real_mpitimeout", 0), deliver, st2db, (config->getConfig("stas.savewav", "false").find("true")==0)?true:false, config->getConfig("stas.wavpath", "/home/stt"), config->getConfig("stas.framelen", 30), config->getConfig("stas.mode", 0));
     if (!vrcm) {
         logger->error("MAIN - ERROR (Failed to get VRCManager instance)");
         VDCManager::release();

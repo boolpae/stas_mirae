@@ -247,7 +247,7 @@ void VRClient::thrdMain(VRClient* client) {
     vBuff[0].reserve(MM_SIZE);
     vBuff[1].reserve(MM_SIZE);
     
-    framelen = client->m_framelen * 2;
+    framelen = client->m_framelen ;//* 2;
 #endif // FAD_FUNC
 
     localtime_r(&client->m_tStart, &timeinfo);
@@ -528,8 +528,11 @@ void VRClient::thrdMain(VRClient* client) {
                         // 직전 버퍼 값을 사용... 인식률 향상 확인용
                         if (posBuf && (vBuff[item->spkNo-1].size() == nHeadLen))
                         {
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf-framelen);
-                            for(size_t i=0; i<framelen; i++) {
+                            size_t tempLen=0;
+                            if ( posBuf >= (framelen * 2) ) tempLen = framelen*2;
+                            else tempLen = framelen;
+                            vpBuf = (uint8_t *)(item->voiceData+posBuf-tempLen);
+                            for(size_t i=0; i<tempLen; i++) {
                                 vBuff[item->spkNo-1].push_back(vpBuf[i]);
                             }
                             vpBuf = (uint8_t *)(item->voiceData+posBuf);

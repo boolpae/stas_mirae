@@ -487,7 +487,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
 
     MakeDirectory(fullpath.c_str());
     
-    framelen = client->m_framelen * 2;
+    framelen = client->m_framelen ;//* 2;
 
     sprintf(fname, "%s", client->m_sFname.c_str());
 
@@ -678,8 +678,11 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         // 직전 버퍼 값을 사용... 인식률 향상 확인용
                         if (posBuf && (vBuff.size() == nHeadLen))
                         {
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf-framelen);
-                            for(size_t i=0; i<framelen; i++) {
+                            size_t tempLen=0;
+                            if ( posBuf >= (framelen * 2) ) tempLen = framelen*2;
+                            else tempLen = framelen;
+                            vpBuf = (uint8_t *)(item->voiceData+posBuf-tempLen);
+                            for(size_t i=0; i<tempLen; i++) {
                                 vBuff.push_back(vpBuf[i]);
                             }
                             vpBuf = (uint8_t *)(item->voiceData+posBuf);
@@ -1192,7 +1195,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
 
     MakeDirectory(fullpath.c_str());
     
-    framelen = client->m_framelen * 2;
+    framelen = client->m_framelen ;//* 2;
 
     sprintf(fname, "%s", client->m_sFname.c_str());
 
@@ -1381,8 +1384,11 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         // 직전 버퍼 값을 사용... 인식률 향상 확인용
                         if (posBuf && (vBuff.size() == nHeadLen))
                         {
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf-framelen);
-                            for(size_t i=0; i<framelen; i++) {
+                            size_t tempLen=0;
+                            if ( posBuf >= (framelen * 2) ) tempLen = framelen*2;
+                            else tempLen = framelen;
+                            vpBuf = (uint8_t *)(item->voiceData+posBuf-tempLen);
+                            for(size_t i=0; i<tempLen; i++) {
                                 vBuff.push_back(vpBuf[i]);
                             }
                             vpBuf = (uint8_t *)(item->voiceData+posBuf);
