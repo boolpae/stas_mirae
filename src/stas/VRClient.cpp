@@ -525,13 +525,12 @@ void VRClient::thrdMain(VRClient* client) {
                     }
 
                     if (vadres > 0) {
-                        if (posBuf && (vBuff[item->spkNo-1].size() == nHeadLen))
+                        if (vBuff[item->spkNo-1].size() == nHeadLen)
                         {
                             // VR로 보내는 음성데이터의 처음에 노이즈 추가
                             for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
                                 vBuff[item->spkNo-1].push_back(silbuff[i]);
                             }
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf);
                         }
                         for(size_t i=0; i<framelen; i++) {
                             vBuff[item->spkNo-1].push_back(vpBuf[i]);
