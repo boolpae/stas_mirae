@@ -27,4 +27,7 @@ using namespace itfact::common;
 
 extern Configuration *config;
 
+#define NOISE_BUFF_SIZE 640
+extern uint8_t silbuff[NOISE_BUFF_SIZE];
+
 #endif // _STAS_H_

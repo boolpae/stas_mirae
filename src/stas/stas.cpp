@@ -39,6 +39,7 @@
 using namespace std;
 
 Configuration *config;
+uint8_t silbuff[NOISE_BUFF_SIZE];
 
 volatile bool gRunning = true;
 
@@ -63,6 +64,8 @@ int main(int argc, const char** argv)
     int max_size = -1, max_backup = 0;
     std::string traceName;
     std::string log_max;
+
+    FILE *pSilFile;
     
     std::signal(SIGINT, term_handle);
     std::signal(SIGTERM, term_handle);
@@ -110,6 +113,15 @@ int main(int argc, const char** argv)
 
     log4cpp::Category &tracerLog = log4cpp::Category::getInstance(std::string("WorkTracer"));
     tracerLog.addAppender(appender);
+
+    pSilFile = fopen(config->getConfig("stas.silpcmfile", "./config/noise_40.pcm").c_str(), "rb");
+    if ( !pSilFile ) {
+        logger->error("MAIN - ERROR (Failed to open silpcm_file(%s))", config->getConfig("stas.silpcmfile", "./config/noise_40.pcm").c_str());
+        delete config;
+        return -1;
+    }
+    logger->info("STAS Sildata Read(%lu)", fread((void *)silbuff, sizeof(uint8_t), sizeof(silbuff), pSilFile));
+    fclose(pSilFile);
     
 	logger->info("STT Tasks Allocation Server(Service) ver %d.%d.%d BUILD : %s", STAS_VERSION_MAJ, STAS_VERSION_MIN, STAS_VERSION_BLD, __DATE__);
 	logger->info("================================================");

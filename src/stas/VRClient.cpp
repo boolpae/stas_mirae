@@ -525,15 +525,11 @@ void VRClient::thrdMain(VRClient* client) {
                     }
 
                     if (vadres > 0) {
-                        // 직전 버퍼 값을 사용... 인식률 향상 확인용
                         if (posBuf && (vBuff[item->spkNo-1].size() == nHeadLen))
                         {
-                            size_t tempLen=0;
-                            if ( posBuf >= (framelen * 2) ) tempLen = framelen*2;
-                            else tempLen = framelen;
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf-tempLen);
-                            for(size_t i=0; i<tempLen; i++) {
-                                vBuff[item->spkNo-1].push_back(vpBuf[i]);
+                            // VR로 보내는 음성데이터의 처음에 노이즈 추가
+                            for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
+                                vBuff[item->spkNo-1].push_back(silbuff[i]);
                             }
                             vpBuf = (uint8_t *)(item->voiceData+posBuf);
                         }
@@ -551,6 +547,13 @@ void VRClient::thrdMain(VRClient* client) {
                     if (!vadres && (vBuff[item->spkNo-1].size()>nHeadLen)) {
                         chkRealSize = checkRealSize(vBuff[item->spkNo-1], nHeadLen, framelen, client->m_framelen);
                         if ( chkRealSize > nMinVBuffSize ) {   // 3200 bytes, 0.2초 이하의 음성데이터는 처리하지 않음
+
+                            // VR로 보내기 직전 음성데이터 마지막에 노이즈 추가
+                            for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
+                                vBuff[item->spkNo-1].push_back(silbuff[i]);
+                                
+                            }
+
                             // send buff to gearman
                             if (aDianum[item->spkNo-1] == 0) {
                                 sprintf(buf, "%s_%d|%s|", client->m_sCallId.c_str(), item->spkNo, "FIRS");

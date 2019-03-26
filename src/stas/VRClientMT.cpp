@@ -675,15 +675,11 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     }
 
                     if (vadres > 0) {
-                        // 직전 버퍼 값을 사용... 인식률 향상 확인용
                         if (posBuf && (vBuff.size() == nHeadLen))
                         {
-                            size_t tempLen=0;
-                            if ( posBuf >= (framelen * 2) ) tempLen = framelen*2;
-                            else tempLen = framelen;
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf-tempLen);
-                            for(size_t i=0; i<tempLen; i++) {
-                                vBuff.push_back(vpBuf[i]);
+                            // VR로 보내는 음성데이터의 처음에 노이즈 추가
+                            for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
+                                vBuff.push_back(silbuff[i]);
                             }
                             vpBuf = (uint8_t *)(item->voiceData+posBuf);
                         }
@@ -704,6 +700,12 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
                         
                         if ( chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+
+                            // VR로 보내기 직전 음성데이터 마지막에 노이즈 추가
+                            for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
+                                vBuff.push_back(silbuff[i]);
+                                
+                            }
 
 #ifdef DIAL_SYNC
                             if (!client->tx_hold) {
@@ -1381,15 +1383,11 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     }
 
                     if (vadres > 0) {
-                        // 직전 버퍼 값을 사용... 인식률 향상 확인용
                         if (posBuf && (vBuff.size() == nHeadLen))
                         {
-                            size_t tempLen=0;
-                            if ( posBuf >= (framelen * 2) ) tempLen = framelen*2;
-                            else tempLen = framelen;
-                            vpBuf = (uint8_t *)(item->voiceData+posBuf-tempLen);
-                            for(size_t i=0; i<tempLen; i++) {
-                                vBuff.push_back(vpBuf[i]);
+                            // VR로 보내는 음성데이터의 처음에 노이즈 추가
+                            for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
+                                vBuff.push_back(silbuff[i]);
                             }
                             vpBuf = (uint8_t *)(item->voiceData+posBuf);
                         }
@@ -1410,6 +1408,12 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         chkRealSize = checkRealSize(vBuff, nHeadLen, framelen, client->m_framelen);
 
                         if ( chkRealSize > nMinVBuffSize ) {   // 8000 bytes, 0.5 이하의 음성데이터는 처리하지 않음
+
+                            // VR로 보내기 직전 음성데이터 마지막에 노이즈 추가
+                            for(size_t i=0; i<NOISE_BUFF_SIZE; i++) {
+                                vBuff.push_back(silbuff[i]);
+                                
+                            }
 
 #ifdef DIAL_SYNC
                             if (!client->rx_hold) {
