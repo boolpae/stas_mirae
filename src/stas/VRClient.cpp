@@ -64,6 +64,7 @@
 #define WAVE_FORMAT_MPEG         0X0050;
 #define WAVE_FORMAT_EXTENSIBLE   0XFFFE;
 
+#define MS_PER_FRAME 15
 
 
 typedef struct
@@ -516,7 +517,7 @@ void VRClient::thrdMain(VRClient* client) {
                 posBuf = 0;
                 while ((item->lenVoiceData >= framelen) && ((item->lenVoiceData - posBuf) >= framelen)) {
                     vpBuf = (uint8_t *)(item->voiceData+posBuf);
-                    eframe[item->spkNo-1] += (client->m_framelen/8);
+                    eframe[item->spkNo-1] += (MS_PER_FRAME);
                     // Convert the read samples to int16
                     vadres = fvad_process(vad, (const int16_t *)vpBuf, client->m_framelen);
 
@@ -540,7 +541,7 @@ void VRClient::thrdMain(VRClient* client) {
                     
                     if (!vadres && (vBuff[item->spkNo-1].size()<=nHeadLen)) {
                         // start ms
-                        sframe[item->spkNo-1] = eframe[item->spkNo-1] - (client->m_framelen/8);
+                        sframe[item->spkNo-1] = eframe[item->spkNo-1] - (MS_PER_FRAME);
                     }
 
                     if (!vadres && (vBuff[item->spkNo-1].size()>nHeadLen)) {

@@ -63,6 +63,8 @@
 #define WAVE_FORMAT_MPEG         0X0050;
 #define WAVE_FORMAT_EXTENSIBLE   0XFFFE;
 
+#define MS_PER_FRAME 15
+
 //#define CHANNEL_SYNC    // 두 화자 간의 음성 데이터 처리 속도를 맞추기 위한 정의
 //#define DIAL_SYNC       // 두 화자 간의 대화 내용을 맞추기 위한 정의(CHANNEL_SYNC가 이미 정의되어야 한다.)
 
@@ -665,7 +667,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     }
 #endif
-                    client->rx_eframe += (client->m_framelen/8);
+                    client->rx_eframe += (MS_PER_FRAME);
 
                     // Convert the read samples to int16
                     vadres = fvad_process(vad, (const int16_t *)vpBuf, client->m_framelen);
@@ -690,7 +692,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                     
                     if (!vadres && (vBuff.size()<=nHeadLen)) {
                         // start ms
-                        client->rx_sframe = client->rx_eframe - (client->m_framelen/8);
+                        client->rx_sframe = client->rx_eframe - (MS_PER_FRAME);
                     }
 
                     if (
@@ -1372,7 +1374,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         std::this_thread::sleep_for(std::chrono::milliseconds(1));
                     }
 #endif
-                    client->tx_eframe += (client->m_framelen/8);
+                    client->tx_eframe += (MS_PER_FRAME);
 
                     // Convert the read samples to int16
                     vadres = fvad_process(vad, (const int16_t *)vpBuf, client->m_framelen);
@@ -1397,7 +1399,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                     
                     if (!vadres && (vBuff.size()<=nHeadLen)) {
                         // start ms
-                        client->tx_sframe = client->tx_eframe - (client->m_framelen/8);
+                        client->tx_sframe = client->tx_eframe - (MS_PER_FRAME);
                     }
 
                     if (
