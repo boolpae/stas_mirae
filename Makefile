@@ -93,6 +93,7 @@ FOR_ITFACT="TRUE"
 USE_RETRY_TABLE="TRUE"
 USE_CS_TABLE="TRUE"
 USE_DIFF_CSCODE="TRUE"
+USE_UNSEG_WITH_TIME="TRUE"
 ###############################################################################
 
 all: $(SUB_LIBRARIES) $(SUB_PROJECTS)

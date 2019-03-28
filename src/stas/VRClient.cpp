@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string.hpp>
 
 // For Gearman
 #include <libgearman/gearman.h>
@@ -609,7 +610,29 @@ void VRClient::thrdMain(VRClient* client) {
                                 } else
                                 // Make use of value
                                 if (value) {
+                                    // std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
+                                    size_t nSPos = sframe[item->spkNo -1]/10;
+                                    size_t nEPos = eframe[item->spkNo -1]/10;
+
+#ifdef USE_UNSEG_WITH_TIME
+                                    std::string modValue;
+                                    std::string unseg = (const char*)value;
+                                    std::string line;
+                                    std::istringstream iss(unseg);
+                                    std::vector<std::string> strs;
+
+                                    while(std::getline(iss, line)) {
+                                        boost::split(strs, line, boost::is_any_of(","));
+
+                                        if ( strs.size() < 3 ) continue;
+
+                                        nSPos = sframe[item->spkNo -1]/10 + std::stoi(strs[0].c_str()+4);
+                                        nEPos = nEPsframe[item->spkNo -1]/10os + std::stoi(strs[1].c_str()+4);
+                                        modValue = strs[2].c_str();
+#else
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
+
+#endif
                                                             
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
@@ -641,8 +664,8 @@ void VRClient::thrdMain(VRClient* client) {
                                                 d.SetObject();
                                                 d.AddMember("IDX", diaNumber, alloc);
                                                 d.AddMember("SPK", rapidjson::Value((item->spkNo==1)?"R":"L", alloc).Move(), alloc);
-                                                d.AddMember("POS_START", sframe[item->spkNo -1]/10, alloc);
-                                                d.AddMember("POS_END", eframe[item->spkNo -1]/10, alloc);
+                                                d.AddMember("POS_START", nSPos, alloc);
+                                                d.AddMember("POS_END", nEPos, alloc);
                                                 d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
 
                                                 rapidjson::StringBuffer strbuf;
@@ -702,17 +725,19 @@ void VRClient::thrdMain(VRClient* client) {
 #ifdef DISABLE_ON_REALTIME
                                     // to DB
                                     if (client->m_s2d) {
-                                        client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, modValue);
+                                        client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, nSPos, nEPos, modValue);
                                     }
 #endif // DISABLE_ON_REALTIME
 
                                     if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, client->m_sCounselCode);
+                                        client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, nSPos, nEPos, client->m_sCounselCode);
                                     }
-
-                                    free(value);
                                     
                                     diaNumber++;
+#ifdef USE_UNSEG_WITH_TIME
+                                    }
+#endif
+                                    free(value);
                                 }
                             }
                             else if (gearman_failed(rc)){
@@ -865,7 +890,28 @@ void VRClient::thrdMain(VRClient* client) {
                         svalue.erase(0, svalue.find("\n")+1);
                         // Make use of value
                         if (svr_nm.size() && svalue.size()) {
+                            // std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
+                            size_t nSPos = sframe[item->spkNo -1]/10;
+                            size_t nEPos = eframe[item->spkNo -1]/10;
+
+#ifdef USE_UNSEG_WITH_TIME
+                            std::string modValue;
+                            std::string line;
+                            std::istringstream iss(svalue);
+                            std::vector<std::string> strs;
+
+                            while(std::getline(iss, line)) {
+                                boost::split(strs, line, boost::is_any_of(","));
+
+                                if ( strs.size() < 3 ) continue;
+
+                                nSPos = sframe[item->spkNo -1]/10 + std::stoi(strs[0].c_str()+4);
+                                nEPos = sframe[item->spkNo -1]/10 + std::stoi(strs[1].c_str()+4);
+                                modValue = strs[2].c_str();
+#else
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
+
+#endif
 
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
@@ -895,8 +941,8 @@ void VRClient::thrdMain(VRClient* client) {
                                         d.SetObject();
                                         d.AddMember("IDX", diaNumber, alloc);
                                         d.AddMember("SPK", rapidjson::Value((item->spkNo==1)?"R":"L", alloc).Move(), alloc);
-                                        d.AddMember("POS_START", sframe[item->spkNo -1]/10, alloc);
-                                        d.AddMember("POS_END", eframe[item->spkNo -1]/10, alloc);
+                                        d.AddMember("POS_START", nSPos, alloc);
+                                        d.AddMember("POS_END", nEPos, alloc);
                                         d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
 
                                         rapidjson::StringBuffer strbuf;
@@ -955,16 +1001,21 @@ void VRClient::thrdMain(VRClient* client) {
 
 #ifdef DISABLE_ON_REALTIME
                             if (client->m_s2d) {
-                                client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, modValue);
+                                client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, nSPos, nEPos, modValue);
                             }
 #endif // DISABLE_ON_REALTIME
 
                             // to STTDeliver(file)
                             if (client->m_deliver) {
-                                client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, sframe[item->spkNo -1]/10, eframe[item->spkNo -1]/10, client->m_sCounselCode);
+                                client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, nSPos, nEPos, client->m_sCounselCode);
                             }
                             
                             diaNumber++;
+
+#ifdef USE_UNSEG_WITH_TIME
+                            }
+#endif
+
                         }
                     }
                     else if (gearman_failed(rc)){

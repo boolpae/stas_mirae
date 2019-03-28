@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string.hpp>
 
 // For Gearman
 #include <libgearman/gearman.h>
@@ -772,107 +773,131 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                 } else
                                 // Make use of value
                                 if (value) {
+                                    size_t nSPos = client->rx_sframe/10;
+                                    size_t nEPos = client->rx_eframe/10;
+
+#ifdef USE_UNSEG_WITH_TIME
+                                    std::string modValue;
+                                    std::string unseg = (const char*)value;
+                                    std::string line;
+                                    std::istringstream iss(unseg);
+                                    std::vector<std::string> strs;
+
+                                    while(std::getline(iss, line)) {
+                                        boost::split(strs, line, boost::is_any_of(","));
+
+                                        if ( strs.size() < 3 ) continue;
+
+                                        nSPos = client->rx_sframe/10 + std::stoi(strs[0].c_str()+4);
+                                        nEPos = client->rx_sframe/10 + std::stoi(strs[1].c_str()+4);
+                                        modValue = strs[2].c_str();
+#else
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
 
-                                    diaNumber = client->getDiaNumber();//client->getDiaNumber();
+#endif
+                                        diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
-                                    if ( useRedis ) {
-                                        int64_t zCount=0;
-                                        std::string sJsonValue;
+                                        if ( useRedis ) {
+                                            int64_t zCount=0;
+                                            std::string sJsonValue;
 
-                                        size_t in_size, out_size;
-                                        char *utf_buf = NULL;
-                                        char *input_buf_ptr = NULL;
-                                        char *output_buf_ptr = NULL;
+                                            size_t in_size, out_size;
+                                            char *utf_buf = NULL;
+                                            char *input_buf_ptr = NULL;
+                                            char *output_buf_ptr = NULL;
 
-                                        in_size = modValue.size();
-                                        out_size = in_size * 2 + 1;
-                                        utf_buf = (char *)malloc(out_size);
+                                            in_size = modValue.size();
+                                            out_size = in_size * 2 + 1;
+                                            utf_buf = (char *)malloc(out_size);
 
-                                        if (utf_buf) {
-                                            memset(utf_buf, 0, out_size);
+                                            if (utf_buf) {
+                                                memset(utf_buf, 0, out_size);
 
-                                            input_buf_ptr = (char *)modValue.c_str();
-                                            output_buf_ptr = utf_buf;
+                                                input_buf_ptr = (char *)modValue.c_str();
+                                                output_buf_ptr = utf_buf;
 
-                                            iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
-                                            
+                                                iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
+                                                
 
-                                            {
-                                                rapidjson::Document d;
-                                                rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
-
-                                                d.SetObject();
-                                                d.AddMember("IDX", diaNumber, alloc);
-                                                d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
-                                                d.AddMember("POS_START", client->rx_sframe/10, alloc);
-                                                d.AddMember("POS_END", client->rx_eframe/10, alloc);
-                                                d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
-
-                                                rapidjson::StringBuffer strbuf;
-                                                rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-                                                d.Accept(writer);
-
-                                                sJsonValue = strbuf.GetString();
-
-                                                if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    remSpaceInSentence( sJsonValue );
-                                                }
+                                                    rapidjson::Document d;
+                                                    rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
 
-                                                if ( bUseMask )
-                                                {
-                                                    maskKeyword( sJsonValue );
-                                                }
+                                                    d.SetObject();
+                                                    d.AddMember("IDX", diaNumber, alloc);
+                                                    d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
+                                                    d.AddMember("POS_START", nSPos, alloc);
+                                                    d.AddMember("POS_END", nEPos, alloc);
+                                                    d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
 
-                                                #ifdef USE_FIND_KEYWORD
-                                                if ( bUseFindKeyword )
-                                                {
-                                                    for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                    rapidjson::StringBuffer strbuf;
+                                                    rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                                    d.Accept(writer);
+
+                                                    sJsonValue = strbuf.GetString();
+
+                                                    if ( bUseRemSpaceInNumwords )
                                                     {
-                                                        if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                        remSpaceInSentence( sJsonValue );
+                                                    }
+
+                                                    if ( bUseMask )
+                                                    {
+                                                        maskKeyword( sJsonValue );
+                                                    }
+
+                                                    #ifdef USE_FIND_KEYWORD
+                                                    if ( bUseFindKeyword )
+                                                    {
+                                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                         {
-                                                            client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                            break;
+                                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                            {
+                                                                client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                                break;
+                                                            }
                                                         }
                                                     }
+                                                    #endif
+
                                                 }
-                                                #endif
 
-                                            }
+                                                vVal.push_back(toString(diaNumber));
+                                                vVal.push_back(sJsonValue);
 
-                                            vVal.push_back(toString(diaNumber));
-                                            vVal.push_back(sJsonValue);
-
-                                            // for TEST
-                                            if (bSaveJsonData && client->m_deliver) {
-                                                client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
-                                            }
-
-                                            if ( bSendDataRedis )
-                                            {
-                                                if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
-                                                    client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                                // for TEST
+                                                if (bSaveJsonData && client->m_deliver) {
+                                                    client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
                                                 }
-                                            }
-                                            vVal.clear();
 
-                                            free(utf_buf);
+                                                if ( bSendDataRedis )
+                                                {
+                                                    if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                                        client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                                    }
+                                                }
+                                                vVal.clear();
+
+                                                free(utf_buf);
+                                            }
                                         }
-                                    }
 #endif
 
 #ifdef DISABLE_ON_REALTIME
-                                    // to DB
-                                    if (client->m_s2d) {
-                                        client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, modValue);
-                                    }
+                                        // to DB
+                                        if (client->m_s2d) {
+                                            client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, nSPos, nEPos, modValue);
+                                        }
 #endif // DISABLE_ON_REALTIME
 
-                                    // to STTDeliver(file)
-                                    if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
+                                        // to STTDeliver(file)
+                                        if (client->m_deliver) {
+                                            client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, nSPos, nEPos, client->m_sCounselCode);
+                                        }
+
+#ifdef USE_UNSEG_WITH_TIME
                                     }
+#endif
 
                                     free(value);
                                     
@@ -965,105 +990,129 @@ void VRClient::thrdRxProcess(VRClient* client) {
                         svalue.erase(0, svalue.find("\n")+1);
                         // Make use of value
                         if (svr_nm.size() && svalue.size()) {
+                            size_t nSPos = client->rx_sframe/10;
+                            size_t nEPos = client->rx_eframe/10;
+                            // std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
+                            // diaNumber = client->getDiaNumber();
+#ifdef USE_UNSEG_WITH_TIME
+                            std::string modValue;
+                            std::string line;
+                            std::istringstream iss(svalue);
+                            std::vector<std::string> strs;
+
+                            while(std::getline(iss, line)) {
+                                boost::split(strs, line, boost::is_any_of(","));
+
+                                if ( strs.size() < 3 ) continue;
+
+                                nSPos = client->rx_sframe/10 + std::stoi(strs[0].c_str()+4);
+                                nEPos = client->rx_sframe/10 + std::stoi(strs[1].c_str()+4);
+                                modValue = strs[2].c_str();
+#else
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
-                            diaNumber = client->getDiaNumber();
+
+#endif
+                                diaNumber = client->getDiaNumber();
+
 #ifdef USE_REDIS_POOL
-                            if ( useRedis ) {
-                                int64_t zCount=0;
-                                std::string sJsonValue;
-                                size_t in_size, out_size;
-                                // iconv_t it;
-                                char *utf_buf = NULL;
-                                char *input_buf_ptr = NULL;
-                                char *output_buf_ptr = NULL;
+                                if ( useRedis ) {
+                                    int64_t zCount=0;
+                                    std::string sJsonValue;
+                                    size_t in_size, out_size;
+                                    // iconv_t it;
+                                    char *utf_buf = NULL;
+                                    char *input_buf_ptr = NULL;
+                                    char *output_buf_ptr = NULL;
 
-                                in_size = modValue.size();
-                                out_size = in_size * 2 + 1;
-                                utf_buf = (char *)malloc(out_size);
+                                    in_size = modValue.size();
+                                    out_size = in_size * 2 + 1;
+                                    utf_buf = (char *)malloc(out_size);
 
-                                if (utf_buf) {
-                                    memset(utf_buf, 0, out_size);
+                                    if (utf_buf) {
+                                        memset(utf_buf, 0, out_size);
 
-                                    input_buf_ptr = (char *)modValue.c_str();
-                                    output_buf_ptr = utf_buf;
+                                        input_buf_ptr = (char *)modValue.c_str();
+                                        output_buf_ptr = utf_buf;
 
-                                    iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
-                                    
-                                    {
-                                        rapidjson::Document d;
-                                        rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
-
-                                        d.SetObject();
-                                        d.AddMember("IDX", diaNumber, alloc);
-                                        d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
-                                        d.AddMember("POS_START", client->rx_sframe/10, alloc);
-                                        d.AddMember("POS_END", client->rx_eframe/10, alloc);
-                                        d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
-
-                                        rapidjson::StringBuffer strbuf;
-                                        rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-                                        d.Accept(writer);
-
-                                        sJsonValue = strbuf.GetString();
-
-                                        if ( bUseRemSpaceInNumwords )
+                                        iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
+                                        
                                         {
-                                            remSpaceInSentence( sJsonValue );
-                                        }
+                                            rapidjson::Document d;
+                                            rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
 
-                                        if ( bUseMask )
-                                        {
-                                            maskKeyword( sJsonValue );
-                                        }
+                                            d.SetObject();
+                                            d.AddMember("IDX", diaNumber, alloc);
+                                            d.AddMember("SPK", rapidjson::Value("R", alloc).Move(), alloc);
+                                            d.AddMember("POS_START", nSPos, alloc);
+                                            d.AddMember("POS_END", nEPos, alloc);
+                                            d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
 
-                                        #ifdef USE_FIND_KEYWORD
-                                        if ( bUseFindKeyword ) 
-                                        {
-                                            for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                            rapidjson::StringBuffer strbuf;
+                                            rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                            d.Accept(writer);
+
+                                            sJsonValue = strbuf.GetString();
+
+                                            if ( bUseRemSpaceInNumwords )
                                             {
-                                                if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                remSpaceInSentence( sJsonValue );
+                                            }
+
+                                            if ( bUseMask )
+                                            {
+                                                maskKeyword( sJsonValue );
+                                            }
+
+                                            #ifdef USE_FIND_KEYWORD
+                                            if ( bUseFindKeyword ) 
+                                            {
+                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                 {
-                                                    client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", (*klIter).c_str());
-                                                    break;
+                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    {
+                                                        client->m_Logger->debug("VRClient::thrdRxProcess(%s) - Find Keyword(%s)", (*klIter).c_str());
+                                                        break;
+                                                    }
                                                 }
                                             }
+                                            #endif
+
                                         }
-                                        #endif
 
-                                    }
+                                        vVal.push_back(toString(diaNumber));
+                                        vVal.push_back(sJsonValue);
 
-                                    vVal.push_back(toString(diaNumber));
-                                    vVal.push_back(sJsonValue);
-
-                                    // for TEST
-                                    if (bSaveJsonData && client->m_deliver) {
-                                        client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
-                                    }
-
-                                    if ( bSendDataRedis )
-                                    {
-                                        if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
-                                            client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                        // for TEST
+                                        if (bSaveJsonData && client->m_deliver) {
+                                            client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
                                         }
-                                    }
-                                    vVal.clear();
 
-                                    free(utf_buf);
+                                        if ( bSendDataRedis )
+                                        {
+                                            if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                                client->m_Logger->error("VRClient::thrdRxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                            }
+                                        }
+                                        vVal.clear();
+
+                                        free(utf_buf);
+                                    }
                                 }
-                            }
 #endif
 
 #ifdef DISABLE_ON_REALTIME
-                            if (client->m_s2d) {
-                                client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, modValue);
-                            }
+                                if (client->m_s2d) {
+                                    client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, nSPos, nEPos, modValue);
+                                }
 #endif // DISABLE_ON_REALTIME
 
-                            // to STTDeliver(file)
-                            if (client->m_deliver) {
-                                client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->rx_sframe/10, client->rx_eframe/10, client->m_sCounselCode);
-                            }
-                            
+                                // to STTDeliver(file)
+                                if (client->m_deliver) {
+                                    client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, nSPos, nEPos, client->m_sCounselCode);
+                                }
+#ifdef USE_UNSEG_WITH_TIME
+                            }    
+#endif
                         }
                     }
                     else if (gearman_failed(rc)){
@@ -1480,107 +1529,132 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                 } else
                                 // Make use of value
                                 if (value) {
+                                    size_t nSPos = client->tx_sframe/10;
+                                    size_t nEPos = client->tx_eframe/10;
+                                    // std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
+#ifdef USE_UNSEG_WITH_TIME
+                                    std::string modValue;
+                                    std::string unseg = (const char*)value;
+                                    std::string line;
+                                    std::istringstream iss(unseg);
+                                    std::vector<std::string> strs;
+
+                                    while(std::getline(iss, line)) {
+                                        boost::split(strs, line, boost::is_any_of(","));
+
+                                        if ( strs.size() < 3 ) continue;
+
+                                        nSPos = client->tx_sframe/10 + std::stoi(strs[0].c_str()+4);
+                                        nEPos = client->tx_sframe/10 + std::stoi(strs[1].c_str()+4);
+                                        modValue = strs[2].c_str();
+#else
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
-                                    diaNumber = client->getDiaNumber();
+
+#endif
+                                        diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
-                                    if ( useRedis ) {
-                                        int64_t zCount=0;
-                                        std::string sJsonValue;
+                                        if ( useRedis ) {
+                                            int64_t zCount=0;
+                                            std::string sJsonValue;
 
-                                        size_t in_size, out_size;
-                                        char *utf_buf = NULL;
-                                        char *input_buf_ptr = NULL;
-                                        char *output_buf_ptr = NULL;
+                                            size_t in_size, out_size;
+                                            char *utf_buf = NULL;
+                                            char *input_buf_ptr = NULL;
+                                            char *output_buf_ptr = NULL;
 
-                                        in_size = modValue.size();
-                                        out_size = in_size * 2 + 1;
-                                        utf_buf = (char *)malloc(out_size);
+                                            in_size = modValue.size();
+                                            out_size = in_size * 2 + 1;
+                                            utf_buf = (char *)malloc(out_size);
 
-                                        if (utf_buf) {
-                                            memset(utf_buf, 0, out_size);
+                                            if (utf_buf) {
+                                                memset(utf_buf, 0, out_size);
 
-                                            input_buf_ptr = (char *)modValue.c_str();
-                                            output_buf_ptr = utf_buf;
+                                                input_buf_ptr = (char *)modValue.c_str();
+                                                output_buf_ptr = utf_buf;
 
-                                            iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
+                                                iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
 
-                                            {
-                                                rapidjson::Document d;
-                                                rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
-
-                                                d.SetObject();
-                                                d.AddMember("IDX", diaNumber, alloc);
-                                                d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
-                                                d.AddMember("POS_START", client->tx_sframe/10, alloc);
-                                                d.AddMember("POS_END", client->tx_eframe/10, alloc);
-                                                d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
-
-                                                rapidjson::StringBuffer strbuf;
-                                                rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-                                                d.Accept(writer);
-
-                                                sJsonValue = strbuf.GetString();
-
-                                                if ( bUseRemSpaceInNumwords )
                                                 {
-                                                    remSpaceInSentence( sJsonValue );
-                                                }
+                                                    rapidjson::Document d;
+                                                    rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
 
-                                                if ( bUseMask )
-                                                {
-                                                    maskKeyword( sJsonValue );
-                                                }
+                                                    d.SetObject();
+                                                    d.AddMember("IDX", diaNumber, alloc);
+                                                    d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
+                                                    d.AddMember("POS_START", nSPos, alloc);
+                                                    d.AddMember("POS_END", nEPos, alloc);
+                                                    d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
 
-                                                #ifdef USE_FIND_KEYWORD
-                                                if ( bUseFindKeyword ) 
-                                                {
-                                                    for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                                    rapidjson::StringBuffer strbuf;
+                                                    rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                                    d.Accept(writer);
+
+                                                    sJsonValue = strbuf.GetString();
+
+                                                    if ( bUseRemSpaceInNumwords )
                                                     {
-                                                        if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                        remSpaceInSentence( sJsonValue );
+                                                    }
+
+                                                    if ( bUseMask )
+                                                    {
+                                                        maskKeyword( sJsonValue );
+                                                    }
+
+                                                    #ifdef USE_FIND_KEYWORD
+                                                    if ( bUseFindKeyword ) 
+                                                    {
+                                                        for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                         {
-                                                            client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                            break;
+                                                            if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                            {
+                                                                client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                                break;
+                                                            }
                                                         }
                                                     }
+                                                    #endif
                                                 }
-                                                #endif
-                                            }
 
-                                            vVal.push_back(toString(diaNumber));
-                                            vVal.push_back(sJsonValue);
+                                                vVal.push_back(toString(diaNumber));
+                                                vVal.push_back(sJsonValue);
 
-                                            // for TEST
-                                            if (bSaveJsonData && client->m_deliver) {
-                                                client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
-                                            }
-
-                                            if ( bSendDataRedis )
-                                            {
-                                                if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
-                                                    client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                                // for TEST
+                                                if (bSaveJsonData && client->m_deliver) {
+                                                    client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
                                                 }
-                                            }
-                                            vVal.clear();
 
-                                            free(utf_buf);
+                                                if ( bSendDataRedis )
+                                                {
+                                                    if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                                        client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                                    }
+                                                }
+                                                vVal.clear();
+
+                                                free(utf_buf);
+                                            }
                                         }
-                                    }
 #endif
 
 #ifdef DISABLE_ON_REALTIME
-                                    // to DB
-                                    if (client->m_s2d) {
-                                        client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, modValue);
-                                    }
+                                        // to DB
+                                        if (client->m_s2d) {
+                                            client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, nSPos, nEPos, modValue);
+                                        }
 #endif // DISABLE_ON_REALTIME
 
-                                    // to STTDeliver(file)
-                                    if (client->m_deliver) {
-                                        client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
-                                    }
+                                        // to STTDeliver(file)
+                                        if (client->m_deliver) {
+                                            client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, nSPos, nEPos, client->m_sCounselCode);
+                                        }
+
+#ifdef USE_UNSEG_WITH_TIME
+                                    }  
+#endif
 
                                     free(value);
-                                    
+
                                 }
                             }
                             else if (gearman_failed(rc)){
@@ -1670,105 +1744,128 @@ void VRClient::thrdTxProcess(VRClient* client) {
                         svalue.erase(0, svalue.find("\n")+1);
                         // Make use of value
                         if (svr_nm.size() && svalue.size()) {
+                            size_t nSPos = client->rx_sframe/10;
+                            size_t nEPos = client->rx_eframe/10;
+                            // std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
+                            // diaNumber = client->getDiaNumber();
+#ifdef USE_UNSEG_WITH_TIME
+                            std::string modValue;
+                            std::string line;
+                            std::istringstream iss(svalue);
+                            std::vector<std::string> strs;
+
+                            while(std::getline(iss, line)) {
+                                boost::split(strs, line, boost::is_any_of(","));
+
+                                if ( strs.size() < 3 ) continue;
+
+                                nSPos = client->tx_sframe/10 + std::stoi(strs[0].c_str()+4);
+                                nEPos = client->tx_sframe/10 + std::stoi(strs[1].c_str()+4);
+                                modValue = strs[2].c_str();
+#else
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
-                            diaNumber = client->getDiaNumber();
+
+#endif
+                                diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
-                            if ( useRedis ) {
-                                int64_t zCount=0;
-                                std::string sJsonValue;
-                                size_t in_size, out_size;
-                                char *utf_buf = NULL;
-                                char *input_buf_ptr = NULL;
-                                char *output_buf_ptr = NULL;
+                                if ( useRedis ) {
+                                    int64_t zCount=0;
+                                    std::string sJsonValue;
+                                    size_t in_size, out_size;
+                                    char *utf_buf = NULL;
+                                    char *input_buf_ptr = NULL;
+                                    char *output_buf_ptr = NULL;
 
-                                in_size = modValue.size();
-                                out_size = in_size * 2 + 1;
-                                utf_buf = (char *)malloc(out_size);
+                                    in_size = modValue.size();
+                                    out_size = in_size * 2 + 1;
+                                    utf_buf = (char *)malloc(out_size);
 
-                                if (utf_buf) {
-                                    memset(utf_buf, 0, out_size);
+                                    if (utf_buf) {
+                                        memset(utf_buf, 0, out_size);
 
-                                    input_buf_ptr = (char *)modValue.c_str();
-                                    output_buf_ptr = utf_buf;
+                                        input_buf_ptr = (char *)modValue.c_str();
+                                        output_buf_ptr = utf_buf;
 
-                                    iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
+                                        iconv(it, &input_buf_ptr, &in_size, &output_buf_ptr, &out_size);
 
-                                    {
-                                        rapidjson::Document d;
-                                        rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
-
-                                        d.SetObject();
-                                        d.AddMember("IDX", diaNumber, alloc);
-                                        d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
-                                        d.AddMember("POS_START", client->tx_sframe/10, alloc);
-                                        d.AddMember("POS_END", client->tx_eframe/10, alloc);
-                                        d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
-
-                                        rapidjson::StringBuffer strbuf;
-                                        rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-                                        d.Accept(writer);
-
-                                        sJsonValue = strbuf.GetString();
-
-                                        if ( bUseRemSpaceInNumwords )
                                         {
-                                            remSpaceInSentence( sJsonValue );
-                                        }
+                                            rapidjson::Document d;
+                                            rapidjson::Document::AllocatorType& alloc = d.GetAllocator();
 
-                                        if ( bUseMask )
-                                        {
-                                            maskKeyword( sJsonValue );
-                                        }
+                                            d.SetObject();
+                                            d.AddMember("IDX", diaNumber, alloc);
+                                            d.AddMember("SPK", rapidjson::Value("L", alloc).Move(), alloc);
+                                            d.AddMember("POS_START", nSPos, alloc);
+                                            d.AddMember("POS_END", nEPos, alloc);
+                                            d.AddMember("VALUE", rapidjson::Value(utf_buf, alloc).Move(), alloc);
 
-                                        #ifdef USE_FIND_KEYWORD
-                                        if ( bUseFindKeyword ) 
-                                        {
-                                            for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
+                                            rapidjson::StringBuffer strbuf;
+                                            rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+                                            d.Accept(writer);
+
+                                            sJsonValue = strbuf.GetString();
+
+                                            if ( bUseRemSpaceInNumwords )
                                             {
-                                                if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                remSpaceInSentence( sJsonValue );
+                                            }
+
+                                            if ( bUseMask )
+                                            {
+                                                maskKeyword( sJsonValue );
+                                            }
+
+                                            #ifdef USE_FIND_KEYWORD
+                                            if ( bUseFindKeyword ) 
+                                            {
+                                                for(klIter = keywordList.begin(); klIter != keywordList.end(); klIter++ )
                                                 {
-                                                    client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
-                                                    break;
+                                                    if ( sJsonValue.find(*klIter) != std::string::npos )
+                                                    {
+                                                        client->m_Logger->debug("VRClient::thrdTxProcess(%s) - Find Keyword(%s)", client->m_sCallId.c_str(), (*klIter).c_str());
+                                                        break;
+                                                    }
                                                 }
                                             }
+                                            #endif
+
                                         }
-                                        #endif
 
-                                    }
+                                        vVal.push_back(toString(diaNumber));
+                                        vVal.push_back(sJsonValue);
 
-                                    vVal.push_back(toString(diaNumber));
-                                    vVal.push_back(sJsonValue);
-
-                                    // for TEST
-                                    if (bSaveJsonData && client->m_deliver) {
-                                        client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
-                                    }
-
-                                    if ( bSendDataRedis )
-                                    {
-                                        if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
-                                            client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                        // for TEST
+                                        if (bSaveJsonData && client->m_deliver) {
+                                            client->m_deliver->insertJsonData(fhCallId, sJsonValue, (diaNumber==1)?0:1, 0, 0, client->m_sCounselCode);
                                         }
-                                    }
-                                    vVal.clear();
 
-                                    free(utf_buf);
+                                        if ( bSendDataRedis )
+                                        {
+                                            if ( !xRedis.zadd(dbi, redisKey, vVal, zCount) ) {
+                                                client->m_Logger->error("VRClient::thrdTxProcess(%s) - redis zadd(). [%s], zCount(%d)", redisKey.c_str(), dbi.GetErrInfo(), zCount);
+                                            }
+                                        }
+                                        vVal.clear();
+
+                                        free(utf_buf);
+                                    }
                                 }
-                            }
 #endif
 
 #ifdef DISABLE_ON_REALTIME
 
-                            if (client->m_s2d) {
-                                client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, modValue);
-                            }
+                                if (client->m_s2d) {
+                                    client->m_s2d->insertSTTData(diaNumber, client->m_sCallId, item->spkNo, nSPos, nEPos, modValue);
+                                }
 #endif // DISABLE_ON_REALTIME
 
-                            // to STTDeliver(file)
-                            if (client->m_deliver) {
-                                client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, client->tx_sframe/10, client->tx_eframe/10, client->m_sCounselCode);
+                                // to STTDeliver(file)
+                                if (client->m_deliver) {
+                                    client->m_deliver->insertSTT(fhCallId, modValue, item->spkNo, nSPos, nEPos, client->m_sCounselCode);
+                                }
+#ifdef USE_UNSEG_WITH_TIME
                             }
-                            
+#endif
                         }
                     }
                     else if (gearman_failed(rc)){
