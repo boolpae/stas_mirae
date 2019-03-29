@@ -27,6 +27,7 @@
 using namespace std;
 using boost::locale::conv::utf_to_utf;
 
+bool g_bUseReplace=false;
 map< string, string > g_mReplace;
 
 const string key = "fooboo1234567890";
@@ -328,6 +329,7 @@ int createReplaceMap(const char* mapFile)
     }
     infile.close();
 
+    g_bUseReplace = true;
     return 0;
 }
 
@@ -343,6 +345,7 @@ std::string ReplaceAll(std::string &str, const std::string& from, const std::str
 
 void replaceSentence(string& sttValue)
 {
+    if (!g_bUseReplace) return;
     for (auto it = g_mReplace.begin(); it != g_mReplace.end(); it++ )
     {
         ReplaceAll(sttValue, it->first, it->second);
