@@ -795,6 +795,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
 
 #endif
+                                        replaceSentence(modValue);  // 띄어쓰기 수정을 위해 추가
                                         diaNumber = client->getDiaNumber();//client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                         if ( useRedis ) {
@@ -1012,6 +1013,7 @@ void VRClient::thrdRxProcess(VRClient* client) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
 
 #endif
+                                replaceSentence(modValue);  // 띄어쓰기 수정을 위해 추가
                                 diaNumber = client->getDiaNumber();
 
 #ifdef USE_REDIS_POOL
@@ -1551,6 +1553,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
 
 #endif
+                                        replaceSentence(modValue);  // 띄어쓰기 수정을 위해 추가
                                         diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                         if ( useRedis ) {
@@ -1766,6 +1769,7 @@ void VRClient::thrdTxProcess(VRClient* client) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
 
 #endif
+                                replaceSentence(modValue);  // 띄어쓰기 수정을 위해 추가
                                 diaNumber = client->getDiaNumber();
 #ifdef USE_REDIS_POOL
                                 if ( useRedis ) {

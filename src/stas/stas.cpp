@@ -122,6 +122,10 @@ int main(int argc, const char** argv)
     }
     logger->info("STAS Sildata Read(%lu)", fread((void *)silbuff, sizeof(uint8_t), sizeof(silbuff), pSilFile));
     fclose(pSilFile);
+
+    if ( createReplaceMap(config->getConfig("stas.replacefile", "./config/replace.txt").c_str()) ) {
+        logger->error("MAIN - ERROR (Failed to open repacefile(%s))", config->getConfig("stas.replacefile", "./config/replace.txt").c_str());
+    }
     
 	logger->info("STT Tasks Allocation Server(Service) ver %d.%d.%d BUILD : %s", STAS_VERSION_MAJ, STAS_VERSION_MIN, STAS_VERSION_BLD, __DATE__);
 	logger->info("================================================");

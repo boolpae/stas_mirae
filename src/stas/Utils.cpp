@@ -7,19 +7,27 @@
 #include <regex>
 #include <algorithm>
 #include <locale>
-#if 0
-#include <codecvt>
-#else
+
 #include <boost/locale/encoding_utf.hpp>
-#endif
+#include <boost/algorithm/string.hpp>
+
 
 #include <fvad.h>
 #include <openssl/evp.h>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+
+#include <string>
+#include <map>
+#include <vector>
 
 using namespace std;
 using boost::locale::conv::utf_to_utf;
 
+map< string, string > g_mReplace;
 
 const string key = "fooboo1234567890";
 const string iv = "fooboo1234567890";
@@ -297,3 +305,47 @@ int checkRealSize(std::vector<uint8_t> &buff, uint16_t hSize, size_t fSize, size
     return realSize;
 
 }
+
+int createReplaceMap(const char* mapFile)
+{
+    std::ifstream infile(mapFile);
+    std::string line;
+    std::vector<std::string> strs;
+
+    if (infile.fail()) {
+        std::cerr << "Error opeing a file : " << mapFile << std::endl;
+        infile.close();
+        return -1;
+    }
+    while (std::getline(infile, line))
+    {
+        boost::split(strs, line, boost::is_any_of(","));
+
+        if ( strs.size() < 2 ) continue;
+
+        g_mReplace.insert(make_pair(strs[0], strs[1]));
+
+    }
+    infile.close();
+
+    return 0;
+}
+
+std::string ReplaceAll(std::string &str, const std::string& from, const std::string& to){
+    size_t start_pos = 0; //string처음부터 검사
+    while((start_pos = str.find(from, start_pos)) != std::string::npos)  //from을 찾을 수 없을 때까>지
+    {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // 중복검사를 피하고 from.length() > to.length()인 경우를 위해서
+    }
+    return str;
+}
+
+void replaceSentence(string& sttValue)
+{
+    for (auto it = g_mReplace.begin(); it != g_mReplace.end(); it++ )
+    {
+        ReplaceAll(sttValue, it->first, it->second);
+    }
+}
+

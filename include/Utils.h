@@ -21,7 +21,10 @@ void remSpaceInSentence(std::string& org);
 void maskKeyword(std::string& org);
 
 int checkRealSize(std::vector<uint8_t> &buff, uint16_t hSize, size_t fSize, size_t vadFSize);
+int createReplaceMap(const char* mapFile);
 
+std::string ReplaceAll(std::string &str, const std::string& from, const std::string& to);
+void replaceSentence(std::string& sttValue);
 
 #ifdef __cplusplus
 }

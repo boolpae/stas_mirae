@@ -633,7 +633,7 @@ void VRClient::thrdMain(VRClient* client) {
                                     std::string modValue = boost::replace_all_copy(std::string((const char*)value), "\n", " ");
 
 #endif
-                                                            
+                                    replaceSentence(modValue);  // 띄어쓰기 수정을 위해 추가
 #ifdef USE_REDIS_POOL
                                     if ( useRedis ) {
                                         int64_t zCount=0;
@@ -912,7 +912,7 @@ void VRClient::thrdMain(VRClient* client) {
                             std::string modValue = boost::replace_all_copy(svalue, "\n", " ");
 
 #endif
-
+                            replaceSentence(modValue);  // 띄어쓰기 수정을 위해 추가
 #ifdef USE_REDIS_POOL
                             if ( useRedis ) {
                                 int64_t zCount=0;
